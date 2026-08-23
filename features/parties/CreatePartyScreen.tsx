@@ -283,8 +283,18 @@ export default function CreatePartyScreen() {
       }
     }
 
+    // Die Party steht an dieser Stelle schon, eine gescheiterte Umfrage darf den Ablauf
+    // also nicht abbrechen — dieselbe Regel wie beim Hintergrundbild darüber. Gemeldet
+    // werden muss sie aber: vorher lief diese Schleife bei einem Fehler stillschweigend
+    // weiter, und der Gastgeber bekam eine Party mit zwei statt drei Umfragen, ohne
+    // dass irgendwo etwas stand.
+    //
+    // Gesammelt und einmal am Ende gemeldet, nicht pro Umfrage: POOLS_MAX ist 5, das
+    // wären sonst fünf Dialoge hintereinander.
+    const failedPools: string[] = []
+
     for (const pool of localPools) {
-      const { data: poolData } = await createPool({
+      const { data: poolData, error: poolError } = await createPool({
         event_id: newPartyId,
         question: pool.question,
         description: pool.description,
@@ -292,9 +302,26 @@ export default function CreatePartyScreen() {
         allow_text_response: false,
         allow_multiple: pool.allow_multiple,
       })
-      if (poolData) {
-        await Promise.all(pool.options.map((label, i) => addPoolOption(poolData.id, label, i)))
+
+      if (poolError || !poolData) {
+        failedPools.push(pool.question)
+        continue
       }
+
+      // Eine Umfrage ohne ihre Antwortmöglichkeiten ist unbrauchbar, also zählt eine
+      // halb angelegte genauso als gescheitert wie eine, die gar nicht entstand.
+      const optionResults = await Promise.all(
+        pool.options.map((label, i) => addPoolOption(poolData.id, label, i))
+      )
+      if (optionResults.some((result) => result.error)) failedPools.push(pool.question)
+    }
+
+    if (failedPools.length > 0) {
+      alertError(
+        failedPools.length === 1
+          ? `Die Umfrage „${failedPools[0]}“ konnte nicht angelegt werden. Die Party wurde trotzdem erstellt — du kannst die Umfrage beim Bearbeiten nachtragen.`
+          : `${failedPools.length} Umfragen konnten nicht angelegt werden. Die Party wurde trotzdem erstellt — du kannst sie beim Bearbeiten nachtragen.`
+      )
     }
 
     setInviteCode(code)

@@ -207,15 +207,26 @@ export default function EditPartyScreen({ partyId }: { partyId: string }) {
   // Everything the host did to the polls, turned into the smallest set of writes.
   // Options are matched by position and RENAMED rather than replaced: option_id is
   // ON DELETE SET NULL, so dropping one to rename it would detach every vote on it.
-  const savePools = async () => {
+  //
+  // Gibt zurück, wie viele Umfragen NICHT durchgingen. Vorher verschluckte diese
+  // Funktion jeden einzelnen Fehler und handleSave navigierte anschließend trotzdem
+  // weiter — der Gastgeber sah also seine Änderungen verschwinden, ohne dass irgendwo
+  // etwas stand. Beim Anlegen ist ein solcher Fehler ärgerlich, hier ist er schlimmer:
+  // wer auf „speichern“ drückt, erwartet, dass gespeichert wurde.
+  const savePools = async (): Promise<number> => {
+    let failed = 0
     const keptIds = new Set(poolDrafts.map((d) => d.id))
-    await Promise.all(loadedPools.filter((p) => !keptIds.has(p.id)).map((p) => deletePool(p.id)))
+
+    const deletions = await Promise.all(
+      loadedPools.filter((p) => !keptIds.has(p.id)).map((p) => deletePool(p.id))
+    )
+    failed += deletions.filter((result) => result.error).length
 
     for (const d of poolDrafts) {
       const existing = loadedPools.find((p) => p.id === d.id)
 
       if (!existing) {
-        const { data } = await createPool({
+        const { data, error } = await createPool({
           event_id: partyId,
           question: d.question,
           description: d.description,
@@ -223,20 +234,33 @@ export default function EditPartyScreen({ partyId }: { partyId: string }) {
           allow_text_response: false,
           allow_multiple: d.allow_multiple,
         })
-        if (data) await Promise.all(d.options.map((label, i) => addPoolOption(data.id, label, i)))
+        if (error || !data) {
+          failed++
+          continue
+        }
+        // Eine Umfrage ohne Antwortmöglichkeiten ist unbrauchbar, also zählt eine halb
+        // angelegte genauso als gescheitert.
+        const options = await Promise.all(d.options.map((label, i) => addPoolOption(data.id, label, i)))
+        if (options.some((result) => result.error)) failed++
         continue
       }
 
       if (JSON.stringify(toDraft(existing)) === JSON.stringify(d)) continue
 
-      await updatePool(existing.id, {
+      const { error: updateError } = await updatePool(existing.id, {
         question: d.question,
         description: d.description,
         allow_multiple: d.allow_multiple,
       })
+      if (updateError) {
+        failed++
+        continue
+      }
 
       const old = existing.options
-      await Promise.all([
+      // null steht für die Optionen, die unverändert blieben und deshalb gar nicht
+      // erst geschrieben wurden — die können auch nicht scheitern.
+      const optionWrites = await Promise.all([
         ...d.options
           .slice(0, old.length)
           .map((label, i) =>
@@ -247,7 +271,10 @@ export default function EditPartyScreen({ partyId }: { partyId: string }) {
         ...old.slice(d.options.length).map((o) => deletePoolOption(o.id)),
         ...d.options.slice(old.length).map((label, i) => addPoolOption(existing.id, label, old.length + i)),
       ])
+      if (optionWrites.some((result) => result !== null && result.error)) failed++
     }
+
+    return failed
   }
 
   const handleSave = async () => {
@@ -266,8 +293,23 @@ export default function EditPartyScreen({ partyId }: { partyId: string }) {
       alertError('Die Party konnte nicht gespeichert werden.', error.message)
       return
     }
-    await savePools()
+    const failedPools = await savePools()
     setSaving(false)
+
+    // Die Felder der Party sind zu diesem Zeitpunkt gespeichert; nur an den Umfragen
+    // hat etwas nicht geklappt. Weiternavigiert wird trotzdem — auf der Detailseite
+    // sieht der Gastgeber den tatsächlichen Stand und kann gezielt nachbessern. Hier
+    // stehenzubleiben wäre schlechter: savePools vergleicht gegen den beim Öffnen
+    // geladenen Stand, ein zweiter Versuch würde die bereits angelegten Umfragen also
+    // ein zweites Mal anlegen.
+    if (failedPools > 0) {
+      alertError(
+        failedPools === 1
+          ? 'Eine Umfrage konnte nicht gespeichert werden. Alle anderen Änderungen wurden übernommen.'
+          : `${failedPools} Umfragen konnten nicht gespeichert werden. Alle anderen Änderungen wurden übernommen.`
+      )
+    }
+
     router.push(`/parties/${partyId}`)
   }
 
