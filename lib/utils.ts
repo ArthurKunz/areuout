@@ -22,16 +22,39 @@ export function sanitizeNextPath(next: string | null | undefined): string | null
   return next
 }
 
-// Ten hex characters, not eight. The code is the only thing standing between a link
-// and a party's address, but the reason for the two extra is collisions rather than
-// guessing: events.invite_code is UNIQUE, so a birthday-paradox clash is not a silent
-// duplicate, it is an insert that fails and a host who cannot create their party. At
-// eight that lands around 1% by the ten-thousandth party. Ten pushes it out of sight.
+// Crockford's base32 without I, L, O and U — the four that get misread when somebody
+// reads a link aloud or types it off another screen. Exactly 32 symbols, which matters
+// below: 256 divides by 32, so `byte % 32` is unbiased and needs no rejection loop.
+const CODE_ALPHABET = '0123456789abcdefghjkmnpqrstvwxyz'
+const CODE_LENGTH = 12
+
+// The invite code is the only thing between a link and somebody's home address plus a
+// guest list of real names. Two things were wrong with the previous version.
+//
+// It fell back to Math.random when crypto.randomUUID was missing, and that fallback was
+// not hypothetical: randomUUID is a secure-context feature, so on http://192.168.x.x —
+// the LAN address in next.config.ts, used for testing on a phone — it is undefined and
+// every code came out of Math.random. That is a predictable generator; a handful of
+// outputs is enough to reconstruct its state. getRandomValues has no such restriction
+// (it is the one member of Crypto usable from an insecure context), so there is nothing
+// left to fall back to. If it were ever absent this throws, which is the right outcome:
+// a party without a code beats a party with a guessable one.
+//
+// And ten hex characters is 40 bits. Measured against the live API, the anon lookup has
+// no rate limit at all — 150 of 150 requests answered at 55/s from one machine. An
+// attacker wants ANY party, not a specific one, so the work drops as the app grows: at
+// 100k parties and 2000 requests per second, expect a hit in about 90 minutes. Twelve
+// base32 symbols is 60 bits, which turns those 90 minutes into roughly 180 years.
+//
+// Collisions stop being worth a thought at that size — invite_code is UNIQUE, and the
+// birthday bound sits around a billion parties.
 export function generateInviteCode(): string {
-  if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
-    return crypto.randomUUID().replace(/-/g, '').slice(0, 10)
-  }
-  return Array.from({ length: 10 }, () => Math.floor(Math.random() * 16).toString(16)).join('')
+  const bytes = new Uint8Array(CODE_LENGTH)
+  crypto.getRandomValues(bytes)
+
+  let code = ''
+  for (const byte of bytes) code += CODE_ALPHABET[byte % CODE_ALPHABET.length]
+  return code
 }
 
 // How long a party is assumed to run when the host set no end time. Six hours means

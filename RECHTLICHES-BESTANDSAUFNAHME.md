@@ -106,7 +106,7 @@ Migrationsdateien — der Ordner `supabase/migrations/` ist nachweislich unvolls
 | `host_id` | uuid | **Ja** — Verweis auf die Person |
 | `title`, `description` | text | Mittelbar — Freitext, kann Namen enthalten |
 | `location` | text | **Ja, besonders sensibel** — regelmäßig eine Privatanschrift |
-| `invite_code` | text | Nein — aber das einzige Zugangsgeheimnis der Party |
+| `invite_code` | text | Nein — aber das einzige Zugangsgeheimnis der Party. Seit 23.08. 12 Zeichen base32 (60 Bit) aus `crypto.getRandomValues`; vorher 10 Hex (40 Bit) mit `Math.random`-Rueckfall. Die anonyme Abfrage hat **kein Rate-Limit** (gemessen: 150/150 bei 55/s) |
 | `event_date`, `ends_at` | timestamptz | Mittelbar — Aufenthaltszeitpunkt |
 | `max_guests` | integer | Nein |
 | `background_url` | text | Mittelbar — hochgeladenes Bild kann Personen zeigen |
@@ -335,6 +335,7 @@ Alles, was du selbst klären oder ergänzen musst.
 | 4 | **Hoster festlegen** und AV-Vertrag schließen. Vercel ist bisher nur vorbereitet, nicht gewählt | — |
 | 5 | **Photon / komoot**: Betriebsstandort und Rechtsgrundlage klären. Die Suche ist seit dem 23.08. entprellt (400 ms) und feuert erst ab drei Zeichen — was übertragen wird, ist der eingetippte Adressanfang samt IP | `features/parties/components/AddressSearchField.tsx:16, 104–137` |
 | 6 | **Google Maps**: Der Kartenabruf passiert ungefragt beim Öffnen der Party-Seite. Prüfen lassen, ob das ohne Einwilligung tragfähig ist, oder die Karte erst nach Klick laden | `features/parties/components/PartyMap.tsx:10` |
+| 6a | **Rate-Limiting** auf `get_party_by_invite_code` einrichten (Cloudflare oder Supabase). Gemessen: keins vorhanden. Der laengere Code entschaerft das, beseitigt es aber nicht | Cloudflare-Regel oder Supabase-Einstellung |
 | 7 | **Log-Fristen** von Supabase, Cloudflare und Hoster erfragen und in die Erklärung schreiben | Tarif-Dokumentation der Anbieter |
 | 8 | **Anschrift und Kontakt-E-Mail** in Impressum, Datenschutz und Nutzungsbedingungen eintragen — dort als `«...»` markiert | `app/impressum/page.tsx`, `app/datenschutz/page.tsx`, `app/nutzungsbedingungen/page.tsx` |
 
