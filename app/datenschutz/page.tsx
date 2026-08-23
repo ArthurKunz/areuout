@@ -5,6 +5,9 @@ import LegalTextScreen, { type LegalSection } from '@/features/profile/LegalText
 // Quelltext:
 //
 //   Supabase       lib/supabase/client.ts, proxy.ts, sämtliche Services
+//   Cloudflare     nirgends im Code — Supabase setzt es selbst vor seine API. Belegt
+//                  über die Antwort-Header: server: cloudflare auf /rest/v1/ UND
+//                  /storage/v1/. Genau deshalb fehlte es in der ersten Fassung
 //   Vercel         Hosting
 //   Google Maps    features/parties/components/PartyMap.tsx (Static Maps API)
 //   Photon/komoot  features/parties/components/AddressSearchField.tsx
@@ -61,6 +64,8 @@ const SECTIONS: LegalSection[] = [
       'Andere Gäste einer Party sehen deinen Vornamen, deinen Nachnamen, dein Profilbild beziehungsweise deine Initialen und deine Antwort auf die Einladung. Wer eine Umfrage beantwortet, dessen Antwort sehen die übrigen Gäste derselben Party.',
       'Wer den Einladungslink einer Party besitzt, sieht deren Titel, Datum, Adresse und die Gästeliste. Der Link ist der einzige Schutz dieser Angaben — teile ihn nur mit Menschen, die eingeladen sein sollen.',
       'Deine E-Mail-Adresse sehen andere Nutzerinnen und Nutzer nicht.',
+      'Hochgeladene Profilbilder und Party-Hintergründe liegen unter einer zufällig erzeugten Adresse. Diese Adresse lässt sich weder erraten noch auflisten — wer sie aber kennt, kann das Bild auch ohne Anmeldung abrufen, solange es existiert. Lädst du ein neues Bild hoch oder wechselst du zu den Initialen, wird das alte gelöscht und die Adresse ungültig.',
+      'Aus jedem hochgeladenen Bild entfernen wir vor dem Speichern die Kameradaten. Das betrifft insbesondere GPS-Koordinaten, Gerätemodell und Aufnahmezeitpunkt, die Handykameras in ihre Fotos schreiben. Gespeichert wird nur eine verkleinerte Fassung ohne diese Angaben.',
       'Es findet kein Verkauf und keine Weitergabe zu Werbezwecken statt.',
     ],
   },
@@ -68,9 +73,10 @@ const SECTIONS: LegalSection[] = [
     heading: '6. Auftragsverarbeiter und externe Dienste',
     paragraphs: [
       'Supabase: Datenbank, Nutzerkonten und Speicherung der hochgeladenen Bilder. Serverstandort: «Region des Supabase-Projekts eintragen». Mit Supabase besteht ein Auftragsverarbeitungsvertrag.',
+      'Cloudflare: Liegt technisch vor der Datenbank und dem Bildspeicher von Supabase und sichert die Verbindung ab. Jede Abfrage und jeder Bildabruf läuft darüber, wobei deine IP-Adresse verarbeitet wird. Anbieter ist Cloudflare, Inc. mit Sitz in den USA; die Verarbeitung erfolgt in einem weltweiten Netz, in der Regel am nächstgelegenen Standort.',
       'Vercel: Hosting der Anwendung. Beim Aufruf werden technisch notwendige Server-Logs verarbeitet, darunter IP-Adresse, Zeitpunkt und aufgerufene Adresse.',
       'Google Maps (Static Maps API): Auf der Detailseite einer Party wird eine Kartenvorschau geladen. Dabei werden die Adresse der Party und deine IP-Adresse an Google übertragen — auch dann, wenn du die Karte nicht antippst. Anbieter ist Google Ireland Limited.',
-      'Photon (komoot GmbH): Die Adresssuche beim Erstellen einer Party schickt deine Eingabe an Photon, und zwar bei jedem Tastendruck, nicht erst beim Absenden. Übertragen wird der eingegebene Text zusammen mit deiner IP-Adresse.',
+      'Photon (komoot GmbH): Die Adresssuche beim Erstellen einer Party schickt deine Eingabe an Photon — sobald du beim Tippen kurz innehältst und mindestens drei Zeichen eingegeben hast, also nicht erst beim Absenden. Übertragen wird der eingegebene Adressanfang zusammen mit deiner IP-Adresse. Kürzere Eingaben verlassen dein Gerät nicht.',
       'Google Sign-In: Nur wenn du dich für die Anmeldung mit Google entscheidest. Dabei gelten zusätzlich die Datenschutzbestimmungen von Google.',
       'Bei Google kann eine Übermittlung in die USA nicht ausgeschlossen werden. Google ist unter dem EU-US Data Privacy Framework zertifiziert; die Übermittlung stützt sich auf den Angemessenheitsbeschluss der EU-Kommission sowie ergänzend auf Standardvertragsklauseln.',
     ],
