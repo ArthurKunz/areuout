@@ -15,6 +15,14 @@ const COLLAPSE_MS = 300
 // policy asks not to be used for autocomplete at all.
 const PHOTON = 'https://photon.komoot.io/api/'
 const DEBOUNCE_MS = 400
+// Kürzere Eingaben verlassen das Gerät gar nicht erst. Die Entprellung oben verhindert
+// schon, dass jeder Tastendruck rausgeht — aber wer 'Ta' tippt und dann überlegt, hatte
+// bisher trotzdem 'Ta' bei komoot liegen, ohne je eine brauchbare Antwort zu bekommen.
+//
+// Drei und nicht mehr: Photon wurde laut Kommentar oben genau deshalb Nominatim
+// vorgezogen, weil es auch mit Bruchstücken umgehen kann. Bei vier Zeichen wären
+// Eingaben wie 'Am 5' kaputt.
+const MIN_QUERY_LENGTH = 3
 // Photon has no country filter, so the search is boxed to roughly DACH and the
 // stragglers from across the borders are dropped below.
 const DACH_BBOX = '5.8,45.7,17.2,55.1'
@@ -99,19 +107,20 @@ export default function AddressSearchField({
       skipNextSearch.current = false
       return
     }
+    // Zu kurz: kein Timer, kein AbortController, keine Anfrage. Hier wird bewusst auch
+    // kein State zurückgesetzt — die alten Treffer bleiben stehen, werden aber nicht
+    // mehr angezeigt, weil `tooShort` unten im Render darüber entscheidet. Ableiten
+    // statt synchronisieren, sonst wäre es genau das kaskadierende setState, vor dem
+    // der Kommentar darunter warnt.
+    if (term.length < MIN_QUERY_LENGTH) return
+
     // AbortController rather than a stale-response check: a slow early request must
     // not overwrite the results of a later one.
     const controller = new AbortController()
 
-    // Everything runs from the timer, never straight from the effect body: a
-    // synchronous setState here is a cascading render (and a lint error).
+    // The request itself runs from the timer, never straight from the effect body: a
+    // synchronous fetch here would fire on every keystroke instead of on a pause.
     const timer = setTimeout(async () => {
-      if (!term) {
-        setResults([])
-        setSearched(false)
-        setLoading(false)
-        return
-      }
       setLoading(true)
       try {
         // Over-fetched because the country filter below runs here, not on the server.
@@ -138,6 +147,11 @@ export default function AddressSearchField({
     }
   }, [value])
 
+  // Aus dem Eingabewert abgeleitet, nicht gespeichert: das Vorschlagsfeld klappt damit
+  // in demselben Frame zu, in dem das dritte Zeichen gelöscht wird, statt erst nachdem
+  // ein Timer abgelaufen ist.
+  const tooShort = value.trim().length < MIN_QUERY_LENGTH
+
   const handlePick = (result: AddressResult) => {
     clearTimeout(closeTimer.current)
     skipNextSearch.current = true
@@ -159,7 +173,7 @@ export default function AddressSearchField({
           match is the row closest to what was typed. It unfolds while typing and
           folds away again on blur rather than appearing and vanishing — by HEIGHT,
           since it is a `backdrop-blur-xl` card and opacity would flatten it. */}
-      <Collapse open={open && (loading || results.length > 0 || searched)}>
+      <Collapse open={open && !tooShort && (loading || results.length > 0 || searched)}>
         {/* The gap to the field lives in here, so it folds away too. */}
         <div className='pb-3'>
           {/* Skeleton rather than a spinner: a suggestion has a known shape (pin,

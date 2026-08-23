@@ -56,8 +56,14 @@ Durchsucht: `app/layout.tsx`, `app/globals.css`, alle Komponenten auf `<link>`,
 | Domain | Was wird geladen | Wann | Fundstelle |
 |---|---|---|---|
 | `maps.googleapis.com` | Karten-PNG (Static Maps API) | **Automatisch**, sobald eine Party-Detailseite geöffnet wird — ohne Zutun des Nutzers | `features/parties/components/PartyMap.tsx:10` |
-| `photon.komoot.io` | Adress-Vorschläge (JSON) | **Bei jedem Tastendruck** in der Adresssuche, nicht erst beim Absenden | `features/parties/components/AddressSearchField.tsx:118–119` |
+| `photon.komoot.io` | Adress-Vorschläge (JSON) | Beim Tippen einer Adresse, sobald 400 ms Pause entstehen und mindestens 3 Zeichen stehen — nicht erst beim Absenden | `features/parties/components/AddressSearchField.tsx:16, 104–137` |
 | `www.google.com` | Nichts — reines Linkziel | Nur wenn der Nutzer die Karte antippt | `features/parties/components/PartyMap.tsx:11` |
+
+> **Korrektur zur ersten Fassung dieses Dokuments.** Dort stand, die Adresssuche
+> schicke „bei jedem Tastendruck" eine Anfrage. Das war falsch: Der Effekt entprellt,
+> jeder Tastendruck löscht den anstehenden Timer und setzt einen neuen. Es geht eine
+> Anfrage bei jeder Tippause raus, nicht eine pro Zeichen. Seit dem 23.08. zusätzlich
+> erst ab drei Zeichen.
 
 ### Schriftarten: selbst gehostet — kein Google-Fonts-Problem
 
@@ -327,7 +333,7 @@ Alles, was du selbst klären oder ergänzen musst.
 | 2 | **AV-Vertrag mit Supabase** abschließen oder bestätigen | Supabase-Dashboard → Settings → Legal / Compliance |
 | 3 | **Cloudflare in die Erklärung aufnehmen** — steht nirgends im Code, ist aber an jeder Abfrage beteiligt. Klären, ob der Supabase-AV-Vertrag Cloudflare als Unterauftragsverarbeiter abdeckt | Unterauftragsverarbeiter-Liste von Supabase |
 | 4 | **Hoster festlegen** und AV-Vertrag schließen. Vercel ist bisher nur vorbereitet, nicht gewählt | — |
-| 5 | **Photon / komoot**: Betriebsstandort und Rechtsgrundlage klären. Alternativ überlegen, ob die Suche erst ab z. B. drei Zeichen auslöst — derzeit geht **jeder Tastendruck** an komoot | `features/parties/components/AddressSearchField.tsx:118–119` |
+| 5 | **Photon / komoot**: Betriebsstandort und Rechtsgrundlage klären. Die Suche ist seit dem 23.08. entprellt (400 ms) und feuert erst ab drei Zeichen — was übertragen wird, ist der eingetippte Adressanfang samt IP | `features/parties/components/AddressSearchField.tsx:16, 104–137` |
 | 6 | **Google Maps**: Der Kartenabruf passiert ungefragt beim Öffnen der Party-Seite. Prüfen lassen, ob das ohne Einwilligung tragfähig ist, oder die Karte erst nach Klick laden | `features/parties/components/PartyMap.tsx:10` |
 | 7 | **Log-Fristen** von Supabase, Cloudflare und Hoster erfragen und in die Erklärung schreiben | Tarif-Dokumentation der Anbieter |
 | 8 | **Anschrift und Kontakt-E-Mail** in Impressum, Datenschutz und Nutzungsbedingungen eintragen — dort als `«...»` markiert | `app/impressum/page.tsx`, `app/datenschutz/page.tsx`, `app/nutzungsbedingungen/page.tsx` |
