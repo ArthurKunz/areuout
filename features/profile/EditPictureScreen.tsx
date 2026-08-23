@@ -10,6 +10,7 @@ import UnsavedChangesDialog from '@/components/shared/UnsavedChangesDialog'
 import { alertError } from '@/lib/utils'
 import { removeStorageFileByUrl } from '@/lib/storage'
 import { AVATAR_COLORS, BUCKET, MAX_BYTES } from '@/features/onboarding/constants/onboarding.constants'
+import { stripMetadataAndResize, AVATAR_MAX_EDGE } from '@/lib/image'
 import {
   getMyProfile,
   updateProfileAvatar,
@@ -102,13 +103,21 @@ export default function EditPictureScreen() {
       return
     }
 
-    const ext = file!.name.split('.').pop()?.toLowerCase() || 'jpg'
-    const safeExt = ['jpg', 'jpeg', 'png', 'gif', 'webp'].includes(ext) ? ext : 'jpg'
-    const path = `${userId}/avatar-${Date.now()}.${safeExt}`
+    // Same as in onboarding: the picked file never reaches the bucket unchanged.
+    let clean: File
+    try {
+      clean = await stripMetadataAndResize(file!, AVATAR_MAX_EDGE)
+    } catch {
+      setSaving(false)
+      alertError('Dieses Bild konnte nicht verarbeitet werden. Versuch es mit einem anderen.')
+      return
+    }
+
+    const path = `${userId}/avatar-${Date.now()}.jpg`
 
     const { error: uploadError } = await supabase.storage
       .from(BUCKET)
-      .upload(path, file!, { cacheControl: '3600', upsert: false })
+      .upload(path, clean, { cacheControl: '3600', upsert: false })
     if (uploadError) {
       setSaving(false)
       alertError('Dein Bild konnte nicht hochgeladen werden.', uploadError.message)

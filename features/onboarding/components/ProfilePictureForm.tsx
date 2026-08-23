@@ -11,6 +11,7 @@ import WarningBanner from '@/components/shared/WarningBanner'
 import { alertError, cn } from '@/lib/utils'
 import type { ProfilePictureFormProps } from '../types/onboarding.types'
 import { MAX_BYTES, BUCKET, AVATAR_COLORS, pickRandomAvatarColor } from '../constants/onboarding.constants'
+import { stripMetadataAndResize, AVATAR_MAX_EDGE } from '@/lib/image'
 import { getSession } from '../services/onboarding.service'
 
 // The same two ways of having an avatar as the profile's picture screen: a photo,
@@ -75,13 +76,24 @@ export default function ProfilePictureForm({ onSuccess, onClose, firstname, last
       return
     }
 
-    const ext = file.name.split('.').pop()?.toLowerCase() || 'jpg'
-    const safeExt = ['jpg', 'jpeg', 'png', 'gif', 'webp'].includes(ext) ? ext : 'jpg'
-    const path = `${session.user.id}/avatar-${Date.now()}.${safeExt}`
+    // Never the file the user picked: a camera photo carries GPS coordinates and the
+    // device it was taken with, and the bucket hands those out to anyone with the URL.
+    // stripMetadataAndResize throws rather than quietly passing the original through.
+    let clean: File
+    try {
+      clean = await stripMetadataAndResize(file, AVATAR_MAX_EDGE)
+    } catch {
+      setSaving(false)
+      alertError('Dieses Bild konnte nicht verarbeitet werden. Versuch es mit einem anderen.')
+      return
+    }
+
+    // Always .jpg — that is what comes back out of the canvas.
+    const path = `${session.user.id}/avatar-${Date.now()}.jpg`
 
     const { error: uploadError } = await supabase.storage
       .from(BUCKET)
-      .upload(path, file, { cacheControl: '3600', upsert: false })
+      .upload(path, clean, { cacheControl: '3600', upsert: false })
     if (uploadError) {
       setSaving(false)
       alertError('Dein Bild konnte nicht hochgeladen werden.', uploadError.message)

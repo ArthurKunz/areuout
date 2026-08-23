@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation'
 import { Check, Copy, ImagePlus, Plus } from 'lucide-react'
 import { supabase } from '@/lib/supabase/client'
 import { alertError, generateInviteCode, getOrigin } from '@/lib/utils'
+import { stripMetadataAndResize, BACKGROUND_MAX_EDGE } from '@/lib/image'
 import AddressSearchField from './components/AddressSearchField'
 import PartyDateSheet from './components/PartyDateSheet'
 import PartyTimeSheet from './components/PartyTimeSheet'
@@ -263,23 +264,30 @@ export default function CreatePartyScreen() {
     if (bgPreset) {
       await supabase.from('events').update({ background_url: bgPreset }).eq('id', newPartyId)
     } else if (bgFile) {
-      const ext = bgFile.name.split('.').pop()?.toLowerCase() || 'jpg'
-      const safeExt = ['jpg', 'jpeg', 'png', 'gif', 'webp'].includes(ext) ? ext : 'jpg'
-      const path = `${userId}/${newPartyId}/background.${safeExt}`
-      // 'event-backgrounds', not 'party-backgrounds': the event->party rename swept
-      // through this string too, but the BUCKET kept its name, so every upload since
-      // has failed against a bucket that does not exist.
-      const { error: uploadError } = await supabase.storage
-        .from(BG_BUCKET)
-        .upload(path, bgFile, { cacheControl: '3600', upsert: true })
-      if (uploadError) {
-        // The party itself is already saved, so this is a warning about the picture
-        // and nothing else — it used to be swallowed, which is how the broken bucket
-        // stayed invisible.
-        alertError('Dein Hintergrundbild konnte nicht hochgeladen werden. Die Party wurde trotzdem erstellt.', uploadError.message)
+      // A party background is a photo of somewhere real, so it carries the same
+      // coordinates an avatar does — and this bucket is just as readable. Never the
+      // picked file, always the re-encoded one.
+      const cleanBg = await stripMetadataAndResize(bgFile, BACKGROUND_MAX_EDGE).catch(() => null)
+
+      if (!cleanBg) {
+        // The party is already saved, so this is a warning about the picture and
+        // nothing else — same rule as the failed upload below.
+        alertError('Dein Hintergrundbild konnte nicht verarbeitet werden. Die Party wurde trotzdem erstellt.')
       } else {
-        const { data: urlData } = supabase.storage.from(BG_BUCKET).getPublicUrl(path)
-        await supabase.from('events').update({ background_url: urlData.publicUrl }).eq('id', newPartyId)
+        const path = `${userId}/${newPartyId}/background.jpg`
+        // 'event-backgrounds', not 'party-backgrounds': the event->party rename swept
+        // through this string too, but the BUCKET kept its name, so every upload since
+        // has failed against a bucket that does not exist.
+        const { error: uploadError } = await supabase.storage
+          .from(BG_BUCKET)
+          .upload(path, cleanBg, { cacheControl: '3600', upsert: true })
+        if (uploadError) {
+          // It used to be swallowed, which is how the broken bucket stayed invisible.
+          alertError('Dein Hintergrundbild konnte nicht hochgeladen werden. Die Party wurde trotzdem erstellt.', uploadError.message)
+        } else {
+          const { data: urlData } = supabase.storage.from(BG_BUCKET).getPublicUrl(path)
+          await supabase.from('events').update({ background_url: urlData.publicUrl }).eq('id', newPartyId)
+        }
       }
     }
 
