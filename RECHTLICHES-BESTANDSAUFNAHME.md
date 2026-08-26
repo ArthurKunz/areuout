@@ -1,4 +1,4 @@
-# Datenschutz-Bestandsaufnahme — Student Connect
+# Datenschutz-Bestandsaufnahme — areuout
 
 Erhoben am 23.08.2026 gegen den Stand `f74925d`, nachgetragen nach den Umbauten vom
 selben Tag. Was inzwischen behoben ist, steht als **BEHOBEN** dabei. Grundlage für Impressum und
@@ -9,6 +9,31 @@ Repository nicht feststellen ließ, steht als **UNKLAR – manuell prüfen** und
 in „Offene Punkte" gesammelt. Nichts davon ist geraten.
 
 **Das ist eine technische Bestandsaufnahme, keine Rechtsberatung.**
+
+---
+
+## 0. Betreiber
+
+Betrieben wird die App von einer **Privatperson**, nicht von einem Unternehmen.
+
+- **Kein Gewerbe angemeldet** und keins geplant.
+- **Keine Einnahmeabsicht** — weder jetzt noch für V1. Keine Werbung, keine
+  Bezahlfunktionen, keine Provisionen, keine kostenpflichtigen Konten, keine
+  Datenweitergabe gegen Entgelt.
+- Damit ist das Angebot **nicht geschäftsmäßig** im Sinne von § 5 DDG.
+
+Was daraus folgt, praktisch:
+
+| Bereich | Auswirkung |
+|---|---|
+| **Impressum** | Die Pflicht aus § 5 DDG hängt an einem *geschäftsmäßigen* Angebot — und geschäftsmäßig heißt nach herrschender Lesart **nachhaltig und planmäßig**, nicht gewinnorientiert. Fehlende Gewinnerzielungsabsicht befreit also gerade nicht. Eine dauerhaft betriebene App für fremde Nutzer dürfte darunter fallen, das Impressum ist damit **voraussichtlich Pflicht** und steht seit dem 23.08. vollständig. **UNKLAR – manuell prüfen**, siehe Punkt 14 |
+| **DSGVO** | Gilt **unverändert**. Die Haushaltsausnahme aus Art. 2 Abs. 2 lit. c greift hier nicht: die App richtet sich an fremde Nutzer, nicht an den eigenen Familien- und Bekanntenkreis. Datenschutzerklärung, Löschkonzept und AV-Verträge bleiben also erforderlich |
+| **AV-Verträge** | Weiterhin nötig. Auch eine Privatperson ist Verantwortlicher nach Art. 4 Nr. 7 DSGVO |
+| **Steuer** | Kein Thema, solange kein Geld fließt |
+| **Anbieter-Tarife** | Supabase, Vercel und Google Maps müssen in ihren kostenlosen Stufen bleiben. Reißt das Projekt eine Grenze, ist die Frage „Gewerbe ja/nein“ neu zu stellen, bevor irgendetwas gebucht wird |
+
+Wenn sich das jemals ändert — Werbung, Bezahlfunktion, Sponsoring —, ist diese
+Bestandsaufnahme an dieser Stelle als Erstes zu überarbeiten.
 
 ---
 
@@ -251,7 +276,7 @@ Cookies gesetzt werden — und für Besucher ohne Konto gar keine.
 
 | Dienst | Drittland? | Grundlage / Anmerkung |
 |---|---|---|
-| **Supabase** | **UNKLAR – manuell prüfen** | Die Region steht nicht im Repository. Aus der API nicht ablesbar: die Domain löst auf Cloudflare-IPs auf (`172.64.149.246`, `104.18.38.10`), der Header nennt nur den Cloudflare-Randknoten. **Im Supabase-Dashboard unter Settings → General nachsehen.** Bei einer EU-Region (z. B. `eu-central-1`) liegt die Datenbank in der EU; das US-Mutterunternehmen bleibt davon unberührt |
+| **Supabase** | **Nein — EU** | Am 26.08.2026 geklärt: Die API-Domain hilft nicht weiter, sie löst auf Cloudflare-IPs auf (`172.64.149.246`, `104.18.38.10`). Die Datenbank selbst verrät sich aber: `db.<ref>.supabase.co` → `2a05:d014:128e:9500:…`, und dieses Präfix steht in der AWS-Liste `ip-ranges.json` unter `eu-central-1` — Frankfurt am Main. Die Datenbank liegt damit in der EU; das US-Mutterunternehmen bleibt davon unberührt |
 | **Cloudflare** | **Ja, faktisch** | Globales Anycast-Netz, Unternehmen in den USA. Der Datenverkehr wird am nächstgelegenen Randknoten terminiert (hier Berlin), das schließt eine Verarbeitung in den USA aber nicht aus |
 | **Google** (Maps, Sign-In) | **Ja** | Google Ireland Ltd. als Vertragspartner, Übermittlung in die USA nicht ausgeschlossen. Google ist unter dem EU-US Data Privacy Framework zertifiziert |
 | **Photon / komoot** | Voraussichtlich nein | komoot GmbH sitzt in Potsdam. **UNKLAR – manuell prüfen**, wo Photon tatsächlich betrieben wird |
@@ -329,7 +354,7 @@ Alles, was du selbst klären oder ergänzen musst.
 
 | # | Punkt | Wo nachsehen |
 |---|---|---|
-| 1 | **Supabase-Region** — EU oder nicht? Entscheidet, ob eine Drittlandübermittlung für die Kerndaten vorliegt | Supabase-Dashboard → Settings → General |
+| 1 | **Supabase-Region** — **BEHOBEN am 26.08.2026: `eu-central-1`, Frankfurt am Main.** `db.<ref>.supabase.co` löst auf `2a05:d014:128e:9500:…` auf; AWS führt `2a05:d014::/35` in `ip-ranges.json` unter `eu-central-1`. Für die Kerndaten liegt damit keine Drittlandübermittlung vor. Steht so in der Erklärung | gemessen; zur Sicherheit gegen Dashboard → Settings → General halten |
 | 2 | **AV-Vertrag mit Supabase** abschließen oder bestätigen | Supabase-Dashboard → Settings → Legal / Compliance |
 | 3 | **Cloudflare in die Erklärung aufnehmen** — steht nirgends im Code, ist aber an jeder Abfrage beteiligt. Klären, ob der Supabase-AV-Vertrag Cloudflare als Unterauftragsverarbeiter abdeckt | Unterauftragsverarbeiter-Liste von Supabase |
 | 4 | **Hoster festlegen** und AV-Vertrag schließen. Vercel ist bisher nur vorbereitet, nicht gewählt | — |
@@ -337,7 +362,8 @@ Alles, was du selbst klären oder ergänzen musst.
 | 6 | **Google Maps**: Der Kartenabruf passiert ungefragt beim Öffnen der Party-Seite. Prüfen lassen, ob das ohne Einwilligung tragfähig ist, oder die Karte erst nach Klick laden | `features/parties/components/PartyMap.tsx:10` |
 | 6a | **Rate-Limiting** auf `get_party_by_invite_code` einrichten (Cloudflare oder Supabase). Gemessen: keins vorhanden. Der laengere Code entschaerft das, beseitigt es aber nicht | Cloudflare-Regel oder Supabase-Einstellung |
 | 7 | **Log-Fristen** von Supabase, Cloudflare und Hoster erfragen und in die Erklärung schreiben | Tarif-Dokumentation der Anbieter |
-| 8 | **Anschrift und Kontakt-E-Mail** in Impressum, Datenschutz und Nutzungsbedingungen eintragen — dort als `«...»` markiert | `app/impressum/page.tsx`, `app/datenschutz/page.tsx`, `app/nutzungsbedingungen/page.tsx` |
+| 8 | **Anschrift und Kontakt-E-Mail** eintragen — **BEHOBEN**. Impressum am 23.08. (Bretschneiderstraße 14, 04229 Leipzig, Telefon und E-Mail), dabei auf die reinen Pflichtangaben nach § 5 DDG gekürzt. Datenschutz und Nutzungsbedingungen am 26.08.: die letzten `«...»` sind gefüllt, im Quelltext steht kein Platzhalter mehr | `app/datenschutz/page.tsx`, `app/nutzungsbedingungen/page.tsx` |
+| 14 | **Impressumspflicht bei rein privatem Betrieb** bestätigen lassen — kein Gewerbe, keine Einnahmen, aber „geschäftsmäßig“ verlangt keine Gewinnabsicht, siehe Abschnitt 0. Die Seite steht vorsorglich vollständig; zu klären bleibt nur, ob die Privatanschrift wirklich öffentlich stehen muss | Abschnitt 0, `app/impressum/page.tsx` |
 
 ### Inhaltlich zu entscheiden
 
@@ -356,10 +382,71 @@ Alles, was du selbst klären oder ergänzen musst.
 |---|---|
 | Google Fonts | Selbst gehostet, keine Anfrage an Google. Kein Handlungsbedarf |
 | Cookie-Banner | Nicht erforderlich, solange nur die Auth-Cookies gesetzt werden |
-| Analytics, Tracking, Payment | Nicht vorhanden |
+| Analytics, Tracking, Payment | Nicht vorhanden — und laut Abschnitt 0 auch nicht vorgesehen |
 | localStorage | Wird nicht genutzt |
 | Anonyme Besucher | Bekommen keine Cookies |
 | Löschkaskade | Lückenlos, geprüft. Ein verwaistes Avatar eines gelöschten Kontos wurde am 23.08. entfernt |
 | Auflisten der Buckets | Gesperrt, geprüft |
 | EXIF/GPS in neuen Uploads | Wird entfernt, geprüft |
 | Kein Geburtsdatum, Geschlecht, Telefonnummer, Gerätestandort | Wird nicht erhoben — als Datensparsamkeit erwähnenswert |
+
+---
+
+## Nachtrag 26.08.2026 — Prüfung für die neue Datenschutzerklärung
+
+Erhoben beim Neuschreiben von `app/datenschutz/page.tsx`. Alles hier ist an der
+**Live-Datenbank** oder an der **Antwort des jeweiligen Servers** geprüft, nicht an den
+Migrationsdateien.
+
+### Neue Funde
+
+| # | Fund | Beleg |
+|---|---|---|
+| A | **Jeder angemeldete Account kann beide Bild-Buckets auflisten und jedes Bild herunterladen.** Die SELECT-Policies heißen `avatars_select_authenticated` und `event_backgrounds_select_authenticated` und lauten schlicht `bucket_id = '…'` — ohne Ordner-Einschränkung. Die Migration vom 23.08. hat `anon` ausgesperrt, angemeldete Fremde aber nicht | `pg_policies`, Schema `storage` |
+| B | **Die Bildpfade sind nicht zufällig.** `{user_id}/avatar-{ms}.jpg` und `{host_id}/{party_id}/background.jpg`. Host-Id und Party-Id liefert `get_party_by_invite_code` an **jeden** mit dem Einladungscode, auch ohne Konto — der Hintergrund einer Party ist damit aus dem Link ableitbar | `ProfilePictureForm.tsx:92`, `EditPictureScreen.tsx:116`, `CreatePartyScreen.tsx:277` |
+| C | **Die Edge Function `send-consent-email` ist deployt und aktiv** (Version 4, `verify_jwt: true`). Sie ruft **Resend** auf und verschickt E-Mails an eine frei übergebene Adresse. Im Quellcode ruft sie **nichts** auf; sie ist ein Rest des am 02.06. entfernten Eltern-Einwilligungs-Flows (`20260602120000_remove_consent_and_explore.sql`). Solange sie steht, ist Resend ein Empfänger, der in keiner Erklärung auftaucht — und sie bricht `npx tsc --noEmit` | `list_edge_functions`, `supabase/functions/send-consent-email/` (nicht versioniert) |
+| D | **`get_party_pools_by_invite_code` ist für `anon` freigegeben.** Die Oberfläche zeigt Umfragen nur Angemeldeten (`InviteScreen.tsx:602`), die RPC beantwortet sie aber jedem, der den Code hat. `get_event_attendees_by_invite_code` ist demgegenüber korrekt auf `authenticated` beschränkt | `has_function_privilege` über `pg_proc` |
+
+### Beantwortete offene Punkte
+
+| # | Punkt | Ergebnis |
+|---|---|---|
+| 5 | Photon-Standort | **Geklärt: Deutschland.** `photon.komoot.io` löst auf `116.202.51.114` auf, laut RIPE `Hetzner Online GmbH`, `country: DE`. Keine Drittlandübermittlung |
+| 6 | Google Maps ohne Einwilligung | **Tragfähig auf Art. 6 Abs. 1 lit. f.** Ein HEAD auf die Static-Maps-URL antwortet mit `200`, `content-type: image/png` und **keinem** `Set-Cookie`. Es wird nichts auf dem Endgerät gespeichert oder gelesen, § 25 Abs. 1 TDDDG ist damit nicht einschlägig. Der Generator-Warnkasten von eRecht24 zielt auf die JS-Einbettung, nicht auf ein Bild. Die risikofreie Variante bliebe Klick-zum-Laden |
+| 3 | Drittlandmechanismen | Gelesen in den DPAs: **Google** und **Cloudflare** sind DPF-zertifiziert (Cloudflare zusätzlich SCC), **Supabase** und **Vercel** stützen sich ausschließlich auf **Standardvertragsklauseln** — im Text entsprechend getrennt. Die Unterauftragsverarbeiter-Liste von Supabase liegt nur als PDF vor und bleibt zu prüfen |
+| 7 | Log-Fristen | Supabase protokolliert je Anfrage `cf-connecting-ip`, `cf-ipcountry`, `user-agent`, `referer`; die Aufbewahrung hängt am Tarif, im kostenlosen ist sie die kürzeste. **Automatische Backups gibt es im Free-Tarif nicht** — das stützt die Zusage „sofort und vollständig gelöscht" |
+
+### Weiteres zur Kenntnis
+
+- `auth.users` speichert E-Mail, Passwort-Hash, `last_sign_in_at`, `confirmed_at` und die Anmeldeart. `auth.audit_log_entries` ist derzeit **leer**.
+- `profiles` ist per RLS nur für den eigenen Account lesbar. Fremde Namen kommen ausschließlich über die `SECURITY DEFINER`-RPCs, jeweils auf eine Party geschlüsselt.
+- Kein Treffer für Analytics, Tracking, Error-Tracking, `headers()`, `x-forwarded-for`, `user-agent` oder `navigator.geolocation` im eigenen Code — der Stand von 23.08. gilt unverändert.
+
+### Erledigt und entschieden, 26.08.2026 (Arthur)
+
+| Punkt | Stand |
+|---|---|
+| Fund C — `send-consent-email` | **BEHOBEN.** Remote gelöscht (`supabase functions delete send-consent-email`, Antwort `Deleted Edge Function`, `list_edge_functions` liefert jetzt `[]`), lokaler Ordner `supabase/functions/` entfernt. Damit ist auch der Type-Check-Blocker weg: der Build kam vorher nicht an `tsconfig`s `include: ["**/*.ts"]` vorbei, weil die Deno-Datei `Deno` und den `https://`-Import nicht auflösen konnte |
+| Offener Punkt 4 — Hoster | **Entschieden: Vercel.** Damit steht der Hoster im Text nicht mehr unter Vorbehalt. Der AV-Vertrag mit Vercel läuft über deren DPA, ausschließlich auf Standardvertragsklauseln — **keine** DPF-Zertifizierung, geprüft in `vercel.com/legal/dpa` |
+| Mailversand | **Resend ist gesetzt** — für die Anmelde-Mails (Custom SMTP) **und** später für eigene Benachrichtigungen. Auf Arthurs Entscheidung steht Resend bereits in der Erklärung, obwohl noch Supabase versendet; Abschnitt 7 nennt deshalb beide Wege in einem Satz. Betreiber ist **Plus Five Five, Inc.**, 2261 Market Street #5039, San Francisco, CA 94114, USA — DPF-zertifiziert laut eigener DPA, Abschnitt 11.1, zusätzlich SCC. Unterauftragsverarbeiter unter `resend.com/legal/subprocessors`, 14 Tage Vorlauf bei Änderungen |
+
+**Neu offen:** Der Build scheitert weiterhin, aber an einer anderen Stelle — `Export encountered an error on /_global-error/page`, `TypeError: Cannot read properties of null (reading 'useContext')`. Gegengeprüft mit `git stash` auf die vorige Fassung der Datenschutz-Seite: **derselbe Fehler**, der Fund hängt also nicht an den Rechtstexten. React 19.2.4 und react-dom 19.2.4 stimmen überein, es gibt keine doppelte React-Kopie in `node_modules`. Muss vor dem ersten Deploy auf Vercel geklärt werden.
+
+**Weiterhin offen aus dem Nachtrag:** Fund A (beide Bild-Buckets sind für jeden angemeldeten Account auflistbar), Fund D (`get_party_pools_by_invite_code` ist für `anon` freigegeben), AV-Vertrag mit Supabase bestätigen, Widerspruch zwischen § 4 der Nutzungsbedingungen und der Datenschutzerklärung zur Gästeliste.
+
+### Auftragsverarbeitung — Stand nach der Überarbeitung vom 26.08.2026
+
+Die Erklärung nennt jetzt für jeden Dienst, in welcher Rolle er steht. Das ist keine
+Formsache: Ein AVV setzt voraus, dass der Dienst **auf unsere Weisung** verarbeitet.
+
+| Dienst | Rolle | Was in der Erklärung steht | Was du dafür haben musst |
+|---|---|---|---|
+| Supabase | Auftragsverarbeiter | AVV nach Art. 28 DSGVO | DPA im Dashboard bestätigen/akzeptieren |
+| Vercel | Auftragsverarbeiter | AVV nach Art. 28 DSGVO | Vercel-DPA akzeptieren (`vercel.com/legal/dpa`) |
+| Resend | Auftragsverarbeiter | AVV nach Art. 28 DSGVO | Resend-DPA akzeptieren, sobald das Konto steht |
+| Cloudflare | **Unter**auftragsverarbeiter von Supabase | Art. 28 Abs. 2 und 4 — **kein** eigener Vertrag | Cloudflare auf der Unterauftragsverarbeiter-Liste von Supabase bestätigen |
+| Google (Maps, Sign-In), komoot | **Eigene Verantwortliche** | ausdrücklich kein Art.-28-Vertrag | nichts — aber die Rolle muss so bleiben, sonst ändert sich der Text |
+
+**Wichtig:** Ein AVV mit Cloudflare wäre sachlich falsch gewesen — wir sind dort nicht
+Kunde. Cloudflare kommt ausschließlich deshalb ins Spiel, weil Supabase es selbst vor
+seine API setzt. Die Erklärung sagt das jetzt genau so.

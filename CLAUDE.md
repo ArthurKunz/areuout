@@ -2,7 +2,7 @@
 
 # CLAUDE.md
 
-This is a party and event discovery app for people aged 16–25.
+This is a party and event discovery app for people aged 16–26.
 Read this entire file before writing any code.
 
 ---
@@ -12,8 +12,16 @@ A web app where hosts create public or private events and guests
 discover and RSVP to them. Two user roles: host and guest.
 Current phase: V1 MVP. Deadline: July 2026.
 
+Run by Arthur as a **private individual** — no registered business
+(kein Gewerbe), no intention to earn money from it. Never suggest ads,
+paid tiers, payment providers, affiliate links or any other monetisation,
+and never propose a paid plan of a third-party service: Supabase, Vercel
+and Google Maps have to stay inside their free tiers. If a change would
+push past a free-tier limit, say so before writing it. The legal
+consequences are written up in RECHTLICHES-BESTANDSAUFNAHME.md, section 0.
+
 ## Problem statement
-For students and young people aged 16–25, finding out what's
+For students and young people aged 16–26, finding out what's
 happening socially still depends on being in the right WhatsApp
 group or following the right person on Instagram. If you're new
 to a city or university, events are invisible to you and you're
@@ -107,6 +115,8 @@ Always git push after commiting something
 - Mobile responsive
 
 ## Not in V1 — do not suggest these
+- Monetisation of any kind: ads, paid tiers, payment providers, affiliate
+  links, sponsored events. Not in V1 and not later — see Project summary
 - Explore page: all public events, because we want to prevent a cold-start
 - Profile photo upload (using initials avatar instead)
 - Gender field on profiles (legal complexity for under-18 users)
@@ -143,6 +153,12 @@ Key fields:
   without a session, so they are listed in `PUBLIC_PATHS` and in `GATE_EXEMPT` in
   proxy.ts, and the sign-up sheet links straight to them. Do not move them behind the
   auth gate. Everything a reader has to fill in themselves is marked with «...»
+  Die Datenschutzerklärung ist am 26.08.2026 gegen den Code, die Live-Datenbank und die
+  Antworten der beteiligten Server neu geschrieben worden (Art.-13-Gliederung, 17
+  Abschnitte). Sie behauptet nichts, was nicht belegt ist — der Kopfkommentar der Datei
+  führt jede Messung mit. Kommt ein Dienst dazu, der Daten empfängt, oder ändert sich,
+  wer welche Zeile sehen darf, gehört beides in Abschnitt 6 bzw. 7 dieser Datei, bevor
+  der Code gemergt wird.
 - components/ — shared UI components
 - lib/ — Supabase client setup and utility functions
 - types/ — generated Supabase types and custom types
