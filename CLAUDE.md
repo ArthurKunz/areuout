@@ -159,6 +159,18 @@ Key fields:
   führt jede Messung mit. Kommt ein Dienst dazu, der Daten empfängt, oder ändert sich,
   wer welche Zeile sehen darf, gehört beides in Abschnitt 6 bzw. 7 dieser Datei, bevor
   der Code gemergt wird.
+  Die Nutzungsbedingungen sind am 26.08.2026 auf dieselbe Weise neu geschrieben worden
+  (23 Abschnitte). Neu darin: Vertragsschluss und der Grund, warum kein Widerrufsrecht
+  besteht (§ 2); die Zustimmung der Eltern bei 16- bis 17-Jährigen (§ 3); Melde- und
+  Abhilfeverfahren samt Begründungspflicht und Kontaktstelle nach Art. 11, 12, 16 und 17
+  DSA (§§ 13, 14); Gästezahl, Rauswurf durch den Gastgeber, Sichtbarkeit der
+  Umfrageantworten, der Umgang mit den Daten anderer Gäste, die öffentlich abrufbaren
+  Bilder, das Fehlen jeder Datensicherung und die Freistellung. Jede Aussage über die App
+  hat eine Belegstelle im Kopfkommentar der Datei — ändert sich das Verhalten, ändert sich
+  der Satz mit. Was der Code nicht hält, wird dort nicht versprochen: solange die
+  Bild-Buckets für jeden angemeldeten Account auflistbar sind und
+  `get_party_pools_by_invite_code` für `anon` freigegeben ist, sagt der Text nur, dass
+  ein Bild abrufbar ist, wer seine Adresse kennt.
 - components/ — shared UI components
 - lib/ — Supabase client setup and utility functions
 - types/ — generated Supabase types and custom types

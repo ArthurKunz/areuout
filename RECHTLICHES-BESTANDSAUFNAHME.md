@@ -432,7 +432,11 @@ Migrationsdateien.
 
 **Neu offen:** Der Build scheitert weiterhin, aber an einer anderen Stelle — `Export encountered an error on /_global-error/page`, `TypeError: Cannot read properties of null (reading 'useContext')`. Gegengeprüft mit `git stash` auf die vorige Fassung der Datenschutz-Seite: **derselbe Fehler**, der Fund hängt also nicht an den Rechtstexten. React 19.2.4 und react-dom 19.2.4 stimmen überein, es gibt keine doppelte React-Kopie in `node_modules`. Muss vor dem ersten Deploy auf Vercel geklärt werden.
 
-**Weiterhin offen aus dem Nachtrag:** Fund A (beide Bild-Buckets sind für jeden angemeldeten Account auflistbar), Fund D (`get_party_pools_by_invite_code` ist für `anon` freigegeben), AV-Vertrag mit Supabase bestätigen, Widerspruch zwischen § 4 der Nutzungsbedingungen und der Datenschutzerklärung zur Gästeliste.
+**Weiterhin offen aus dem Nachtrag:** Fund A (beide Bild-Buckets sind für jeden angemeldeten Account auflistbar), Fund D (`get_party_pools_by_invite_code` ist für `anon` freigegeben), AV-Vertrag mit Supabase bestätigen.
+
+**Erledigt am 26.08.2026:** Der Widerspruch zwischen § 4 der Nutzungsbedingungen und der Datenschutzerklärung zur Gästeliste ist weg — die Nutzungsbedingungen sind gegen den Code neu geschrieben worden (23 statt 12 Abschnitte, `app/nutzungsbedingungen/page.tsx`). § 5 sagt jetzt, was `get_event_attendees_by_invite_code` tatsächlich tut: ohne Konto keine Gästeliste. Dazu kamen Vertragsschluss und Widerrufsrecht, die Elternzustimmung bei 16- bis 17-Jährigen, Melde- und Abhilfeverfahren nach Art. 11, 12, 16 und 17 DSA, Gästezahl und Rauswurf, die Sichtbarkeit von Umfrageantworten, der Umgang mit fremden Gästedaten, die öffentlich abrufbaren Bilder, das fehlende Backup und die Freistellung.
+
+Fund A und Fund D wirken in den neuen Text hinein: Solange beide offen sind, verspricht § 11 nur, dass ein Bild abrufbar ist, wer seine Adresse kennt, und kein Abschnitt behauptet, Umfragen seien ohne Konto unsichtbar. Werden die Policies enger gezogen, kann der Text nachziehen — nicht umgekehrt.
 
 ### Auftragsverarbeitung — Stand nach der Überarbeitung vom 26.08.2026
 
