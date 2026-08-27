@@ -85,7 +85,7 @@ export default function PoolCard({ pool, userId, myProfile, onRefresh }: Props) 
     const previous = pendingOptionId
     setPendingOptionId(optionId)
     setSubmitting(true)
-    const { error } = await upsertPoolResponse(pool.id, userId, optionId, null)
+    const { error } = await upsertPoolResponse(pool.id, optionId, null)
     setSubmitting(false)
     if (error) {
       setPendingOptionId(previous)

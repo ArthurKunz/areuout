@@ -108,18 +108,32 @@ export async function addPoolOption(poolId: string, label: string, position: num
 }
 
 // Single-answer polls: one row per user, replaced when they change their mind.
+//
+// Das lief bis zum 27.08.2026 als delete gefolgt von insert — zwei getrennte Anfragen,
+// also zwei Transaktionen. Das Löschen war committet, bevor das Einfügen überhaupt
+// losging; scheiterte es dann, war die alte Antwort weg und die neue nie da. Mit einer
+// Fixture nachgestellt: Antwort gesetzt, auf eine Option einer FREMDEN Umfrage
+// gewechselt, Fremdschlüssel lehnt ab — übrig blieben null Antworten.
+//
+// set_single_pool_response klammert beides in eine Transaktion. Die Funktion läuft als
+// security invoker, RLS gilt also unverändert; sie steuert nichts bei ausser der
+// Klammer. Die user_id kommt dort aus auth.uid() und nicht mehr als Parameter — was
+// nicht übergeben wird, kann auch nicht falsch übergeben werden.
 export async function upsertPoolResponse(
   poolId: string,
-  userId: string,
   optionId: string | null,
   textResponse: string | null
 ) {
-  // The old (pool_id, user_id) unique key is gone, so a plain upsert would append
-  // a second row instead of replacing the first.
-  await supabase.from('pool_responses').delete().eq('pool_id', poolId).eq('user_id', userId)
-  return supabase
-    .from('pool_responses')
-    .insert({ pool_id: poolId, user_id: userId, option_id: optionId, text_response: textResponse })
+  // Der Cast ist nicht Schlamperei, sondern eine Grenze des Typgenerators: Postgres
+  // notiert an einem Funktionsargument nur den Typ (uuid, text), nicht ob NULL erlaubt
+  // ist — supabase gen types schreibt deshalb `string`. Beide Argumente DUERFEN aber
+  // null sein: eine Auswahlantwort hat keinen Freitext, eine Freitextantwort keine
+  // Option. Der Wert geht als JSON-null raus, was die Funktion genau so erwartet.
+  return supabase.rpc('set_single_pool_response', {
+    p_pool_id: poolId,
+    p_option_id: optionId as string,
+    p_text_response: textResponse as string,
+  })
 }
 
 // Multi-answer polls: each option is toggled on its own.

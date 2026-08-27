@@ -403,6 +403,10 @@ export type Database = {
         }[]
       }
       is_party_member: { Args: { p_event_id: string }; Returns: boolean }
+      set_single_pool_response: {
+        Args: { p_option_id: string; p_pool_id: string; p_text_response: string }
+        Returns: undefined
+      }
       party_has_room: {
         Args: { p_event_id: string; p_user_id: string }
         Returns: boolean
