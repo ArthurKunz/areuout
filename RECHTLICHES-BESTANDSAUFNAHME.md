@@ -432,7 +432,11 @@ Migrationsdateien.
 
 **Neu offen:** Der Build scheitert weiterhin, aber an einer anderen Stelle — `Export encountered an error on /_global-error/page`, `TypeError: Cannot read properties of null (reading 'useContext')`. Gegengeprüft mit `git stash` auf die vorige Fassung der Datenschutz-Seite: **derselbe Fehler**, der Fund hängt also nicht an den Rechtstexten. React 19.2.4 und react-dom 19.2.4 stimmen überein, es gibt keine doppelte React-Kopie in `node_modules`. Muss vor dem ersten Deploy auf Vercel geklärt werden.
 
-**Weiterhin offen aus dem Nachtrag:** Fund A (beide Bild-Buckets sind für jeden angemeldeten Account auflistbar), Fund D (`get_party_pools_by_invite_code` ist für `anon` freigegeben), AV-Vertrag mit Supabase bestätigen.
+**Weiterhin offen aus dem Nachtrag:** Fund A (beide Bild-Buckets sind für jeden angemeldeten Account auflistbar), AV-Vertrag mit Supabase bestätigen.
+
+**Fund D erledigt am 27.08.2026.** `get_party_pools_by_invite_code` ist für `anon` gesperrt (Migrationen `20260827100530` und `20260827100549`). Die Zusage der Datenschutzerklärung, Umfragen seien den angemeldeten Gästen vorbehalten, hing bis dahin allein an der Oberfläche. Zwei Migrationen deshalb, weil die erste nicht wirkte: `revoke ... from anon` läuft ins Leere, solange `PUBLIC` das Recht noch hat — `anon` erbt es von dort. Aufgefallen ist das nur, weil nach dem Schritt `has_function_privilege` abgefragt wurde. Gegengeprüft mit einem echten Rollentest (`set local role anon`): Umfragen werden abgewiesen, die Einladung selbst weiterhin beantwortet.
+
+**Ebenfalls am 27.08.2026:** `get_rsvp_count(uuid)` gelöscht — eine der für `anon` ausführbaren SECURITY-DEFINER-Funktionen aus dem Advisor ist damit weg, weil die Funktion selbst weg ist. Sie wurde von keinem Aufruf je erreicht.
 
 **Erledigt am 26.08.2026:** Der Widerspruch zwischen § 4 der Nutzungsbedingungen und der Datenschutzerklärung zur Gästeliste ist weg — die Nutzungsbedingungen sind gegen den Code neu geschrieben worden (23 statt 12 Abschnitte, `app/nutzungsbedingungen/page.tsx`). § 5 sagt jetzt, was `get_event_attendees_by_invite_code` tatsächlich tut: ohne Konto keine Gästeliste. Dazu kamen Vertragsschluss und Widerrufsrecht, die Elternzustimmung bei 16- bis 17-Jährigen, Melde- und Abhilfeverfahren nach Art. 11, 12, 16 und 17 DSA, Gästezahl und Rauswurf, die Sichtbarkeit von Umfrageantworten, der Umgang mit fremden Gästedaten, die öffentlich abrufbaren Bilder, das fehlende Backup und die Freistellung.
 

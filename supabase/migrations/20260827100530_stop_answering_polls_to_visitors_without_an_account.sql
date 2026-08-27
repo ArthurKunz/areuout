@@ -1,0 +1,17 @@
+-- Fund D aus RECHTLICHES-BESTANDSAUFNAHME.md, Nachtrag vom 26.08.2026.
+--
+-- Die Oberfläche zeigt Umfragen ausschliesslich Angemeldeten (InviteScreen.tsx:602:
+-- `pools.length > 0 && userId`). Die RPC dahinter beantwortete sie aber jedem, der den
+-- Einladungscode hat — die Zusage in der Datenschutzerklärung, Umfragen seien den
+-- angemeldeten Gästen vorbehalten, hing damit allein an der Oberfläche.
+--
+-- Der Aufruf in getPartyPoolsByInviteCode läuft für Besucher ohne Konto zwar weiterhin
+-- mit, faellt aber auf `poolJson ?? []` zurueck. Ein Fehler von PostgREST erzeugt
+-- deshalb dieselbe leere Liste, die der anonyme Besucher ohnehin nie zu sehen bekam.
+--
+-- get_party_by_invite_code bleibt fuer anon erreichbar: Titel, Datum, Bild und Adresse
+-- SIND die Einladung.
+--
+-- ACHTUNG: Dieses Revoke allein hat NICHT gewirkt, siehe die Migration unmittelbar
+-- danach (20260827100549).
+revoke execute on function public.get_party_pools_by_invite_code(text) from anon;

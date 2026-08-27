@@ -44,9 +44,10 @@ import LegalTextScreen, { type LegalSection } from '@/features/profile/LegalText
 //     ohne Ordner-Einschränkung, jeder angemeldete Account kann sie auflisten
 //     (RECHTLICHES-BESTANDSAUFNAHME.md, Fund A — offen). § 11 sagt deshalb genau das,
 //     was zutrifft: wer die Adresse hat, kommt an das Bild.
-//   - Er behauptet nicht, Umfragen seien nur für Angemeldete sichtbar. Die Oberfläche
-//     zeigt sie nur ihnen, get_party_pools_by_invite_code ist aber für anon freigegeben
-//     (Fund D — offen). Solange das so ist, gehört die Zusage nicht in einen Vertrag.
+//   - Er behauptet nicht, Umfragen seien nur für Angemeldete sichtbar — obwohl das seit
+//     dem 27.08.2026 auch technisch stimmt: get_party_pools_by_invite_code ist seither
+//     für anon gesperrt (Fund D, Migrationen 20260827100530 und ...549). Der Text bleibt
+//     wie er ist; eine Zusage, die nicht gebraucht wird, muss nicht in einen Vertrag.
 //
 // § 13 und § 14 sind keine Kür: Art. 16 und 17 DSA gelten für jeden Hostingdienst. Die
 // Ausnahme für Kleinstunternehmen in Art. 19 DSA erfasst nur die Art. 20 bis 24.

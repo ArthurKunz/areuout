@@ -217,7 +217,7 @@ the policy on `events` needs to read `rsvps`, whose policy needs to read `events
 | `get_host_info_for_events(uuid[])` | is_party_member | authenticated |
 | `get_pool_responses_by_event(uuid)` | inline membership | authenticated |
 | `get_party_by_invite_code(text)` | none — public invite page | **anon** |
-| `get_party_pools_by_invite_code(text)` | none — public invite page | **anon** |
+| `get_party_pools_by_invite_code(text)` | none — the link is the claim | authenticated |
 | `get_event_host(uuid)` | none | **anon** |
 | `get_rsvp_counts_by_status(uuid)` | none | **anon** |
 | `delete_self()` | auth.uid() | authenticated |
