@@ -779,7 +779,7 @@ export default function CreatePartyScreen() {
                   // Typing past the cap clamps to it rather than being swallowed, so
                   // the number on screen is always the one that will be saved.
                   onChange={(e) => {
-                    const digits = e.target.value.replace(/\D/g, '').slice(0, 4)
+                    const digits = e.target.value.replace(/\D/g, '').replace(/^0+/, '').slice(0, 4)
                     setField('max_guests', Number(digits) > GUESTS_MAX ? String(GUESTS_MAX) : digits)
                   }}
                   onKeyDown={handleEnterAdvance}

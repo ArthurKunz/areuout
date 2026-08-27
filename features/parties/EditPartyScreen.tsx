@@ -193,7 +193,14 @@ export default function EditPartyScreen({ partyId }: { partyId: string }) {
   // back button asks.
   const poolsChanged = JSON.stringify(poolDrafts) !== JSON.stringify(loadedPools.map(toDraft))
   const changed = !loading && (current !== stored || poolsChanged)
-  const canSave = changed && title.trim().length > 0 && location.trim().length > 0
+  // Der Kapazitaets-Trigger auf rsvps prueft nur beim Zusagen, nie beim Aendern der
+  // Grenze. Ohne diese Regel liesse sich die Gaestezahl unter die Zahl der bereits
+  // Zugesagten senken — die Party stuende dann auf '8 von 3', und niemand fliegt
+  // dadurch raus. Die Zahl der Zusagen liegt hier ohnehin schon vor, sie steht in der
+  // Zeile darunter auf dem Schirm.
+  const maxGuestsBelowGoing = maxGuests !== '' && parseInt(maxGuests, 10) < guestCount
+  const canSave =
+    changed && title.trim().length > 0 && location.trim().length > 0 && !maxGuestsBelowGoing
 
   const removePool = (id: string) => {
     if (removingPoolId) return
@@ -515,7 +522,7 @@ export default function EditPartyScreen({ partyId }: { partyId: string }) {
                     value={maxGuests}
                     onFocus={caretToEnd}
                     onChange={(e) => {
-                      const digits = e.target.value.replace(/\D/g, '')
+                      const digits = e.target.value.replace(/\D/g, '').replace(/^0+/, '')
                       setMaxGuests(Number(digits) > GUESTS_MAX ? String(GUESTS_MAX) : digits)
                     }}
                     placeholder='unbegrenzt'
@@ -523,6 +530,12 @@ export default function EditPartyScreen({ partyId }: { partyId: string }) {
                   />
                 </label>
               </div>
+
+              {maxGuestsBelowGoing && (
+                <WarningBanner
+                  message={`${guestCount} ${guestCount === 1 ? 'Gast hat' : 'Gäste haben'} schon zugesagt — weniger geht nicht`}
+                />
+              )}
 
               <Switch label='Endzeitpunkt hinzufügen' checked={hasEndTime} onChange={setHasEndTime} />
 
