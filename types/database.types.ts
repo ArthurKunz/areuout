@@ -46,7 +46,6 @@ export type Database = {
           description: string | null
           ends_at: string | null
           event_date: string
-          event_type: string | null
           host_id: string
           id: string
           invite_code: string
@@ -60,7 +59,6 @@ export type Database = {
           description?: string | null
           ends_at?: string | null
           event_date: string
-          event_type?: string | null
           host_id: string
           id?: string
           invite_code: string
@@ -74,7 +72,6 @@ export type Database = {
           description?: string | null
           ends_at?: string | null
           event_date?: string
-          event_type?: string | null
           host_id?: string
           id?: string
           invite_code?: string
