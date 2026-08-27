@@ -8,7 +8,7 @@ type Params = { invite_code: string }
 // Der Einladungslink ist das Herzstück der App — er beantwortet die Frage, mit der
 // alles anfing: "Events sind unsichtbar, wenn du nicht in der richtigen Gruppe bist."
 // Ohne das hier sah genau dieser Link in WhatsApp aus wie jeder andere: Titel und
-// Beschreibung kamen aus dem Root-Layout, also "Student Connect — Entdecke und
+// Beschreibung kamen aus dem Root-Layout, also "areuout — Entdecke und
 // erstelle Partys für Studierende". Nicht der Partyname, nicht das Datum, kein Bild.
 //
 // Warum das serverseitig passieren MUSS: InviteScreen ist eine Client-Komponente, die

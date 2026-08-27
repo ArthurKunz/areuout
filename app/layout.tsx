@@ -18,16 +18,16 @@ export const metadata: Metadata = {
   // absoluten Adressen auflösen und warnt bei jedem Build. Der Wert kommt aus der
   // Umgebung, damit hier keine Domain fest verdrahtet ist — siehe lib/site.ts.
   metadataBase: new URL(siteUrl()),
-  title: 'Student Connect',
+  title: 'areuout',
   description: 'Entdecke und erstelle Partys für Studierende',
   // Der Vorgabetext für alles, was keine eigene Vorschau mitbringt. Die Einladungs-
   // seite überschreibt ihn mit dem Namen der Party.
   openGraph: {
-    title: 'Student Connect',
+    title: 'areuout',
     description: 'Entdecke und erstelle Partys für Studierende',
     type: 'website',
     locale: 'de_DE',
-    siteName: 'Student Connect',
+    siteName: 'areuout',
   },
 };
 
