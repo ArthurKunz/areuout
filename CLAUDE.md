@@ -70,7 +70,13 @@ chats and stories.
   hops, and on a phone that is the whole loading experience
 - A party that is over is still readable — the row stays, the invite link keeps working
   — but it must never look upcoming. `isPartyOver` decides; InviteScreen and
-  PartyDetailScreen both hide the RSVP controls and the address once it is true
+  PartyDetailScreen both hide the RSVP controls and the address once it is true.
+  Seit dem 27.08.2026 ist das nicht mehr nur Oberfläche: `get_party_by_invite_code`
+  liefert `location` dann als leeren String aus — ausser an den Gastgeber, der seine
+  eigene vergangene Party vollständig sieht. Die Sechs-Stunden-Annahme steckt damit an
+  ZWEI Stellen (ASSUMED_PARTY_HOURS in lib/utils.ts und `c_assumed_hours` in der
+  Migration); ändert sich die eine, muss die andere mit. Leerer String und nicht NULL,
+  weil beide Screens `party.location.lastIndexOf(',')` unbedingt aufrufen
 - PostgREST embeds resolve by the real table name, not by the app's wording: the table is `events`, so write `parties:events(...)`, never `parties(...)`
 - Never expose the Supabase service role key on the client
 - Generate TypeScript types regularly: supabase gen types typescript. Seit dem

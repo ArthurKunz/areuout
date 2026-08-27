@@ -37,10 +37,21 @@ import LegalTextScreen, { type LegalSection } from '@/features/profile/LegalText
 // Was hier bewusst NICHT mehr steht: die frühere Zusage, die Adresse eines hochgeladenen
 // Bildes lasse sich „weder erraten noch auflisten". Der Pfad ist {user_id}/avatar-{ms}.jpg
 // beziehungsweise {user_id}/{party_id}/background.jpg — er enthält keine zufällige
-// Komponente, und die SELECT-Policy der beiden Buckets steht auf `authenticated` ohne
-// weitere Einschränkung. Ein Versprechen, das die Policies nicht halten, gehört nicht in
-// eine Datenschutzerklärung. Der Text sagt jetzt nur das, was zutrifft: der Speicher ist
+// Komponente. Ein Versprechen, das die Policies nicht halten, gehört nicht in eine
+// Datenschutzerklärung. Der Text sagt deshalb nur das, was zutrifft: der Speicher ist
 // öffentlich, wer die Adresse hat, kommt an das Bild.
+//
+// Zum Auflisten stand hier bis zum 27.08.2026, die SELECT-Policy beider Buckets sei
+// `authenticated` ohne weitere Einschränkung — jeder angemeldete Account konnte also
+// fremde Bilder auflisten. Das ist seit Migration 20260827100812 nicht mehr so: die
+// Policies gelten nur noch für den eigenen Ordner. Am Satz im Text ändert das nichts,
+// denn die Buckets bleiben öffentlich; geschlossen ist das Auflisten, nicht die URL.
+//
+// Nachtrag 27.08.2026: Der Satz in Abschnitt 6, nach dem die Anschrift nach der Party
+// nicht mehr im Link steht, wird seither auch vom Server gehalten, nicht nur von der
+// Oberfläche — get_party_by_invite_code liefert location dann leer aus (Migration
+// 20260827113025). Ausgenommen ist der Gastgeber, der seine eigene vergangene Party
+// weiterhin vollständig sieht.
 //
 // Kein Analytics, kein Tracking, keine Werbe-Cookies — im ganzen Projekt kein einziger
 // Treffer. Deshalb braucht die App auch kein Cookie-Banner: die einzigen Cookies sind die

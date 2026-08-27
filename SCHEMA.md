@@ -216,7 +216,7 @@ the policy on `events` needs to read `rsvps`, whose policy needs to read `events
 | `get_rsvp_counts_for_events(uuid[])` | is_party_member | authenticated |
 | `get_host_info_for_events(uuid[])` | is_party_member | authenticated |
 | `get_pool_responses_by_event(uuid)` | inline membership | authenticated |
-| `get_party_by_invite_code(text)` | Bremse: 30 Fehlversuche/IP/Minute | **anon** |
+| `get_party_by_invite_code(text)` | Bremse: 30 Fehlversuche/IP/Minute; `location` leer, wenn vorbei | **anon** |
 | `get_party_pools_by_invite_code(text)` | none — the link is the claim | authenticated |
 | `get_event_host(uuid)` | is_party_member | authenticated |
 | `get_rsvp_counts_by_status(uuid)` | is_party_member | authenticated |
@@ -232,6 +232,13 @@ Wer irgendwo eine solche UUID aufschnappte (sie steht in jeder Hintergrundbild-A
 bekam ohne Konto den vollen Namen des Gastgebers. Beide gibt es jetzt zweimal — als
 `…_by_invite_code` für `anon`, und als UUID-Fassung für `authenticated` mit
 `is_party_member`-Prüfung, die nur noch die Detailseite benutzt.
+
+Dieselbe Funktion verschweigt seit dem 27.08.2026 auch die Adresse einer Party, die
+vorbei ist: `location` kommt dann als leerer String zurück, ausser der Fragende ist der
+Gastgeber. Vorher blendete nur die Oberfläche sie aus, und wer die API direkt fragte,
+bekam die Wohnanschrift Monate später noch. Das "vorbei" ist wortgleich mit
+`isPartyOver` in lib/utils.ts — `coalesce(ends_at, event_date + 6 Stunden) < now()` —
+und diese sechs Stunden stehen damit an zwei Stellen, die zusammenbleiben müssen.
 
 `get_party_by_invite_code` trägt seit dem 27.08.2026 als einzige Funktion eine
 Bremse. Sie zählt in `private.invite_lookup_misses` **nur Fehlversuche** je IP und
