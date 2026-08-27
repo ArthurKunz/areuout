@@ -1,10 +1,10 @@
 # areuout — Cursor Rules
 
-You are working on a party and event discovery web app for people aged 14–25. Hosts create public or private events; guests discover and RSVP. V1 MVP deadline: July 2026.
+You are working on a party and event discovery web app for people aged 16–26. Hosts create public or private events; guests discover and RSVP. V1 MVP deadline: July 2026.
 
 ## Stack (do not deviate)
 
-- Next.js 14, App Router only — never Pages Router
+- Next.js 16, App Router only — never Pages Router
 - TypeScript strict mode — never use `any`
 - Supabase (Postgres) for database and auth via `@supabase/ssr`
 - Tailwind CSS for styling
@@ -26,7 +26,7 @@ Prisma, Firebase, PlanetScale, Clerk, NextAuth, React Router, Redux, Zustand, Pa
 - `lib/` — Supabase clients and utilities
 - `types/` — generated Supabase types and custom types
 - `features/` — feature modules (auth, explore, etc.)
-- `party-app/SCHEMA.md` — full data model reference
+- `SCHEMA.md` — full data model reference
 
 ## Data model (essentials)
 
