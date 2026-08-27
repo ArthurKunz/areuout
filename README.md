@@ -1,36 +1,92 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# areuout
 
-## Getting Started
+Eine Web-App, mit der man private Partys anlegt, sie über einen Link teilt und
+Zu- und Absagen verwaltet. Für Leute zwischen 16 und 26.
 
-First, run the development server:
+Das Problem, aus dem sie entstanden ist: Wer neu in einer Stadt oder an einer
+Uni ist, erfährt von nichts. Was läuft, steht in der richtigen WhatsApp-Gruppe
+oder in der Story der richtigen Person — beides hat man nicht, wenn man neu
+ist. Gastgeber wiederum haben kein Werkzeug für Gästelisten; alles zerfasert
+über Gruppenchats.
+
+Betrieben von einer Privatperson, ohne Gewerbe und ohne Gewinnerzielungsabsicht.
+Keine Werbung, keine Bezahlfunktionen, keine Datenweitergabe. Alle beteiligten
+Dienste bleiben in ihren kostenlosen Tarifen.
+
+## Stack
+
+- Next.js 16, ausschließlich App Router
+- TypeScript im strict mode
+- Supabase (Postgres, Auth, Storage) — Row Level Security auf allen sechs Tabellen
+- Tailwind CSS v4
+
+## Entwickeln
 
 ```bash
+npm install
+cp .env.example .env.local   # Werte eintragen
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Die App läuft dann auf http://localhost:3000.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+```bash
+npm run build   # Produktionsbuild
+npm run lint    # ESLint
+npx tsc --noEmit
+```
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## Umgebungsvariablen
 
-## Learn More
+Alles wird über `process.env` gelesen, nichts steht fest verdrahtet im Code.
+`.env.example` ist die Kopiervorlage und die einzige versionierte .env-Datei.
 
-To learn more about Next.js, take a look at the following resources:
+| Variable | Wofür |
+|---|---|
+| `NEXT_PUBLIC_SUPABASE_URL` | Supabase-Projekt |
+| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Supabase-Projekt. Liegt im Browser-Bundle — geschützt wird über RLS, nicht über Geheimhaltung |
+| `NEXT_PUBLIC_GOOGLE_MAPS_KEY` | Kartenvorschau (Static Maps API). Muss in der Google Cloud Console auf die eigene Domain beschränkt werden |
+| `NEXT_PUBLIC_SITE_URL` | Die eigene Domain, sobald es sie gibt. Ohne den Wert nimmt `lib/site.ts` die Produktionsdomain von Vercel und danach localhost |
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+`SUPABASE_SERVICE_ROLE_KEY` wird im gesamten Quellcode nirgends verwendet und
+gehört deshalb weder in `.env.local` noch in die Deployment-Konfiguration.
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+## Aufbau
 
-## Deploy on Vercel
+```
+app/            Routen (App Router)
+  e/[invite_code]/   die öffentliche Einladungsseite
+  impressum/, datenschutz/, nutzungsbedingungen/
+                     die drei Rechtstexte — bewusst ohne Login erreichbar
+features/       die großen Bausteine: auth, onboarding, parties, profile, settings
+components/     geteilte UI
+lib/            Supabase-Clients, Bildverarbeitung, Hilfsfunktionen
+types/          generierte Supabase-Typen
+supabase/       Migrationen
+```
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+## Datenmodell
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+Sechs Tabellen: `profiles`, `events`, `rsvps`, `pools`, `pool_options`,
+`pool_responses`. Die Tabelle heißt `events`, die App nennt sie überall Party —
+PostgREST-Embeds müssen deshalb `parties:events(...)` schreiben.
+
+Kein Geburtsdatum, kein Alter, kein Geschlecht, keine Telefonnummer, kein
+Gerätestandort. Die Altersgrenze von 16 Jahren steht in den Nutzungsbedingungen,
+nicht in einer Spalte.
+
+Details in [SCHEMA.md](SCHEMA.md), einschließlich aller RLS-Policies,
+CHECK-Constraints und der Stellen, an denen ein Trigger statt einer Policy
+nötig war.
+
+## Weitere Dateien
+
+- [CLAUDE.md](CLAUDE.md) — die verbindlichen Projektregeln, auch für Menschen die kürzeste Übersicht
+- [SCHEMA.md](SCHEMA.md) — Datenmodell, RLS, Constraints
+- [STORIES_V1.md](STORIES_V1.md) — User Stories für V1
+- [DECISIONS.md](DECISIONS.md) — Entscheidungslog
+- [RECHTLICHES-BESTANDSAUFNAHME.md](RECHTLICHES-BESTANDSAUFNAHME.md) — was die App datenschutzrechtlich tut, gegen den Code geprüft
+
+## Stand
+
+V1 in Arbeit, Ziel Juli 2026. Noch nicht veröffentlicht.
