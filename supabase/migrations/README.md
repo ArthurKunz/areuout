@@ -6,37 +6,39 @@ davon nichts — der Tag, an dem es weh tut, ist der, an dem eine Staging-Umgebu
 gebraucht wird, das Projekt neu aufgesetzt werden muss oder ein Backup zurückgespielt
 wird.
 
-Stand 21.08.2026, geprüft mit `supabase migration list --linked`:
+Stand 27.08.2026, geprüft gegen `list_migrations` auf der Live-Datenbank:
 
 | | Anzahl |
 |---|---|
-| Dateien in diesem Ordner | 32 |
-| Migrationen auf der Datenbank | 51 |
+| Dateien in diesem Ordner | 33 |
+| Migrationen auf der Datenbank | 55 |
 | davon **nur** auf der Datenbank, ohne Datei hier | 22 |
-| davon **nur** hier, nie angewendet | 5 |
+| davon **nur** hier, nie angewendet | 0 |
 
-## Die 5 Dateien, die nie angewendet wurden
+## Die drei gefährlichen Dateien sind weg
 
-Zwei davon sind aktiv gefährlich, weil sie mit `add column if not exists` arbeiten:
-abgespielt würden sie **stillschweigend** Spalten zurückbringen, die bewusst entfernt
-wurden — `gender` steht in `CLAUDE.md` ausdrücklich unter „Not in V1", und zwar aus
-rechtlichen Gründen bei Minderjährigen.
+Am 27.08.2026 gelöscht, nachdem sie seit dem 21.08. als Entscheidung offenstanden:
 
-| Datei | Verhalten beim Abspielen |
+| Gelöschte Datei | Was sie beim Abspielen getan hätte |
 |---|---|
-| `20260401120000_add_gender_height_relationship.sql` | **gefährlich** — bringt `gender`, `height`, `relationship` zurück |
-| `20260402120000_add_hobbies_to_profiles.sql` | **gefährlich** — bringt `hobbies` zurück |
-| `20260613120000_create_events_and_rsvps.sql` | harmlos — `CREATE TABLE` ohne `IF NOT EXISTS`, bricht laut ab |
-| `20260602120000_remove_consent_and_explore.sql` | harmlos — ist angewendet, nur unter der Version `20260602114136` |
-| `20260602121000_remove_profile_extra_fields.sql` | harmlos — ist angewendet, nur unter der Version `20260602120114` |
+| `20260401120000_add_gender_height_relationship.sql` | `gender`, `height`, `relationship` per `add column if not exists` **lautlos** zurückbringen — `gender` steht in CLAUDE.md aus rechtlichen Gründen bei Minderjährigen unter „Not in V1", und die Datenschutzerklärung nennt es ausdrücklich als nicht erhoben |
+| `20260402120000_add_hobbies_to_profiles.sql` | dasselbe mit `hobbies` |
+| `20260613120000_create_events_and_rsvps.sql` | mit „relation exists" abbrechen. Darin stand außerdem die längst ersetzte Policy `events_select_public USING (true)` — die Fassung, in der jede Party für jeden lesbar war |
 
-Die beiden gefährlichen Dateien wurden **nicht** gelöscht, weil Löschen eine
-Entscheidung ist, die Arthur treffen sollte. Bis dahin gilt: **kein `supabase db push`
-ausführen**, ohne vorher diese Liste durchzugehen.
+Damit kann ein versehentliches `supabase db push` keine Spalte mehr
+zurückbringen, die bewusst entfernt wurde.
+
+## Zwei Dateien tragen noch eine andere Version als die Datenbank
+
+`20260602120000_remove_consent_and_explore.sql` liegt auf der Datenbank als
+`20260602114136`, `20260602121000_remove_profile_extra_fields.sql` als
+`20260602120114`. Beide sind **angewendet**; nur die Nummer im Dateinamen stimmt
+nicht. `supabase migration list --linked` zeigt sie deshalb weiterhin als
+Abweichung an.
 
 ## Warum die Abweichung entstanden ist
 
-Die 22 fehlenden Migrationen wurden über die Supabase-Oberfläche bzw. per MCP direkt
+Die 22 Migrationen ohne Datei wurden über die Supabase-Oberfläche bzw. per MCP direkt
 auf der Datenbank angewendet. Dabei vergibt Supabase die Version selbst und legt keine
 Datei an. Der vollständige SQL-Text jeder einzelnen liegt weiterhin auf der Datenbank
 in `supabase_migrations.schema_migrations.statements` — verloren ist also nichts, es
@@ -54,10 +56,12 @@ supabase db pull          # fragt nach dem Datenbank-Passwort
 Das erzeugt eine Baseline-Migration mit dem aktuellen Schema und markiert sie als
 angewendet. Danach:
 
-1. Die 5 nie angewendeten Dateien oben löschen — allen voran die beiden gefährlichen.
-2. `supabase migration list --linked` erneut ausführen: links und rechts müssen
+1. `supabase migration list --linked` erneut ausführen: links und rechts müssen
    danach Zeile für Zeile übereinstimmen.
-3. Ergebnis einchecken.
+2. Ergebnis einchecken.
+
+Der erste Schritt der alten Anleitung — die nie angewendeten Dateien löschen — ist
+am 27.08.2026 erledigt worden.
 
 ## Regel für alles Weitere
 
