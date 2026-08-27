@@ -88,3 +88,47 @@ nötig war.
 ## Stand
 
 V1 in Arbeit, Ziel Juli 2026. Noch nicht veröffentlicht.
+
+### Vor dem Launch offen
+
+Stand 27.08.2026. Was hier steht, blockiert die Veröffentlichung oder gehört
+unmittelbar dazu — erledigte Punkte werden gestrichen, nicht abgehakt.
+
+**Blockiert das Deploy**
+
+- `npm run build` scheitert beim Prerendern von `/_global-error` mit
+  `TypeError: Cannot read properties of null (reading 'useContext')`. Ausgeschlossen
+  sind: eine eigene `global-error.tsx` (auch minimal), `app/error.tsx`, next 16.3.2
+  gegen 16.3.3, react 19.2.4 gegen 19.2.8, doppelte React-Kopien. Nächster Schritt ist
+  eine Minimalreproduktion ausserhalb des Repos, um Next-Bug von App-Ursache zu trennen.
+
+**Hosting und Dienste**
+
+- Domain kaufen, Vercel-Projekt anlegen (der Projektname wird die Fallback-Domain in
+  `lib/site.ts`), Umgebungsvariablen setzen, danach `NEXT_PUBLIC_SITE_URL` eintragen.
+- Supabase → Authentication → URL Configuration auf die Domain stellen, sonst brechen
+  Google-Login und Passwort-Reset in der Produktion.
+- Google Cloud: Maps-Key auf die Domain beschränken, OAuth-Consent-Screen
+  veröffentlichen.
+- Resend anschliessen: Domain verifizieren, in Supabase als Custom SMTP eintragen,
+  Auth-Mailvorlagen auf Deutsch.
+- Auftragsverarbeitungsverträge bestätigen: Supabase, Vercel, Resend.
+
+**Sicherheit**
+
+- Rate-Limiting auf `get_party_by_invite_code` (Cloudflare oder Supabase). Der Code ist
+  nicht zu raten, aber ohne Limit lässt er sich durchprobieren.
+- Die Bild-Buckets sind öffentlich. Auflisten kann seit dem 27.08. niemand mehr, aber
+  wer eine Datei-URL kennt, bekommt das Bild. Nächste Stufe wären private Buckets mit
+  signierten URLs — betrifft jedes `<img src>` der App.
+
+**Aufräumen**
+
+- Testdaten und Bilder löschen. Der saubere Weg ist die App selbst: Profil → Account →
+  Account löschen räumt erst den Speicher, dann die Zeilen.
+- Bilder, die vor dem 23.08.2026 hochgeladen wurden, tragen noch ihre Kameradaten
+  samt GPS — die EXIF-Bereinigung kam später.
+- `types/database.types.ts` an die Supabase-Clients hängen (`createBrowserClient<Database>`)
+  oder löschen. Aktuell ist die Datei korrekt, aber ungenutzt, und deckt die Casts in
+  `parties.service.ts` zu.
+- Der lokale Projektordner heisst noch `student-connect`.
