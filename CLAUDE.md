@@ -73,7 +73,10 @@ chats and stories.
   PartyDetailScreen both hide the RSVP controls and the address once it is true
 - PostgREST embeds resolve by the real table name, not by the app's wording: the table is `events`, so write `parties:events(...)`, never `parties(...)`
 - Never expose the Supabase service role key on the client
-- Generate TypeScript types regularly: supabase gen types typescript
+- Generate TypeScript types regularly: supabase gen types typescript. Seit dem
+  27.08.2026 tragen alle drei Clients — Browser, Server, Proxy — `<Database>` aus
+  `types/database.types.ts`. Eine veraltete Typdatei ist damit kein stiller Mangel mehr,
+  sondern bricht den Typecheck: nach jeder Schemaänderung neu erzeugen, im selben Commit
 
 ## commit rules
 Always use this keywords:

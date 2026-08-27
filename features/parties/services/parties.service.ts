@@ -64,32 +64,6 @@ function hostColor(hostId: string): string {
   return AVATAR_COLORS[sum % AVATAR_COLORS.length]
 }
 
-interface HostedRow {
-  id: string
-  title: string
-  event_date: string
-  ends_at: string | null
-  location: string
-  invite_code: string
-  background_url: string | null
-  max_guests: number | null
-}
-
-interface AttendedRsvpRow {
-  status: string
-  parties: {
-    id: string
-    title: string
-    event_date: string
-    ends_at: string | null
-    location: string
-    invite_code: string
-    background_url: string | null
-    host_id: string
-    max_guests: number | null
-  } | null
-}
-
 export async function getHostedParties(userId: string): Promise<PartyWithCount[]> {
   const { data, error } = await supabase
     .from('events')
@@ -101,7 +75,7 @@ export async function getHostedParties(userId: string): Promise<PartyWithCount[]
   // A finished party drops out HERE rather than in the screen, so the RPCs below never
   // ask about a party nobody is going to see. The row itself stays in the database:
   // the invite link keeps working and the host keeps their guest list.
-  const upcoming = (data as unknown as HostedRow[]).filter((e) => !isPartyOver(e.event_date, e.ends_at))
+  const upcoming = data.filter((e) => !isPartyOver(e.event_date, e.ends_at))
   if (upcoming.length === 0) return []
 
   // Two requests for the whole tab. The counts already include the host themselves.
@@ -131,7 +105,7 @@ export async function getAttendedParties(userId: string): Promise<PartyWithCount
     .eq('user_id', userId)
   if (error || !data) return []
 
-  const rows = (data as unknown as AttendedRsvpRow[])
+  const rows = data
     // You are never a guest at your own party — it belongs on the 'Gastgeber' tab only,
     // and a party that is over belongs on neither.
     .filter(
@@ -206,13 +180,13 @@ export async function getPartyById(partyId: string): Promise<PartyDetail | null>
 export async function getPartyByInviteCode(inviteCode: string): Promise<PartyDetail | null> {
   const { data, error } = await supabase.rpc('get_party_by_invite_code', { p_invite_code: inviteCode })
   if (error || !data) return null
-  return (data as unknown as PartyDetail[])[0] ?? null
+  return (data as PartyDetail[])[0] ?? null
 }
 
 export async function getPartyHost(partyId: string): Promise<PartyHost | null> {
   const { data, error } = await supabase.rpc('get_event_host', { p_event_id: partyId })
   if (error || !data || data.length === 0) return null
-  return data[0] as unknown as PartyHost
+  return data[0] as PartyHost
 }
 
 // The invite page's version: keyed on the code rather than on membership, so someone
@@ -221,20 +195,18 @@ export async function getPartyHost(partyId: string): Promise<PartyHost | null> {
 export async function getPartyAttendeesByInviteCode(inviteCode: string): Promise<Attendee[]> {
   const { data, error } = await supabase.rpc('get_event_attendees_by_invite_code', { p_invite_code: inviteCode })
   if (error || !data) return []
-  return data as unknown as Attendee[]
+  return data as Attendee[]
 }
 
 export async function getPartyAttendees(partyId: string): Promise<Attendee[]> {
   const { data, error } = await supabase.rpc('get_event_attendees', { p_event_id: partyId })
   if (error || !data) return []
-  return data as unknown as Attendee[]
+  return data as Attendee[]
 }
 
-interface RsvpCountRow { going_count: number; maybe_count: number; not_going_count: number }
-
 export async function getRsvpCountsByStatus(partyId: string): Promise<{ going: number; maybe: number; not_going: number }> {
-  const { data } = await (supabase.rpc as unknown as (fn: string, args: Record<string, string>) => Promise<{ data: unknown }>)('get_rsvp_counts_by_status', { p_event_id: partyId })
-  const row = (data as RsvpCountRow[] | null)?.[0]
+  const { data } = await supabase.rpc('get_rsvp_counts_by_status', { p_event_id: partyId })
+  const row = data?.[0]
   return { going: row?.going_count ?? 0, maybe: row?.maybe_count ?? 0, not_going: row?.not_going_count ?? 0 }
 }
 

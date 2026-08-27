@@ -1,5 +1,6 @@
 import { NextResponse, type NextRequest } from 'next/server'
 import { createServerClient } from '@supabase/ssr'
+import type { Database } from '@/types/database.types'
 import { sanitizeNextPath } from '@/lib/utils'
 
 // Next 16 renamed the middleware convention to `proxy`; same behaviour, new filename.
@@ -37,7 +38,7 @@ export async function proxy(request: NextRequest) {
   // token is actually written back to the browser instead of being dropped here.
   let response = NextResponse.next({ request })
 
-  const supabase = createServerClient(
+  const supabase = createServerClient<Database>(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
     {

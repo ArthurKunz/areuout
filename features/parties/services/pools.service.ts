@@ -68,7 +68,7 @@ export async function getPartyPoolsByInviteCode(inviteCode: string, partyId: str
     supabase.rpc('get_pool_responses_by_event', { p_event_id: partyId }),
   ])
 
-  const pools = (poolJson ?? []) as unknown as Omit<Pool, 'responses'>[]
+  const pools = (poolJson ?? []) as Omit<Pool, 'responses'>[]
   const responses = (responseRows ?? []) as PoolResponse[]
 
   return pools.map((pool) => ({ ...pool, responses: responses.filter((r) => r.pool_id === pool.id) }))
