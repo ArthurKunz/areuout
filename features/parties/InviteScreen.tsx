@@ -9,12 +9,12 @@ import { getMyProfile, type Profile } from '@/features/profile/services/profile.
 import {
   getPartyByInviteCode,
   getPartyAttendeesByInviteCode,
-  getPartyHost,
+  getPartyHostByInviteCode,
   getMyRsvpStatus,
   setRsvp,
   deleteParty,
   deleteRsvp,
-  getRsvpCountsByStatus,
+  getRsvpCountsByStatusByInviteCode,
 } from './services/parties.service'
 import { getPartyPoolsByInviteCode } from './services/pools.service'
 import Avatar from '@/components/shared/Avatar'
@@ -167,7 +167,7 @@ export default function InviteScreen({ inviteCode }: { inviteCode: string }) {
       setIsHost(partyData.host_id === uid)
 
       void Promise.all([
-        getPartyHost(partyData.id),
+        getPartyHostByInviteCode(inviteCode),
         uid ? getMyRsvpStatus(partyData.id, uid) : Promise.resolve(null),
       ]).then(([hostData, status]) => {
         if (cancelled) return
@@ -176,7 +176,7 @@ export default function InviteScreen({ inviteCode }: { inviteCode: string }) {
         setPartyLoading(false)
       })
 
-      void getRsvpCountsByStatus(partyData.id).then((data) => {
+      void getRsvpCountsByStatusByInviteCode(inviteCode).then((data) => {
         if (cancelled) return
         setCounts(data)
         setCountsLoading(false)

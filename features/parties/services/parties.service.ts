@@ -183,6 +183,16 @@ export async function getPartyByInviteCode(inviteCode: string): Promise<PartyDet
   return (data as PartyDetail[])[0] ?? null
 }
 
+// Die Fassung für die Einladungsseite. Sie sucht über den Einladungscode statt über
+// die Party-UUID, weil der Code das Geheimnis ist und die UUID nicht: Letztere steht in
+// jeder Hintergrundbild-Adresse. Ohne diesen Weg bekam jeder, der irgendwo eine
+// Party-UUID aufschnappte, ohne Konto den vollen Namen des Gastgebers.
+export async function getPartyHostByInviteCode(inviteCode: string): Promise<PartyHost | null> {
+  const { data, error } = await supabase.rpc('get_event_host_by_invite_code', { p_invite_code: inviteCode })
+  if (error || !data || data.length === 0) return null
+  return data[0] as PartyHost
+}
+
 export async function getPartyHost(partyId: string): Promise<PartyHost | null> {
   const { data, error } = await supabase.rpc('get_event_host', { p_event_id: partyId })
   if (error || !data || data.length === 0) return null
@@ -202,6 +212,14 @@ export async function getPartyAttendees(partyId: string): Promise<Attendee[]> {
   const { data, error } = await supabase.rpc('get_event_attendees', { p_event_id: partyId })
   if (error || !data) return []
   return data as Attendee[]
+}
+
+// Gleiche Begründung wie bei getPartyHostByInviteCode: auf der Einladungsseite ist der
+// Code der Schlüssel, nicht die UUID.
+export async function getRsvpCountsByStatusByInviteCode(inviteCode: string): Promise<{ going: number; maybe: number; not_going: number }> {
+  const { data } = await supabase.rpc('get_rsvp_counts_by_status_by_invite_code', { p_invite_code: inviteCode })
+  const row = data?.[0]
+  return { going: row?.going_count ?? 0, maybe: row?.maybe_count ?? 0, not_going: row?.not_going_count ?? 0 }
 }
 
 export async function getRsvpCountsByStatus(partyId: string): Promise<{ going: number; maybe: number; not_going: number }> {

@@ -326,6 +326,15 @@ export type Database = {
           lastname: string
         }[]
       }
+      get_event_host_by_invite_code: {
+        Args: { p_invite_code: string }
+        Returns: {
+          avatar_color: string
+          avatar_url: string
+          firstname: string
+          lastname: string
+        }[]
+      }
       get_host_info_for_events: {
         Args: { p_event_ids: string[] }
         Returns: {
@@ -372,6 +381,14 @@ export type Database = {
       }
       get_rsvp_counts_by_status: {
         Args: { p_event_id: string }
+        Returns: {
+          going_count: number
+          maybe_count: number
+          not_going_count: number
+        }[]
+      }
+      get_rsvp_counts_by_status_by_invite_code: {
+        Args: { p_invite_code: string }
         Returns: {
           going_count: number
           maybe_count: number

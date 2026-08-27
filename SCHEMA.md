@@ -218,10 +218,20 @@ the policy on `events` needs to read `rsvps`, whose policy needs to read `events
 | `get_pool_responses_by_event(uuid)` | inline membership | authenticated |
 | `get_party_by_invite_code(text)` | Bremse: 30 Fehlversuche/IP/Minute | **anon** |
 | `get_party_pools_by_invite_code(text)` | none — the link is the claim | authenticated |
-| `get_event_host(uuid)` | none | **anon** |
-| `get_rsvp_counts_by_status(uuid)` | none | **anon** |
+| `get_event_host(uuid)` | is_party_member | authenticated |
+| `get_rsvp_counts_by_status(uuid)` | is_party_member | authenticated |
+| `get_event_host_by_invite_code(text)` | none — the link is the claim | **anon** |
+| `get_rsvp_counts_by_status_by_invite_code(text)` | none — the link is the claim | **anon** |
 | `delete_self()` | auth.uid() | authenticated |
 | `rsvps_enforce_capacity()` | trigger only | **nobody** — revoked from anon and authenticated |
+
+Seit dem 27.08.2026 ist der Einladungscode auch wirklich der einzige Schlüssel, den
+ein Besucher ohne Konto braucht — und der einzige, den er benutzen kann. Vorher nahmen
+`get_event_host` und `get_rsvp_counts_by_status` die Party-UUID und prüften nichts:
+Wer irgendwo eine solche UUID aufschnappte (sie steht in jeder Hintergrundbild-Adresse),
+bekam ohne Konto den vollen Namen des Gastgebers. Beide gibt es jetzt zweimal — als
+`…_by_invite_code` für `anon`, und als UUID-Fassung für `authenticated` mit
+`is_party_member`-Prüfung, die nur noch die Detailseite benutzt.
 
 `get_party_by_invite_code` trägt seit dem 27.08.2026 als einzige Funktion eine
 Bremse. Sie zählt in `private.invite_lookup_misses` **nur Fehlversuche** je IP und
