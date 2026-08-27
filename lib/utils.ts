@@ -17,8 +17,21 @@ export function getOrigin(): string {
 
 // Where to land after auth/onboarding. Only same-site paths are accepted, so a
 // crafted ?next=https://evil.example cannot turn the login flow into a redirector.
+//
+// Der Backslash ist der Grund, warum hier mehr steht als die beiden offensichtlichen
+// Prüfungen: Der URL-Parser behandelt \ in einer speziellen Schema-URL wie /, also ist
+// '/\evil.example' protokollrelativ. Es beginnt mit einem Slash und nicht mit zwei,
+// kam also durch — und `new URL(ziel, origin)` in proxy.ts machte daraus
+// https://evil.example/. Ein angemeldeter Nutzer, der /login?next=/\phishing.example
+// öffnet, wurde von der eigenen Domain aus weggeleitet.
+//
+// Steuerzeichen fliegen aus demselben Grund raus: Tab, CR und LF werden beim Parsen
+// stillschweigend entfernt, '/\tevil' und '/e\nvil' sähen hier also anders aus als das,
+// wohin der Browser am Ende geht.
 export function sanitizeNextPath(next: string | null | undefined): string | null {
-  if (!next || !next.startsWith('/') || next.startsWith('//')) return null
+  if (!next) return null
+  if (/[\\\u0000-\u001f\u007f]/.test(next)) return null
+  if (!next.startsWith('/') || next.startsWith('//')) return null
   return next
 }
 
