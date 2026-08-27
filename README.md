@@ -114,8 +114,6 @@ npm run build` beweist es in einem Durchlauf.
 
 **Sicherheit**
 
-- Rate-Limiting auf `get_party_by_invite_code` (Cloudflare oder Supabase). Der Code ist
-  nicht zu raten, aber ohne Limit lässt er sich durchprobieren.
 - Die Bild-Buckets sind öffentlich. Auflisten kann seit dem 27.08. niemand mehr, aber
   wer eine Datei-URL kennt, bekommt das Bild. Nächste Stufe wären private Buckets mit
   signierten URLs — betrifft jedes `<img src>` der App.

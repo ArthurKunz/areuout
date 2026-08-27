@@ -216,12 +216,23 @@ the policy on `events` needs to read `rsvps`, whose policy needs to read `events
 | `get_rsvp_counts_for_events(uuid[])` | is_party_member | authenticated |
 | `get_host_info_for_events(uuid[])` | is_party_member | authenticated |
 | `get_pool_responses_by_event(uuid)` | inline membership | authenticated |
-| `get_party_by_invite_code(text)` | none — public invite page | **anon** |
+| `get_party_by_invite_code(text)` | Bremse: 30 Fehlversuche/IP/Minute | **anon** |
 | `get_party_pools_by_invite_code(text)` | none — the link is the claim | authenticated |
 | `get_event_host(uuid)` | none | **anon** |
 | `get_rsvp_counts_by_status(uuid)` | none | **anon** |
 | `delete_self()` | auth.uid() | authenticated |
 | `rsvps_enforce_capacity()` | trigger only | **nobody** — revoked from anon and authenticated |
+
+`get_party_by_invite_code` trägt seit dem 27.08.2026 als einzige Funktion eine
+Bremse. Sie zählt in `private.invite_lookup_misses` **nur Fehlversuche** je IP und
+Kalenderminute und weist ab 30 mit `PT429` ab, was PostgREST zu HTTP 429 macht. Nur
+Fehlversuche, weil ein echter Gast immer einen gültigen Code trifft und deshalb nie
+gezählt wird — und weil die serverseitige Chat-Vorschau für alle Besucher von wenigen
+Vercel-IPs kommt und eine Bremse auf allen Aufrufen genau die getroffen hätte. Die
+Prüfung steht vor dem Hochzählen, weil ein `raise` die Transaktion zurückrollt und ein
+Hochzählen im selben Aufruf damit verloren wäre. Das Schema `private` liegt ausserhalb
+der API: die Tabelle ist über PostgREST nicht erreichbar, `anon` und `authenticated`
+haben kein Recht darauf.
 
 Am 27.08.2026 gelöscht, weil kein Aufruf sie je erreicht hat: `get_rsvp_count(uuid)`
 — die Oberfläche zählt über `get_rsvp_counts_by_status` und

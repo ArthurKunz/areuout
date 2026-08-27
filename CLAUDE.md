@@ -140,7 +140,10 @@ Always git push after commiting something
 ## Data model (see SCHEMA.md for full detail)
 Core tables: profiles, events, rsvps, pools, pool_options, pool_responses
 Key fields:
-- events.invite_code: 10 random hex chars, UNIQUE — the shareable link's only secret
+- events.invite_code: 12 random base32 symbols (Crockford ohne I, L, O, U), UNIQUE —
+  the shareable link's only secret, 60 Bit. Die Zeile stand bis zum 27.08.2026 auf
+  "10 random hex chars"; das war der Stand vor der Verlängerung am 23.08. Dazu bremst
+  `get_party_by_invite_code` seit dem 27.08. Fehlversuche auf 30 pro IP und Minute
 - rsvps.status: 'going' | 'maybe' | 'not_going', CHECK-constrained
 - profiles: firstname, lastname, avatar_url, avatar_color. profiles.id IS
   auth.users.id — there is no separate auth_user_id column
