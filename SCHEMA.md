@@ -212,7 +212,6 @@ the policy on `events` needs to read `rsvps`, whose policy needs to read `events
 | `party_has_room(uuid, uuid)` | — | authenticated |
 | `get_event_attendees(uuid)` | is_party_member | authenticated |
 | `get_event_attendees_by_invite_code(text)` | **none — the link is the claim** | authenticated |
-| `get_attendee_avatars_for_events(uuid[])` | is_party_member | authenticated |
 | `get_event_attendees_for_events(uuid[])` | is_party_member | authenticated |
 | `get_rsvp_counts_for_events(uuid[])` | is_party_member | authenticated |
 | `get_host_info_for_events(uuid[])` | is_party_member | authenticated |
@@ -220,13 +219,20 @@ the policy on `events` needs to read `rsvps`, whose policy needs to read `events
 | `get_party_by_invite_code(text)` | none — public invite page | **anon** |
 | `get_party_pools_by_invite_code(text)` | none — public invite page | **anon** |
 | `get_event_host(uuid)` | none | **anon** |
-| `get_rsvp_count(uuid)` | none | **anon** |
 | `get_rsvp_counts_by_status(uuid)` | none | **anon** |
 | `delete_self()` | auth.uid() | authenticated |
 | `rsvps_enforce_capacity()` | trigger only | **nobody** — revoked from anon and authenticated |
 
-The three `_for_events(uuid[])` functions exist so the party list can be read in a
-fixed number of requests instead of one set per party. `get_event_attendees_for_events`
+Am 27.08.2026 gelöscht, weil kein Aufruf sie je erreicht hat: `get_rsvp_count(uuid)`
+— die Oberfläche zählt über `get_rsvp_counts_by_status` und
+`get_rsvp_counts_for_events` — und `get_attendee_avatars_for_events(uuid[])`, deren
+eigene Migration schon festhielt, sie sei "genau dafür gebaut und dann nie" benutzt
+worden. Mit der ersten fällt zugleich eine der für `anon` ausführbaren
+SECURITY-DEFINER-Funktionen weg.
+
+Die drei verbliebenen `_for_events(uuid[])`-Funktionen existieren, damit die
+Partyliste in einer festen Zahl von Anfragen gelesen werden kann statt in einem Satz
+pro Party. `get_event_attendees_for_events`
 and `get_rsvp_counts_for_events` are derived line for line from their single-party
 versions — same statuses, same host-as-fourth-status special case, same ordering — so
 swapping them in changed nothing on screen. Verified per party against the originals

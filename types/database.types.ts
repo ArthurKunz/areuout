@@ -283,17 +283,6 @@ export type Database = {
     }
     Functions: {
       delete_self: { Args: never; Returns: undefined }
-      get_attendee_avatars_for_events: {
-        Args: { p_event_ids: string[] }
-        Returns: {
-          avatar_color: string
-          avatar_url: string
-          event_id: string
-          firstname: string
-          lastname: string
-          user_id: string
-        }[]
-      }
       get_event_attendees: {
         Args: { p_event_id: string }
         Returns: {
@@ -381,7 +370,6 @@ export type Database = {
           user_id: string
         }[]
       }
-      get_rsvp_count: { Args: { p_event_id: string }; Returns: number }
       get_rsvp_counts_by_status: {
         Args: { p_event_id: string }
         Returns: {
