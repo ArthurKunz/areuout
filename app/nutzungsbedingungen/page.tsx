@@ -40,10 +40,10 @@ import LegalTextScreen, { type LegalSection } from '@/features/profile/LegalText
 // Was der Text bewusst NICHT sagt:
 //
 //   - Er verspricht nirgends, dass hochgeladene Bilder nur von Berechtigten abgerufen
-//     werden können. Die SELECT-Policies der beiden Buckets stehen auf `authenticated`
-//     ohne Ordner-Einschränkung, jeder angemeldete Account kann sie auflisten
-//     (RECHTLICHES-BESTANDSAUFNAHME.md, Fund A — offen). § 11 sagt deshalb genau das,
-//     was zutrifft: wer die Adresse hat, kommt an das Bild.
+//     werden können. Seit dem 27.08.2026 kann zwar niemand mehr fremde Bilder AUFLISTEN
+//     (Fund A, Migration 20260827100812 — die SELECT-Policies gelten nur noch für den
+//     eigenen Ordner), aber beide Buckets sind weiterhin öffentlich: wer die Adresse
+//     einer Datei kennt, bekommt sie. § 11 sagt deshalb unverändert genau das.
 //   - Er behauptet nicht, Umfragen seien nur für Angemeldete sichtbar — obwohl das seit
 //     dem 27.08.2026 auch technisch stimmt: get_party_pools_by_invite_code ist seither
 //     für anon gesperrt (Fund D, Migrationen 20260827100530 und ...549). Der Text bleibt

@@ -432,7 +432,11 @@ Migrationsdateien.
 
 **Neu offen:** Der Build scheitert weiterhin, aber an einer anderen Stelle — `Export encountered an error on /_global-error/page`, `TypeError: Cannot read properties of null (reading 'useContext')`. Gegengeprüft mit `git stash` auf die vorige Fassung der Datenschutz-Seite: **derselbe Fehler**, der Fund hängt also nicht an den Rechtstexten. React 19.2.4 und react-dom 19.2.4 stimmen überein, es gibt keine doppelte React-Kopie in `node_modules`. Muss vor dem ersten Deploy auf Vercel geklärt werden.
 
-**Weiterhin offen aus dem Nachtrag:** Fund A (beide Bild-Buckets sind für jeden angemeldeten Account auflistbar), AV-Vertrag mit Supabase bestätigen.
+**Weiterhin offen aus dem Nachtrag:** AV-Vertrag mit Supabase bestätigen.
+
+**Fund A erledigt am 27.08.2026.** Die SELECT-Policies beider Bild-Buckets sind auf den eigenen Ordner eingeschränkt (Migration `20260827100812`); vorher lauteten sie nur `bucket_id = '...'`, jedes angemeldete Konto konnte also auflisten und herunterladen. Vorher-Messung mit dem eigenen Konto: 2 fremde Dateien sichtbar. Nachher: 0, und zwar aus beiden Konten gegengeprüft. Die Anzeige ist unberührt, weil beide Buckets `public = true` sind und ein `<img src>` über die öffentliche URL lädt, ohne eine Policy zu fragen — nachgemessen, beide Bild-URLs antworten weiterhin mit HTTP 200.
+
+**Damit ausdrücklich NICHT erledigt:** Die Buckets bleiben öffentlich. Wer eine Datei-URL kennt oder sie aus Host-Id und Party-Id ableitet, kommt weiterhin an das Bild — Fund B steht unverändert. Genau das, und nicht mehr, sagen Abschnitt 6 der Datenschutzerklärung und § 11 der Nutzungsbedingungen. Ein Umstieg auf private Buckets mit signierten URLs wäre die nächste Stufe und würde jedes `<img src>` der App betreffen.
 
 **Fund D erledigt am 27.08.2026.** `get_party_pools_by_invite_code` ist für `anon` gesperrt (Migrationen `20260827100530` und `20260827100549`). Die Zusage der Datenschutzerklärung, Umfragen seien den angemeldeten Gästen vorbehalten, hing bis dahin allein an der Oberfläche. Zwei Migrationen deshalb, weil die erste nicht wirkte: `revoke ... from anon` läuft ins Leere, solange `PUBLIC` das Recht noch hat — `anon` erbt es von dort. Aufgefallen ist das nur, weil nach dem Schritt `has_function_privilege` abgefragt wurde. Gegengeprüft mit einem echten Rollentest (`set local role anon`): Umfragen werden abgewiesen, die Einladung selbst weiterhin beantwortet.
 

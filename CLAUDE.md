@@ -172,11 +172,12 @@ Key fields:
   Umfrageantworten, der Umgang mit den Daten anderer Gäste, die öffentlich abrufbaren
   Bilder, das Fehlen jeder Datensicherung und die Freistellung. Jede Aussage über die App
   hat eine Belegstelle im Kopfkommentar der Datei — ändert sich das Verhalten, ändert sich
-  der Satz mit. Was der Code nicht hält, wird dort nicht versprochen: solange die
-  Bild-Buckets für jeden angemeldeten Account auflistbar sind, sagt der Text nur, dass
-  ein Bild abrufbar ist, wer seine Adresse kennt. (Der zweite Vorbehalt ist am
-  27.08.2026 entfallen: `get_party_pools_by_invite_code` ist seither für `anon`
-  gesperrt, Umfragen sind also auch technisch den angemeldeten Gästen vorbehalten.)
+  der Satz mit. Was der Code nicht hält, wird dort nicht versprochen: die Buckets sind
+  öffentlich, also sagt § 11 nur, dass ein Bild abrufbar ist, wer seine Adresse kennt —
+  und genau so bleibt es, bis die Bilder in private Buckets mit signierten URLs ziehen.
+  (Zwei Vorbehalte sind am 27.08.2026 entfallen: `get_party_pools_by_invite_code` ist
+  für `anon` gesperrt, und die SELECT-Policies der Buckets erlauben nur noch den
+  eigenen Ordner — auflisten kann fremde Bilder seither niemand mehr.)
 - components/ — shared UI components
 - lib/ — Supabase client setup and utility functions
 - types/ — generated Supabase types and custom types
