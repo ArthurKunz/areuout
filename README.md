@@ -94,13 +94,11 @@ V1 in Arbeit, Ziel Juli 2026. Noch nicht veröffentlicht.
 Stand 27.08.2026. Was hier steht, blockiert die Veröffentlichung oder gehört
 unmittelbar dazu — erledigte Punkte werden gestrichen, nicht abgehakt.
 
-**Blockiert das Deploy**
-
-- `npm run build` scheitert beim Prerendern von `/_global-error` mit
-  `TypeError: Cannot read properties of null (reading 'useContext')`. Ausgeschlossen
-  sind: eine eigene `global-error.tsx` (auch minimal), `app/error.tsx`, next 16.3.2
-  gegen 16.3.3, react 19.2.4 gegen 19.2.8, doppelte React-Kopien. Nächster Schritt ist
-  eine Minimalreproduktion ausserhalb des Repos, um Next-Bug von App-Ursache zu trennen.
+`npm run build` läuft. Falls er in einer Sitzung doch einmal beim Prerendern mit
+`TypeError: Cannot read properties of null (reading 'useContext')` abbricht: dann ist
+`NODE_ENV` auf `development` gesetzt. `next build` mischt dann Entwicklungs- und
+Produktionsbuild von React, und der Renderer steht ohne Dispatcher da. `env -u NODE_ENV
+npm run build` beweist es in einem Durchlauf.
 
 **Hosting und Dienste**
 
