@@ -23,6 +23,7 @@ import Switch from '@/components/shared/Switch'
 import FloatingEmojis from './components/FloatingEmojis'
 import PoolDraftCard from './components/PoolDraftCard'
 import PoolDraftForm from './components/PoolDraftForm'
+import AddressSearchField from './components/AddressSearchField'
 import PartyDateSheet, { type PartyDate } from './components/PartyDateSheet'
 import PartyTimeSheet, { type PartyTime } from './components/PartyTimeSheet'
 import { getPartyById, updateParty, deletePool } from './services/parties.service'
@@ -88,6 +89,10 @@ export default function EditPartyScreen({ partyId }: { partyId: string }) {
   const [title, setTitle] = useState('')
   const [description, setDescription] = useState('')
   const [location, setLocation] = useState('')
+  // Getrennt gehalten wie im Erstellen-Flow: die Suche liefert Strasse und Stadt
+  // einzeln, gespeichert wird die Zusammensetzung. Beim Laden wird am LETZTEN Komma
+  // geteilt — dieselbe Regel, mit der beide Party-Screens die Adresse anzeigen.
+  const [city, setCity] = useState('')
   const [maxGuests, setMaxGuests] = useState('')
   const [date, setDate] = useState<PartyDate>({ day: 1, month: 0, year: new Date().getFullYear() })
   const [time, setTime] = useState<PartyTime>({ hour: 20, minute: 0 })
@@ -107,7 +112,7 @@ export default function EditPartyScreen({ partyId }: { partyId: string }) {
   // written until this screen is saved — and a working copy cannot survive a route
   // change. `loadedPools` is what the database holds; `poolDrafts` is what the host
   // has made of it, and the difference between the two is what save has to apply.
-  const [view, setView] = useState<'main' | 'pools' | 'poolform'>('main')
+  const [view, setView] = useState<'main' | 'pools' | 'poolform' | 'location'>('main')
   const [loadedPools, setLoadedPools] = useState<Pool[]>([])
   const [poolDrafts, setPoolDrafts] = useState<PoolDraft[]>([])
   const [editingPool, setEditingPool] = useState<PoolDraft | null>(null)
@@ -137,7 +142,9 @@ export default function EditPartyScreen({ partyId }: { partyId: string }) {
       const start = new Date(party.event_date)
       setTitle(party.title)
       setDescription(party.description ?? '')
-      setLocation(party.location)
+      const komma = party.location.lastIndexOf(',')
+      setLocation(komma === -1 ? party.location : party.location.slice(0, komma).trim())
+      setCity(komma === -1 ? '' : party.location.slice(komma + 1).trim())
       setMaxGuests(party.max_guests != null ? String(party.max_guests) : '')
       setDate({ day: start.getDate(), month: start.getMonth(), year: start.getFullYear() })
       setTime({ hour: start.getHours(), minute: start.getMinutes() })
@@ -181,10 +188,13 @@ export default function EditPartyScreen({ partyId }: { partyId: string }) {
 
   const startDate = new Date(date.year, date.month, date.day, time.hour, time.minute, 0, 0)
   const endIso = endIsoFrom(startDate, hasEndTime ? endTime : null)
+  // Dieselbe Zusammensetzung wie im Erstellen-Flow, inklusive des filter(Boolean):
+  // eine handgetippte Adresse ohne Stadt darf kein baumelndes Komma bekommen.
+  const fullLocation = [location.trim(), city.trim()].filter(Boolean).join(', ')
   const current = JSON.stringify({
     title: title.trim(),
     description: description.trim(),
-    location: location.trim(),
+    location: fullLocation,
     maxGuests,
     iso: startDate.toISOString(),
     endIso,
@@ -200,7 +210,7 @@ export default function EditPartyScreen({ partyId }: { partyId: string }) {
   // Zeile darunter auf dem Schirm.
   const maxGuestsBelowGoing = maxGuests !== '' && parseInt(maxGuests, 10) < guestCount
   const canSave =
-    changed && title.trim().length > 0 && location.trim().length > 0 && !maxGuestsBelowGoing
+    changed && title.trim().length > 0 && fullLocation.length > 0 && !maxGuestsBelowGoing
 
   const removePool = (id: string) => {
     if (removingPoolId) return
@@ -290,7 +300,7 @@ export default function EditPartyScreen({ partyId }: { partyId: string }) {
     const { error } = await updateParty(partyId, {
       title: title.trim(),
       description: description.trim() || null,
-      location: location.trim(),
+      location: fullLocation,
       max_guests: maxGuests ? parseInt(maxGuests, 10) : null,
       event_date: startDate.toISOString(),
       ends_at: endIso,
@@ -355,6 +365,39 @@ export default function EditPartyScreen({ partyId }: { partyId: string }) {
           }}
         />
       </div>
+    )
+  }
+
+  // Die Adresssuche als eigene Unteransicht, genau wie die Umfragen eine ist. Zwei
+  // Gruende gegen ein Sheet: AddressSearchField zeichnet seine Karte mit
+  // backdrop-blur-xl, und ein SheetLayout ist laut eigenem Kommentar OPAK — ein
+  // blurrendes Element auf einem undurchsichtigen Grund ist genau das, wovor CLAUDE.md
+  // warnt. Auf dem Seitenhintergrund steht es dagegen so, wie es im Erstellen-Flow
+  // entworfen wurde.
+  //
+  // mt-auto haengt das Feld an den unteren Rand: die Vorschlagsliste klappt nach OBEN
+  // auf, damit der beste Treffer am naechsten an der Eingabe liegt. Dieselbe Anordnung
+  // benutzt die Umfragen-Ansicht darunter.
+  if (view === 'location') {
+    return (
+      <SettingsPage title='Location' fill onBack={() => setView('main')}>
+        <div className='mt-auto flex w-full flex-col gap-3'>
+          <AddressSearchField
+            value={location}
+            // Von Hand tippen macht die Stadt der letzten Auswahl ungueltig — sonst
+            // stuende hinter einer frei getippten Strasse noch die alte Stadt.
+            onChange={(address) => {
+              setLocation(address)
+              setCity('')
+            }}
+            onSelect={(result) => {
+              setLocation(result.street)
+              setCity(result.city)
+              setView('main')
+            }}
+          />
+        </div>
+      </SettingsPage>
     )
   }
 
@@ -502,16 +545,11 @@ export default function EditPartyScreen({ partyId }: { partyId: string }) {
 
                 <RowDivider />
 
-                <label className={rowClass}>
+                <button type='button' onClick={() => setView('location')} className={rowClass}>
                   <span className={rowLabelClass}>Location</span>
-                  <input
-                    value={location}
-                    onChange={(e) => setLocation(e.target.value)}
-                    onFocus={caretToEnd}
-                    placeholder='Adresse'
-                    className={rowInputClass}
-                  />
-                </label>
+                  <span className={`ml-auto truncate ${rowValueClass}`}>{fullLocation || 'Adresse'}</span>
+                  {chevron}
+                </button>
 
                 <RowDivider />
 
