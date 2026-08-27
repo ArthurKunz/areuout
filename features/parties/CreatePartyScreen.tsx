@@ -254,7 +254,7 @@ export default function CreatePartyScreen() {
     })
 
     if (error || !data) {
-      alert(error?.message ?? 'Fehler beim Erstellen')
+      alertError('Deine Party konnte nicht erstellt werden.', error?.message)
       setCreating(false)
       return
     }

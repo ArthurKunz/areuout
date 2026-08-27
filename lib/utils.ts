@@ -5,9 +5,26 @@ export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs))
 }
 
-// Browser-native alerts only: readable German line + the raw technical detail underneath.
+// Meldungen aus der Datenbank sind zweierlei.
+//
+// Die einen haben wir selbst geschrieben, damit ein Mensch sie liest: 'Diese Party ist
+// voll.' aus dem Kapazitaets-Trigger, 'Zu viele Versuche. Warte einen Moment.' aus der
+// Bremse auf dem Einladungscode. Die gehoeren in den Dialog, denn sie beantworten
+// genau die Frage, die der Nutzer gerade hat.
+//
+// Die anderen sind Innenleben: 'new row violates row-level security policy for table
+// "rsvps"' beantwortet nichts, verraet Tabellennamen und Regelwerk und sieht aus wie
+// ein Absturz. Die haben in einem Dialog nichts zu suchen — aber sehr wohl in der
+// Konsole, wo sie beim Suchen helfen.
+const INTERNAL_DETAIL =
+  /row-level security|violates|constraint|duplicate key|permission denied|relation "|column "|does not exist|PGRST|JWT|invalid input syntax|schema cache/i
+
+// Browser-native alerts only: readable German line + the technical detail underneath,
+// sofern dieses Detail fuer einen Menschen geschrieben wurde.
 export function alertError(message: string, detail?: string) {
-  alert(detail ? `${message}\n\n${detail}` : message)
+  const zeigbar = detail && !INTERNAL_DETAIL.test(detail) ? detail : undefined
+  if (detail && !zeigbar) console.error('[areuout]', message, detail)
+  alert(zeigbar ? `${message}\n\n${zeigbar}` : message)
 }
 
 // Empty string during SSR; callers only build absolute links on the client.
