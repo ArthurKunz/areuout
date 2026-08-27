@@ -120,10 +120,10 @@ npm run build` beweist es in einem Durchlauf.
 
 **Aufräumen**
 
-- Testdaten und Bilder löschen. Der saubere Weg ist die App selbst: Profil → Account →
-  Account löschen räumt erst den Speicher, dann die Zeilen.
-- Bilder, die vor dem 23.08.2026 hochgeladen wurden, tragen noch ihre Kameradaten
-  samt GPS — die EXIF-Bereinigung kam später.
+- Den Löschpfad der App einmal wirklich durchlaufen: Konto anlegen, Bild hochladen,
+  Party mit eigenem Hintergrund erstellen, dann Profil → Account → Account löschen.
+  Danach müssen Tabellen UND Buckets leer sein. Die Datenschutzerklärung sichert das in
+  Abschnitt 11 zu; beobachtet wurde es noch nie.
 - `types/database.types.ts` an die Supabase-Clients hängen (`createBrowserClient<Database>`)
   oder löschen. Aktuell ist die Datei korrekt, aber ungenutzt, und deckt die Casts in
   `parties.service.ts` zu.

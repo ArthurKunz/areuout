@@ -372,8 +372,8 @@ Alles, was du selbst klären oder ergänzen musst.
 | 9 | **Öffentliche Bild-URLs** in der Erklärung benennen | Auflisten ist gesperrt, der Abruf per bekannter URL bleibt möglich. Widerspricht der naheliegenden Erwartung und gehört benannt |
 | 10 | **Party-Adressen** als eigenen Punkt behandeln | Regelmäßig eine Privatanschrift, sichtbar für jeden mit dem Einladungslink — auch ohne Konto |
 | 11 | **Cookie-Laufzeit 400 Tage** nennen oder verkürzen | Standardwert der Bibliothek, lässt sich über `cookieOptions` setzen |
-| 12a | **Altbestand mit EXIF** — vor dem 23.08. hochgeladene Bilder tragen weiterhin GPS | Entscheiden: neu hochladen lassen, einmalig nachbearbeiten oder hinnehmen |
-| 12 | **Verwaiste Bilder** bei fehlgeschlagener Löschung | Bewusst hinnehmen oder absichern — betrifft die Zusage „vollständig gelöscht" |
+| 12a | **Altbestand mit EXIF** — **ERLEDIGT am 27.08.2026.** Es gab genau eine solche Datei, ein Avatar vom 11.08. mit 1 MB und den GPS-Koordinaten aus `lib/image.ts`. Sie ist mit den Testdaten gelöscht. Es existiert kein Bild mehr, das älter ist als die EXIF-Bereinigung | — |
+| 12 | **Verwaiste Bilder** bei fehlgeschlagener Löschung | Bewusst hinnehmen oder absichern — betrifft die Zusage „vollständig gelöscht". Am 27.08.2026 einmal real eingetreten: Beim Leeren der Testdaten wurden die Konten über das Dashboard gelöscht, das den Speicher nicht anfasst — drei Dateien blieben ohne Besitzer zurück und liessen sich über keine Policy mehr entfernen. Aufgeräumt über zwei befristete, auf genau diese drei Namen beschränkte Policies (`20260827105603`, `20260827105628`), sofort wieder entfernt (`20260827105649`). Lehre: Konten immer über die App löschen, nie über das Dashboard — der Code dort räumt erst den Speicher, dann die Zeile |
 | 13 | **Fehlerüberwachung** (Sentry o. ä.) einführen? | Derzeit keine. Kommt eine dazu, wird sie ein weiterer Auftragsverarbeiter und muss in die Erklärung |
 
 ### Kein Handlungsbedarf — nur zur Kenntnis
