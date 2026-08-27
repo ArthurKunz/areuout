@@ -144,6 +144,11 @@ Key fields:
 - the app stores NO date of birth and no age. The 16+ minimum lives in the terms, not
   in a column and not in a sign-up question — do not reintroduce one
 - no tasks table and no party_score column yet — do not write code that assumes either
+- there is no role column on profiles. Host and guest are always DERIVED from a
+  relationship: host from `events.host_id`, guest from a row in `rsvps`. A person is a
+  host of one party and a guest at another in the same session, so a stored role would
+  be wrong the moment it is written. (Kept from STORIES_V1.md, which was deleted on
+  27.08.2026 — this was the one durable sentence in it)
 
 ## Folder structure
 - app/ - all routes

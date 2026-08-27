@@ -83,8 +83,6 @@ nötig war.
 
 - [CLAUDE.md](CLAUDE.md) — die verbindlichen Projektregeln, auch für Menschen die kürzeste Übersicht
 - [SCHEMA.md](SCHEMA.md) — Datenmodell, RLS, Constraints
-- [STORIES_V1.md](STORIES_V1.md) — User Stories für V1
-- [DECISIONS.md](DECISIONS.md) — Entscheidungslog
 - [RECHTLICHES-BESTANDSAUFNAHME.md](RECHTLICHES-BESTANDSAUFNAHME.md) — was die App datenschutzrechtlich tut, gegen den Code geprüft
 
 ## Stand
