@@ -209,7 +209,12 @@ Key fields:
 - NEXT_PUBLIC_SITE_URL — the own domain, once there is one. Everything that needs an
   absolute address (Open Graph previews, robots.txt, sitemap.xml) reads it through
   `siteUrl()` in lib/site.ts, which falls back to Vercel's own production URL and then
-  to localhost. Never write a domain into a file
+  to localhost. Never write a domain into a file. `siteUrl()` ergänzt seit dem
+  27.08.2026 ein fehlendes `https://` selbst und verwirft einen Wert, den `new URL`
+  nicht lesen kann: der Rückgabewert landet in app/layout.tsx auf Modulebene in
+  `new URL(siteUrl())`, und ein von Hand getipptes `areuout.de` hätte dort den Build
+  beim Prerendern abgebrochen — an genau dem Tag, an dem die Variable zum ersten Mal
+  gesetzt wird
 - SUPABASE_SERVICE_ROLE_KEY (server only — never import on client). Currently used
   nowhere in the source, so it does not belong in the deployment either
 Never hardcode these. Always read from process.env. `.env.example` is the copy
