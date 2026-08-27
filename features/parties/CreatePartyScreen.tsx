@@ -2,10 +2,12 @@
 
 import { useState, useEffect, useRef, type KeyboardEvent } from 'react'
 import { useRouter } from 'next/navigation'
-import { Check, Copy, ImagePlus, Plus } from 'lucide-react'
+import { Check, Copy, Plus } from 'lucide-react'
 import { supabase } from '@/lib/supabase/client'
 import { alertError, generateInviteCode, getOrigin } from '@/lib/utils'
 import { stripMetadataAndResize, BACKGROUND_MAX_EDGE } from '@/lib/image'
+import BackgroundPicker from './components/BackgroundPicker'
+import { BG_BUCKET, BG_MAX_BYTES } from './constants/background.constants'
 import AddressSearchField from './components/AddressSearchField'
 import PartyDateSheet from './components/PartyDateSheet'
 import PartyTimeSheet from './components/PartyTimeSheet'
@@ -21,10 +23,8 @@ import { createParty } from './services/parties.service'
 import { createPool, addPoolOption } from './services/pools.service'
 import type { CreatePartyFormValues, PoolDraft } from './types/parties.types'
 
-const BG_MAX_BYTES = 10 * 1024 * 1024
 
 // The bucket is still called event-backgrounds; only the app renamed events to parties.
-const BG_BUCKET = 'event-backgrounds'
 
 // The title is `text-heading-1` (35px semibold) on the party page and must not wrap:
 // roughly 18px per character across 343px of content leaves about 19, so 20.
@@ -37,7 +37,6 @@ const COLLAPSE_MS = 300
 
 // Ready-made party backgrounds from /public: picking one writes its path straight
 // into parties.background_url, so nothing is uploaded.
-const BG_PRESETS = Array.from({ length: 8 }, (_, i) => `/backgrounds/bg-${i + 1}.jpg`)
 
 type StepId = 'name' | 'description' | 'date' | 'time' | 'location' | 'guests' | 'background' | 'pools' | 'done'
 
@@ -56,51 +55,6 @@ const HEADLINES: Record<StepId, string> = {
   background: 'Hintergrundbild',
   pools: 'Umfragen hinzufügen',
   done: 'Deine Party ist bereit! 🎉',
-}
-
-// The eight wallpapers are ~1.1MB together and arrive one at a time, so each tile
-// shimmers until ITS OWN image has decoded and then cross-fades it in — the same
-// treatment the party hero and PartyCard give their images. It has to be a component
-// rather than inline markup: the loaded flag is per-tile, and state cannot live
-// inside the parent's map.
-function PresetTile({
-  url,
-  index,
-  selected,
-  onSelect,
-}: {
-  url: string
-  index: number
-  selected: boolean
-  onSelect: () => void
-}) {
-  const [loaded, setLoaded] = useState(false)
-
-  return (
-    <button type='button' onClick={onSelect} className='flex flex-col items-center gap-2'>
-      <div
-        className={`relative aspect-[3/2] w-full overflow-hidden rounded-[18px] transition-transform duration-200 ease-[cubic-bezier(0.32,0.72,0,1)] active:scale-95 ${
-          loaded ? '' : 'skeleton'
-        }`}
-      >
-        <img
-          src={url}
-          alt={`Hintergrund ${index + 1}`}
-          onLoad={() => setLoaded(true)}
-          className={`h-full w-full object-cover transition-opacity duration-500 ${
-            loaded ? 'opacity-100' : 'opacity-0'
-          }`}
-        />
-      </div>
-      <span
-        className={`flex h-6 w-6 items-center justify-center rounded-full backdrop-blur-xl transition-colors duration-200 ${
-          selected ? 'bg-link' : 'border border-white/30'
-        }`}
-      >
-        {selected && <Check size={14} strokeWidth={3} className='text-white' />}
-      </span>
-    </button>
-  )
 }
 
 export default function CreatePartyScreen() {
@@ -123,7 +77,6 @@ export default function CreatePartyScreen() {
   const [timeSheet, setTimeSheet] = useState<'start' | 'end' | null>(null)
   const [bgFile, setBgFile] = useState<File | null>(null)
   const [bgPreviewUrl, setBgPreviewUrl] = useState<string | null>(null)
-  const [bgPreviewLoaded, setBgPreviewLoaded] = useState(false)
   const [bgError, setBgError] = useState<string | null>(null)
   const [values, setValues] = useState<CreatePartyFormValues>({
     title: '',
@@ -199,9 +152,6 @@ export default function CreatePartyScreen() {
     }
     setBgPreset(null)
     setBgFile(picked)
-    // A phone photo is big enough to take a moment to decode, so the box shimmers
-    // until this new one is actually on screen.
-    setBgPreviewLoaded(false)
     setBgPreviewUrl((prev) => {
       if (prev) URL.revokeObjectURL(prev)
       return URL.createObjectURL(picked)
@@ -551,56 +501,20 @@ export default function CreatePartyScreen() {
         currentStep={stepIndex}
         onSelectStep={handleSelectStep}
       >
-        <label className='block w-full cursor-pointer'>
-          <div
-            className={`flex aspect-[2/1] w-full flex-col items-center justify-center gap-3 overflow-hidden rounded-[25px] bg-secondary backdrop-blur-xl ${
-              bgPreviewUrl && !bgPreviewLoaded ? 'skeleton' : ''
-            }`}
-          >
-            {bgPreviewUrl ? (
-              <img
-                src={bgPreviewUrl}
-                alt=''
-                onLoad={() => setBgPreviewLoaded(true)}
-                className={`h-full w-full object-cover transition-opacity duration-500 ${
-                  bgPreviewLoaded ? 'opacity-100' : 'opacity-0'
-                }`}
-              />
-            ) : (
-              <>
-                <div className='flex h-12.5 w-12.5 items-center justify-center rounded-full bg-tertiary backdrop-blur-xl'>
-                  <ImagePlus size={22} strokeWidth={2} className='text-heading' />
-                </div>
-                <div className='flex flex-col items-center gap-0.5 px-6 text-center'>
-                  <span className='text-button text-label-large'>Eigenes Bild hochladen</span>
-                  <span className='text-label-2 text-subheading'>JPG oder PNG, bis 10 MB</span>
-                </div>
-              </>
-            )}
-          </div>
-          <input type='file' accept='image/*' className='hidden' onChange={(e) => handlePickBg(e.target.files?.[0] ?? null)} />
-        </label>
-
-        {bgError && <span className='px-4 text-label-2 text-warning'>{bgError}</span>}
-
-        <div className='grid grid-cols-2 gap-3'>
-          {BG_PRESETS.map((url, i) => (
-            <PresetTile
-              key={url}
-              url={url}
-              index={i}
-              selected={bgPreset === url}
-              onSelect={() => {
-                setBgPreset(url)
-                setBgFile(null)
-                setBgPreviewUrl((prev) => {
-                  if (prev) URL.revokeObjectURL(prev)
-                  return null
-                })
-              }}
-            />
-          ))}
-        </div>
+        <BackgroundPicker
+          previewUrl={bgPreviewUrl}
+          selectedPreset={bgPreset}
+          error={bgError}
+          onPickFile={handlePickBg}
+          onSelectPreset={(url) => {
+            setBgPreset(url)
+            setBgFile(null)
+            setBgPreviewUrl((prev) => {
+              if (prev) URL.revokeObjectURL(prev)
+              return null
+            })
+          }}
+        />
       </CreateStepLayout>
     )
   }

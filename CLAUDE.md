@@ -44,6 +44,13 @@ chats and stories.
 - The only other symbols allowed are Apple emojis (the native system emoji, e.g. 👤 🎂 📸 🤫 ⚖️). Emoji for flavour and list bullets, lucide for interface icons — never a drawn substitute for either.
 - update the CLAUDE.md file after each change yourself — but never add a "Current state" section, and never reintroduce one
 - Never use `any` type
+- Der Bildwähler für Party-Hintergründe ist eine Komponente, kein Codeblock:
+  `features/parties/components/BackgroundPicker.tsx`, mit den Regeln in
+  `features/parties/constants/background.constants.ts` (Bucket, 10 MB, die acht Motive).
+  Erstellen und Bearbeiten benutzen dieselbe. Hochgeladene Hintergründe tragen einen
+  Zeitstempel im Namen — `{host}/{party}/background-{ms}.jpg` — aus demselben Grund wie
+  die Avatare: ein fester Name wäre dieselbe URL, und der Zwischenspeicher lieferte nach
+  einem Wechsel stundenlang das alte Bild aus
 - Never nest `backdrop-blur` inside an element that already blurs: the inner one re-samples the already tinted backdrop and paints a visible darker pill behind the row. Inside a glass panel, rows carry a background colour or nothing at all
 - Always ask for my permission to commit or add something
 - call me 'Arthur' every time you respond

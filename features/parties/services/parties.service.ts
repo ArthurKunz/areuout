@@ -251,6 +251,13 @@ export async function updateParty(partyId: string, patch: Partial<CreatePartyPay
   return supabase.from('events').update(patch).eq('id', partyId)
 }
 
+// Eigene Funktion statt eines Feldes in updateParty: background_url gehört nicht in
+// CreatePartyPayload — beim Anlegen steht die Party schon, bevor das Bild überhaupt
+// hochgeladen ist, und die Spalte wird dort ebenfalls einzeln nachgetragen.
+export async function updatePartyBackground(partyId: string, backgroundUrl: string | null) {
+  return supabase.from('events').update({ background_url: backgroundUrl }).eq('id', partyId)
+}
+
 // Options and responses go with it by cascade.
 export async function deletePool(poolId: string) {
   return supabase.from('pools').delete().eq('id', poolId)

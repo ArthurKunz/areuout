@@ -24,9 +24,10 @@ import FloatingEmojis from './components/FloatingEmojis'
 import PoolDraftCard from './components/PoolDraftCard'
 import PoolDraftForm from './components/PoolDraftForm'
 import AddressSearchField from './components/AddressSearchField'
+import BackgroundPicker from './components/BackgroundPicker'
 import PartyDateSheet, { type PartyDate } from './components/PartyDateSheet'
 import PartyTimeSheet, { type PartyTime } from './components/PartyTimeSheet'
-import { getPartyById, updateParty, deletePool } from './services/parties.service'
+import { getPartyById, updateParty, updatePartyBackground, deletePool } from './services/parties.service'
 import {
   getPartyPools,
   createPool,
@@ -36,6 +37,11 @@ import {
   deletePoolOption,
 } from './services/pools.service'
 import { getPartyAttendees } from './services/parties.service'
+
+import { BG_BUCKET, BG_MAX_BYTES, BG_PRESETS } from './constants/background.constants'
+import { stripMetadataAndResize, BACKGROUND_MAX_EDGE } from '@/lib/image'
+import { removeStorageFileByUrl } from '@/lib/storage'
+import { supabase as db } from '@/lib/supabase/client'
 
 import type { Pool, PoolDraft } from './types/parties.types'
 
@@ -93,6 +99,17 @@ export default function EditPartyScreen({ partyId }: { partyId: string }) {
   // einzeln, gespeichert wird die Zusammensetzung. Beim Laden wird am LETZTEN Komma
   // geteilt — dieselbe Regel, mit der beide Party-Screens die Adresse anzeigen.
   const [city, setCity] = useState('')
+  // Hintergrund: was gespeichert ist, und was der Gastgeber gerade gewählt hat. Beides
+  // getrennt, weil erst beim Speichern hochgeladen wird — und weil die alte Datei erst
+  // sterben darf, wenn die Zeile auf die neue zeigt.
+  // Fuer den Speicherpfad des Hintergrunds gebraucht. Es ist immer die eigene Id —
+  // wer nicht Gastgeber ist, wird beim Laden weggeschickt.
+  const [hostId, setHostId] = useState<string | null>(null)
+  const [storedBg, setStoredBg] = useState<string | null>(null)
+  const [bgPreset, setBgPreset] = useState<string | null>(null)
+  const [bgFile, setBgFile] = useState<File | null>(null)
+  const [bgObjectUrl, setBgObjectUrl] = useState<string | null>(null)
+  const [bgError, setBgError] = useState<string | null>(null)
   const [maxGuests, setMaxGuests] = useState('')
   const [date, setDate] = useState<PartyDate>({ day: 1, month: 0, year: new Date().getFullYear() })
   const [time, setTime] = useState<PartyTime>({ hour: 20, minute: 0 })
@@ -112,7 +129,7 @@ export default function EditPartyScreen({ partyId }: { partyId: string }) {
   // written until this screen is saved — and a working copy cannot survive a route
   // change. `loadedPools` is what the database holds; `poolDrafts` is what the host
   // has made of it, and the difference between the two is what save has to apply.
-  const [view, setView] = useState<'main' | 'pools' | 'poolform' | 'location'>('main')
+  const [view, setView] = useState<'main' | 'pools' | 'poolform' | 'location' | 'background'>('main')
   const [loadedPools, setLoadedPools] = useState<Pool[]>([])
   const [poolDrafts, setPoolDrafts] = useState<PoolDraft[]>([])
   const [editingPool, setEditingPool] = useState<PoolDraft | null>(null)
@@ -142,6 +159,12 @@ export default function EditPartyScreen({ partyId }: { partyId: string }) {
       const start = new Date(party.event_date)
       setTitle(party.title)
       setDescription(party.description ?? '')
+      setHostId(session.user.id)
+      setStoredBg(party.background_url ?? null)
+      // Ist der gespeicherte Wert eines der acht Motive, steht sein Haken von Anfang
+      // an richtig. Ein hochgeladenes Bild ist keine Vorauswahl, sondern eine Datei.
+      setBgPreset(party.background_url && BG_PRESETS.includes(party.background_url) ? party.background_url : null)
+
       const komma = party.location.lastIndexOf(',')
       setLocation(komma === -1 ? party.location : party.location.slice(0, komma).trim())
       setCity(komma === -1 ? '' : party.location.slice(komma + 1).trim())
@@ -191,6 +214,15 @@ export default function EditPartyScreen({ partyId }: { partyId: string }) {
   // Dieselbe Zusammensetzung wie im Erstellen-Flow, inklusive des filter(Boolean):
   // eine handgetippte Adresse ohne Stadt darf kein baumelndes Komma bekommen.
   const fullLocation = [location.trim(), city.trim()].filter(Boolean).join(', ')
+  // Was in der Zeile steht. Ein Motiv bekommt seine Nummer, alles andere heisst so,
+  // wie es ist — eine hochgeladene Datei hat keinen Namen, den man zeigen wollte.
+  const backgroundLabel = bgFile
+    ? 'Eigenes Bild'
+    : bgPreset
+      ? `Motiv ${BG_PRESETS.indexOf(bgPreset) + 1}`
+      : storedBg
+        ? 'Eigenes Bild'
+        : 'Keins'
   const current = JSON.stringify({
     title: title.trim(),
     description: description.trim(),
@@ -202,7 +234,10 @@ export default function EditPartyScreen({ partyId }: { partyId: string }) {
   // Polls are part of the same unsaved work, so they belong in the same question the
   // back button asks.
   const poolsChanged = JSON.stringify(poolDrafts) !== JSON.stringify(loadedPools.map(toDraft))
-  const changed = !loading && (current !== stored || poolsChanged)
+  // Der Hintergrund ebenso. Eine gewaehlte Datei ist immer eine Aenderung; ein Motiv
+  // nur, wenn es ein anderes ist als das gespeicherte.
+  const backgroundChanged = bgFile !== null || (bgPreset !== null && bgPreset !== storedBg)
+  const changed = !loading && (current !== stored || poolsChanged || backgroundChanged)
   // Der Kapazitaets-Trigger auf rsvps prueft nur beim Zusagen, nie beim Aendern der
   // Grenze. Ohne diese Regel liesse sich die Gaestezahl unter die Zahl der bereits
   // Zugesagten senken — die Party stuende dann auf '8 von 3', und niemand fliegt
@@ -211,6 +246,28 @@ export default function EditPartyScreen({ partyId }: { partyId: string }) {
   const maxGuestsBelowGoing = maxGuests !== '' && parseInt(maxGuests, 10) < guestCount
   const canSave =
     changed && title.trim().length > 0 && fullLocation.length > 0 && !maxGuestsBelowGoing
+
+  // Dieselben Pruefungen wie im Erstellen-Flow, Wort fuer Wort: Typ und Groesse. Das
+  // eigentliche Entfernen der Kameradaten passiert erst beim Speichern — hier wird nur
+  // gewaehlt.
+  const handlePickBg = (picked: File | null) => {
+    setBgError(null)
+    if (!picked) return
+    if (!picked.type.startsWith('image/')) {
+      setBgError('Bitte ein Bild (JPG, PNG, …) auswählen.')
+      return
+    }
+    if (picked.size > BG_MAX_BYTES) {
+      setBgError('Die Datei darf höchstens 10 MB groß sein.')
+      return
+    }
+    setBgPreset(null)
+    setBgFile(picked)
+    setBgObjectUrl((prev) => {
+      if (prev) URL.revokeObjectURL(prev)
+      return URL.createObjectURL(picked)
+    })
+  }
 
   const removePool = (id: string) => {
     if (removingPoolId) return
@@ -310,8 +367,57 @@ export default function EditPartyScreen({ partyId }: { partyId: string }) {
       alertError('Die Party konnte nicht gespeichert werden.', error.message)
       return
     }
+    // Der Hintergrund NACH den Feldern: die Party ist an dieser Stelle gespeichert,
+    // ein misslungener Upload darf den Rest nicht mitreissen — dieselbe Regel wie im
+    // Erstellen-Flow.
+    let bgFailed = false
+    if (backgroundChanged) {
+      let neueAdresse: string | null = bgPreset
+
+      if (bgFile && hostId) {
+        // Niemals die gewaehlte Datei, immer die neu kodierte: ein Partyfoto traegt
+        // dieselben Koordinaten wie ein Avatar.
+        const clean = await stripMetadataAndResize(bgFile, BACKGROUND_MAX_EDGE).catch(() => null)
+        if (!clean) {
+          bgFailed = true
+          neueAdresse = null
+        } else {
+          // Zeitstempel im Namen, wie beim Avatar. Ein fester Name waere derselbe URL,
+          // und der Zwischenspeicher lieferte danach stundenlang das alte Bild aus.
+          const path = `${hostId}/${partyId}/background-${Date.now()}.jpg`
+          const { error: uploadError } = await db.storage
+            .from(BG_BUCKET)
+            .upload(path, clean, { cacheControl: '3600', upsert: false })
+          if (uploadError) {
+            bgFailed = true
+            neueAdresse = null
+          } else {
+            neueAdresse = db.storage.from(BG_BUCKET).getPublicUrl(path).data.publicUrl
+          }
+        }
+      }
+
+      if (neueAdresse) {
+        const { error: bgError2 } = await updatePartyBackground(partyId, neueAdresse)
+        if (bgError2) {
+          bgFailed = true
+        } else {
+          // Erst jetzt darf das alte Bild sterben — und nur, wenn es eine hochgeladene
+          // Datei war. Die acht Motive liegen in /public und gehoeren keiner Party.
+          if (storedBg && !BG_PRESETS.includes(storedBg)) {
+            await removeStorageFileByUrl(BG_BUCKET, storedBg)
+          }
+          setStoredBg(neueAdresse)
+        }
+      }
+    }
+
     const failedPools = await savePools()
     setSaving(false)
+
+    if (bgFailed) {
+      alertError('Dein Hintergrundbild konnte nicht gespeichert werden. Die übrigen Änderungen sind gespeichert.')
+    }
 
     // Die Felder der Party sind zu diesem Zeitpunkt gespeichert; nur an den Umfragen
     // hat etwas nicht geklappt. Weiternavigiert wird trotzdem — auf der Detailseite
@@ -394,6 +500,32 @@ export default function EditPartyScreen({ partyId }: { partyId: string }) {
               setLocation(result.street)
               setCity(result.city)
               setView('main')
+            }}
+          />
+        </div>
+      </SettingsPage>
+    )
+  }
+
+  // Der Bildwaehler des Erstellen-Flows, dieselbe Komponente. Oben im Kasten steht,
+  // was die Party bekommen wird: das gewaehlte Foto, sonst das gewaehlte Motiv, sonst
+  // der Hintergrund, den sie schon hat.
+  if (view === 'background') {
+    return (
+      <SettingsPage title='Hintergrund' fill onBack={() => setView('main')}>
+        <div className='flex w-full flex-col gap-3'>
+          <BackgroundPicker
+            previewUrl={bgObjectUrl ?? bgPreset ?? storedBg}
+            selectedPreset={bgPreset}
+            error={bgError}
+            onPickFile={handlePickBg}
+            onSelectPreset={(url) => {
+              setBgPreset(url)
+              setBgFile(null)
+              setBgObjectUrl((prev) => {
+                if (prev) URL.revokeObjectURL(prev)
+                return null
+              })
             }}
           />
         </div>
@@ -548,6 +680,14 @@ export default function EditPartyScreen({ partyId }: { partyId: string }) {
                 <button type='button' onClick={() => setView('location')} className={rowClass}>
                   <span className={rowLabelClass}>Location</span>
                   <span className={`ml-auto truncate ${rowValueClass}`}>{fullLocation || 'Adresse'}</span>
+                  {chevron}
+                </button>
+
+                <RowDivider />
+
+                <button type='button' onClick={() => setView('background')} className={rowClass}>
+                  <span className={rowLabelClass}>Hintergrund</span>
+                  <span className={`ml-auto truncate ${rowValueClass}`}>{backgroundLabel}</span>
                   {chevron}
                 </button>
 
