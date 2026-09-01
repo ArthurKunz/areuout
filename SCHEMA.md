@@ -1,281 +1,180 @@
-# Schema
+# SCHEMA.md
 
-The table is `events`. The app calls it a party everywhere else, so PostgREST embeds
-have to be aliased: `parties:events(...)`, never `parties(...)`.
+What this database does that you cannot read off `types/database.types.ts`.
 
-## profiles
-| column        | type        | notes                                                |
-|---------------|-------------|------------------------------------------------------|
-| id            | uuid PK     | IS `auth.users.id` — no separate auth_user_id column  |
-| firstname     | text        | nullable until onboarding fills it                    |
-| lastname      | text        | nullable until onboarding fills it                    |
-| avatar_url    | text        | nullable — initials avatar when empty                 |
-| avatar_color  | text        | not null, default `#A336FF`                           |
-| created_at    | timestamptz | default now()                                         |
+The columns, types and RPC signatures live in that generated file, and the live
+policies, grants and constraints live in the database itself — ask it, don't trust a
+document. So nothing of that kind is repeated here. Every line below had to pass one
+test:
 
-`profiles.id → auth.users(id) ON DELETE CASCADE`. Deleting the auth user takes the
-profile, and every FK below cascades from there, which is what makes `delete_self()`
-a complete erasure.
+> Would this still be missing after querying the database?
 
-**There is no date of birth and no age, anywhere.** The column was dropped on
-21.08.2026 along with the onboarding step, the profile row and the line under every
-name in the guest list. The 16+ minimum lives in the terms instead.
+What is left is the reasoning: why it is built this way, and the traps that cost a bug
+each. Section 8 has the queries to check the rest.
 
-The reasoning, so nobody reintroduces it: Art. 8 DSGVO wants parental consent under
-16, but it only applies where the legal basis is consent — running an account is
-Art. 6(1)(b), performance of a contract. What actually pulled Art. 8 in was the
-audience. A service aimed at 14-year-olds is 'directed at children' whatever the
-terms say, so the audience moved to 16+ and the column became unnecessary. Asking
-for a birthday now would only put the data back without buying anything.
+Verified against the live database on 2026-09-01.
 
-## events
-| column         | type        | notes                                    |
-|----------------|-------------|------------------------------------------|
-| id             | uuid PK     | default gen_random_uuid()                 |
-| host_id        | uuid FK     | → profiles.id ON DELETE CASCADE           |
-| title          | text        | not null                                  |
-| description    | text        | nullable                                  |
-| event_type     | text        | nullable — stubbed, no UI                 |
-| invite_code    | text        | not null, UNIQUE — 10 hex chars           |
-| event_date     | timestamptz | not null                                  |
-| ends_at        | timestamptz | nullable — optional end time              |
-| location       | text        | not null                                  |
-| max_guests     | int         | nullable — null means no cap              |
-| background_url | text        | nullable                                  |
-| created_at     | timestamptz | default now()                             |
+## 1. How security works here, in four sentences
 
-## rsvps
-| column       | type        | notes                                          |
-|--------------|-------------|------------------------------------------------|
-| id           | uuid PK     | default gen_random_uuid()                       |
-| event_id     | uuid FK     | → events.id ON DELETE CASCADE                   |
-| user_id      | uuid FK     | → profiles.id ON DELETE CASCADE                 |
-| status       | text        | CHECK in `going` / `maybe` / `not_going`        |
-| responded_at | timestamptz | default now()                                   |
+RLS is on for all six tables in `public`, and every policy is written for the
+`authenticated` role. A signed-in person reaches their own rows and the rows of parties
+they belong to — nothing else. Everything an anonymous visitor sees comes from
+`SECURITY DEFINER` functions, never from a table. Host and guest are not stored
+anywhere: host is `events.host_id`, guest is a row in `rsvps`, and both are derived on
+every screen, because the same person hosts one party and attends another in the same
+session.
 
-UNIQUE (event_id, user_id) — one answer per person per party.
+## 2. The anon trap
 
-Trigger `rsvps_enforce_capacity` — BEFORE INSERT OR UPDATE. `party_has_room` in the
-INSERT/UPDATE policy counts the seats, but a policy is only an expression: it cannot
-lock, and it knows nothing about the other transactions doing the same thing at the
-same instant. Two guests answering together both read the same count, both pass, and
-the party ends up one over. The trigger takes `pg_advisory_xact_lock` on the party id
-before counting, so answers to the SAME party queue behind each other; answers to
-different parties never wait. It only engages for `status = 'going'` on a party that
-actually has a `max_guests`, so 'maybe', 'not_going' and uncapped parties never touch
-a lock. Rejects with `Diese Party ist voll.` rather than the RLS message.
+**`anon` holds SELECT, INSERT, UPDATE and DELETE on all six tables.** That is the
+Supabase default and it has never been revoked.
 
-The policy stays as it is. The trigger does not replace it — the policy turns away the
-ordinary case, the trigger the dead heat.
+What stops it is that **no policy for the `anon` role exists**. RLS denies whatever no
+policy allows, so anon gets zero rows and zero writes. The protection is an absence, not
+a wall.
 
-Three answers, not two. `host` is a fourth word the attendee RPCs invent to mark the
-host in a guest list; it is never stored, because the insert policy forbids the host
-from RSVPing to their own party.
+Which means: a single policy written `TO public` — or with the role left off, which is
+the same thing — opens that table to the whole internet immediately, because the GRANT
+is already in place. There is no second line of defence behind it.
 
-## pools / pool_options / pool_responses
-The voting feature. There is no `votes` table — this replaced it.
+**Rule: every policy names its role explicitly, and that role is `authenticated`.** If
+you ever want an exception, that is a security decision, not an implementation detail.
 
-**pools**
-| column              | type        | notes                                 |
-|---------------------|-------------|---------------------------------------|
-| id                  | uuid PK     | default gen_random_uuid()              |
-| event_id            | uuid FK     | → events.id ON DELETE CASCADE          |
-| question            | text        | not null                               |
-| description         | text        | nullable                               |
-| type                | text        | CHECK in `options` / `text_only`       |
-| allow_text_response | boolean     | default false                          |
-| allow_multiple      | boolean     | default false                          |
-| created_at          | timestamptz | default now()                          |
+## 3. What RLS cannot do
 
-**pool_options**
-| column     | type        | notes                                  |
-|------------|-------------|----------------------------------------|
-| id         | uuid PK     | default gen_random_uuid()               |
-| pool_id    | uuid FK     | → pools.id ON DELETE CASCADE            |
-| label      | text        | not null                                |
-| position   | int         | default 0                               |
-| created_at | timestamptz | default now()                           |
+**It cannot serialise.** A policy is an expression Postgres evaluates. It takes no lock
+and knows nothing about the other transaction doing the same thing right now, so two
+guests can both pass a capacity check and both take the last seat. Anything that has to
+hold across concurrent writers — a capacity, a quota, an 'only one of these may exist' —
+needs a BEFORE trigger that locks first. `rsvps_enforce_capacity` is the worked example:
+it takes a `pg_advisory_xact_lock` on the event id before counting. `party_has_room` in
+the INSERT policy counts along, but it does not replace the trigger.
 
-UNIQUE (id, pool_id) — exists only so pool_responses can point at the pair.
+**It checks `INSERT ... RETURNING` against the SELECT policy.** `.insert(...).select(...)`
+in the client becomes exactly that, and Postgres checks the returned row against the
+SELECT policy while the row is still invisible to any function that looks it up again.
+So a SELECT policy has to be satisfiable from the row's own columns.
 
-**pool_responses**
-| column        | type        | notes                                              |
-|---------------|-------------|-----------------------------------------------------|
-| id            | uuid PK     | default gen_random_uuid()                            |
-| pool_id       | uuid FK     | → pools.id ON DELETE CASCADE                         |
-| user_id       | uuid FK     | → profiles.id ON DELETE CASCADE                      |
-| option_id     | uuid FK     | → pool_options(pool_id, id), ON DELETE SET NULL      |
-| text_response | text        | nullable                                             |
-| created_at    | timestamptz | default now()                                        |
+**And it never decides what is in a row, only who writes it.** The anon key ships in the
+browser bundle, so anything the interface merely declines to offer needs a CHECK, a
+UNIQUE, an FK or a trigger behind it. The UI is not a constraint.
 
-Three things hold a row honest, because RLS cannot:
-- The FK is **composite** — `(pool_id, option_id)` — so an option always belongs to
-  the poll it was answered in. Null option_id still passes (MATCH SIMPLE), which is
-  what lets a text-only answer write.
-- UNIQUE (pool_id, user_id, option_id) — no voting for the same option twice.
-- Trigger `pool_responses_single_answer` — when `allow_multiple = false`, one row per
-  person per poll. `upsertPoolResponse` deletes before it inserts, so changing your
-  mind still works.
+## 4. The three RPCs anon can reach
 
-## Not built yet
-- **tasks** (checklist / who brings what) — V1 scope, no table.
-- **Coming late + expected arrival time** — V1 scope, no column on rsvps.
-- **party_score** — V2, no column. Do not assume it exists.
+This is the complete public attack surface:
 
----
+- `get_party_by_invite_code`
+- `get_event_host_by_invite_code`
+- `get_rsvp_counts_by_status_by_invite_code`
 
-## RLS
+Every other function is `authenticated` and up. Two things are worth knowing about the
+first one, because both are load-bearing:
 
-Enabled on all six tables. Every policy is scoped to `authenticated`; `anon` holds no
-table grant anywhere and reaches the database only through the three invite-code RPCs.
+It carries the brake. Thirty failed lookups per IP per calendar minute, counted in
+`private.invite_lookup_misses`, then it raises `PT429`. The IP comes from
+`cf-connecting-ip` with `x-forwarded-for` as the fallback. That table has RLS switched
+off and is still unreachable, because neither `anon` nor `authenticated` holds USAGE on
+the `private` schema — the schema is the boundary, not the policy.
 
-**profiles** — SELECT / INSERT / UPDATE, all `auth.uid() = id`. Only your own row.
-Another person's name or age is never read from this table, only from an RPC.
+And it blanks the address. Once the party is over and the caller is not the host,
+`location` comes back as `''`, not NULL, because both screens call `lastIndexOf(',')` on
+it unconditionally. The six hours it assumes mirror `ASSUMED_PARTY_HOURS` in
+`lib/utils.ts` — change one, change the other.
 
-**events**
-- SELECT: `host_id = auth.uid() OR is_party_member(id)`
-- INSERT: WITH CHECK `host_id = auth.uid()`
-- UPDATE / DELETE: `host_id = auth.uid()`
+## 5. Storage: public means public
 
-**rsvps**
-- SELECT: own row, or any row on a party you host
-- INSERT / UPDATE: own row, **not** on your own party, and `party_has_room(...)` —
-  max_guests is enforced here, not in the UI
-- DELETE: own row, or the host removing a guest
+Both buckets, `avatars` and `event-backgrounds`, are `public = true`. **Every file in
+them is fetchable by URL with no login at all.**
 
-**pools / pool_options** — members read, host writes.
+The SELECT policies on `storage.objects` govern *listing* through the API, not fetching.
+They stop a signed-in account from enumerating other people's files; they do not stop
+anyone who has the URL. If something ever needs to be genuinely private, it needs a
+private bucket and signed URLs — a policy will not get you there.
 
-**pool_responses** — members of the party read all answers and write their own.
+All eight storage policies hang on one convention: the first path segment is the
+uploader's `auth.uid()`, so a file lives at `{uid}/...`. Uploads carry a timestamp in
+the name (`{host}/{party}/background-{ms}.jpg`) because a fixed name is the same URL, and
+the cache would serve the old image for hours after a change.
 
-### Two rules worth restating
-- An RLS SELECT policy has to be satisfiable from the row's own columns.
-  `.insert(...).select(...)` becomes `INSERT ... RETURNING`, which Postgres checks
-  against the SELECT policy while the new row is still invisible to any function that
-  looks it up again.
-- RLS decides WHO writes a row, never WHAT is in it. The anon key ships in the browser
-  bundle, so anything the UI merely declines to offer needs a CHECK, a UNIQUE, an FK
-  or a trigger.
+## 6. PostgREST traps
 
----
+**Embeds resolve by the real table name, not by the app's wording.** The table is
+`events` and the app calls it a party everywhere, so an embed is written
+`parties:events(...)`, never `parties(...)`.
 
-## CHECK-Constraints und Indizes
+**Never read a list one request per row.** Every screen showing many parties goes
+through the `_for_events(uuid[])` RPCs — an array of ids in, one round trip back. A
+per-party loop turns ten parties into twenty network hops, and on a phone that is the
+whole loading experience.
 
-Die Regel aus CLAUDE.md — RLS entscheidet WER schreibt, nie WAS drinsteht — ist seit
-dem 21.08.2026 auf allen Spalten umgesetzt, nicht mehr nur auf `rsvps.status` und
-`pools.type`. Migration `20260820230226_bound_what_the_columns_may_hold`.
+**A SQLSTATE of the form `PTxxx` becomes HTTP status `xxx`.** That is how the invite
+brake returns a 429 instead of a 500.
 
-| Tabelle | Constraint | Regel |
-|---|---|---|
-| profiles | `profiles_avatar_color_check` | `^#[0-9A-Fa-f]{6}$` |
-| profiles | `profiles_avatar_url_check` | NULL oder eine URL in den eigenen `avatars`-Bucket |
-| profiles | `profiles_name_length_check` | firstname/lastname ≤ 200 |
-| events | `events_text_length_check` | title ≤ 200, location ≤ 500, description ≤ 5000 |
-| events | `events_max_guests_check` | NULL oder 1 … 100000 |
-| events | `events_invite_code_check` | `^[0-9a-f]{8,32}$` |
-| pools | `pools_text_length_check` | question ≤ 600, description ≤ 3000 |
-| pool_options | `pool_options_label_length_check` | label ≤ 300 |
-| pool_responses | `pool_responses_text_length_check` | text_response ≤ 5000 |
+## 7. Deletion: the cascade from auth.users
 
-Jede Längengrenze liegt rund zehnmal über dem, was das Formular zulässt (`TITLE_MAX`
-ist 20, die Spalte erlaubt 200). Absicht: die Constraint soll ein Megabyte Text
-abwehren, nicht das Formular ein zweites Mal durchsetzen — eine Grenze enger als die
-UI würde aus einer künftigen Textänderung einen fehlgeschlagenen Speichervorgang
-machen.
+`delete_self()` deletes exactly one row — from `auth.users`. Everything else follows,
+because every foreign key in `public` is ON DELETE CASCADE, with one exception:
+`pool_responses.option_id` is SET NULL. `profiles.id` is `auth.users.id` and cascades
+from it, and every other table cascades from `profiles` or `events`.
 
-`events_invite_code_check` erlaubt 8 Zeichen, obwohl `generateInviteCode` 10 erzeugt:
-eine Party aus der Zeit vor der Verlängerung hat noch einen 8-stelligen Code, und eine
-Constraint, die vorhandene Zeilen ablehnt, lässt sich gar nicht erst anlegen.
+That chain is the whole reason account deletion is complete. A new table holding
+anything personal has to join it — an FK without CASCADE makes the erasure silently
+partial, and nothing will fail to tell you.
 
-`profiles_avatar_url_check` ist die einzige davon, die nicht nur Unsinn abwehrt: die
-Spalte landet in einem `<img src>`, das jeder andere Gast lädt. Ohne die Regel könnte
-jemand seinen Avatar auf einen eigenen Server zeigen lassen und die IP-Adresse aller
-mitlesen, die ihn in einer Gästeliste sehen.
+## 8. Checking this file against the database
 
-Dazu sechs Indizes auf den Fremdschlüsseln, auf denen die Partyliste und die
-Umfrage-RPCs joinen — Migration `20260820230141_index_the_foreign_keys_the_party_list_joins_on`.
-Postgres legt für PRIMARY KEY und UNIQUE selbst einen an, für die verweisende Seite
-eines FOREIGN KEY nie.
+Do not trust the above. The database answers all of it, and the Supabase MCP is the
+fastest way to ask. `supabase/migrations/` is **not** a substitute: it runs 22
+migrations behind the live database, for the reasons in `supabase/migrations/README.md`.
 
----
+```sql
+-- Policies: who may do what, per table
+select tablename, policyname, cmd, roles::text, qual, with_check
+from pg_policies where schemaname = 'public' order by tablename, cmd;
 
-## Functions
+-- Grants: the layer underneath the policies (section 2)
+select table_name, grantee, privilege_type
+from information_schema.role_table_grants
+where table_schema = 'public' and grantee in ('anon', 'authenticated');
 
-All `SECURITY DEFINER` with `search_path` pinned. `SECURITY DEFINER` bypasses RLS, so
-each one carries its own check — usually `is_party_member()`.
+-- Functions: which are SECURITY DEFINER, and who may execute them (section 4)
+select p.proname, p.prosecdef, p.proconfig,
+       pg_get_function_identity_arguments(p.oid)
+from pg_proc p where p.pronamespace = 'public'::regnamespace order by p.proname;
 
-`is_party_member(event_id)` is what keeps the events ↔ rsvps policies from recursing:
-the policy on `events` needs to read `rsvps`, whose policy needs to read `events`.
+-- Triggers: where a policy was not enough (section 3)
+select c.relname, t.tgname, pg_get_triggerdef(t.oid)
+from pg_trigger t join pg_class c on c.oid = t.tgrelid
+where c.relnamespace = 'public'::regnamespace and not t.tgisinternal;
 
-| function | check | reachable by |
-|---|---|---|
-| `is_party_member(uuid)` | — | authenticated |
-| `party_has_room(uuid, uuid)` | — | authenticated |
-| `get_event_attendees(uuid)` | is_party_member | authenticated |
-| `get_event_attendees_by_invite_code(text)` | **none — the link is the claim** | authenticated |
-| `get_event_attendees_for_events(uuid[])` | is_party_member | authenticated |
-| `get_rsvp_counts_for_events(uuid[])` | is_party_member | authenticated |
-| `get_host_info_for_events(uuid[])` | is_party_member | authenticated |
-| `get_pool_responses_by_event(uuid)` | inline membership | authenticated |
-| `get_party_by_invite_code(text)` | Bremse: 30 Fehlversuche/IP/Minute; `location` leer, wenn vorbei | **anon** |
-| `get_party_pools_by_invite_code(text)` | none — the link is the claim | authenticated |
-| `get_event_host(uuid)` | is_party_member | authenticated |
-| `get_rsvp_counts_by_status(uuid)` | is_party_member | authenticated |
-| `get_event_host_by_invite_code(text)` | none — the link is the claim | **anon** |
-| `get_rsvp_counts_by_status_by_invite_code(text)` | none — the link is the claim | **anon** |
-| `delete_self()` | auth.uid() | authenticated |
-| `rsvps_enforce_capacity()` | trigger only | **nobody** — revoked from anon and authenticated |
+-- Constraints and indexes: what the UI cannot be trusted to enforce
+select conname, contype, confdeltype, pg_get_constraintdef(oid)
+from pg_constraint where connamespace = 'public'::regnamespace;
+select indexname, tablename, indexdef from pg_indexes
+where schemaname in ('public', 'private');
 
-Seit dem 27.08.2026 ist der Einladungscode auch wirklich der einzige Schlüssel, den
-ein Besucher ohne Konto braucht — und der einzige, den er benutzen kann. Vorher nahmen
-`get_event_host` und `get_rsvp_counts_by_status` die Party-UUID und prüften nichts:
-Wer irgendwo eine solche UUID aufschnappte (sie steht in jeder Hintergrundbild-Adresse),
-bekam ohne Konto den vollen Namen des Gastgebers. Beide gibt es jetzt zweimal — als
-`…_by_invite_code` für `anon`, und als UUID-Fassung für `authenticated` mit
-`is_party_member`-Prüfung, die nur noch die Detailseite benutzt.
+-- Storage: bucket visibility (section 5)
+select id, public, file_size_limit, allowed_mime_types from storage.buckets;
+```
 
-Dieselbe Funktion verschweigt seit dem 27.08.2026 auch die Adresse einer Party, die
-vorbei ist: `location` kommt dann als leerer String zurück, ausser der Fragende ist der
-Gastgeber. Vorher blendete nur die Oberfläche sie aus, und wer die API direkt fragte,
-bekam die Wohnanschrift Monate später noch. Das "vorbei" ist wortgleich mit
-`isPartyOver` in lib/utils.ts — `coalesce(ends_at, event_date + 6 Stunden) < now()` —
-und diese sechs Stunden stehen damit an zwei Stellen, die zusammenbleiben müssen.
+## 9. Open questions
 
-`get_party_by_invite_code` trägt seit dem 27.08.2026 als einzige Funktion eine
-Bremse. Sie zählt in `private.invite_lookup_misses` **nur Fehlversuche** je IP und
-Kalenderminute und weist ab 30 mit `PT429` ab, was PostgREST zu HTTP 429 macht. Nur
-Fehlversuche, weil ein echter Gast immer einen gültigen Code trifft und deshalb nie
-gezählt wird — und weil die serverseitige Chat-Vorschau für alle Besucher von wenigen
-Vercel-IPs kommt und eine Bremse auf allen Aufrufen genau die getroffen hätte. Die
-Prüfung steht vor dem Hochzählen, weil ein `raise` die Transaktion zurückrollt und ein
-Hochzählen im selben Aufruf damit verloren wäre. Das Schema `private` liegt ausserhalb
-der API: die Tabelle ist über PostgREST nicht erreichbar, `anon` und `authenticated`
-haben kein Recht darauf.
+Found on 2026-09-01 and deliberately not touched. Changing the database is its own task
+with its own migrations.
 
-Am 27.08.2026 gelöscht, weil kein Aufruf sie je erreicht hat: `get_rsvp_count(uuid)`
-— die Oberfläche zählt über `get_rsvp_counts_by_status` und
-`get_rsvp_counts_for_events` — und `get_attendee_avatars_for_events(uuid[])`, deren
-eigene Migration schon festhielt, sie sei "genau dafür gebaut und dann nie" benutzt
-worden. Mit der ersten fällt zugleich eine der für `anon` ausführbaren
-SECURITY-DEFINER-Funktionen weg.
-
-Die drei verbliebenen `_for_events(uuid[])`-Funktionen existieren, damit die
-Partyliste in einer festen Zahl von Anfragen gelesen werden kann statt in einem Satz
-pro Party. `get_event_attendees_for_events`
-and `get_rsvp_counts_for_events` are derived line for line from their single-party
-versions — same statuses, same host-as-fourth-status special case, same ordering — so
-swapping them in changed nothing on screen. Verified per party against the originals
-before the client was switched over.
-
-One difference worth knowing: `get_event_host` has **no** membership check (the public
-invite page needs it), while `get_host_info_for_events` does. They are only
-interchangeable where membership is guaranteed, which the guest tab satisfies by
-construction — every party there comes from the reader's own RSVP.
-
-The three anon-reachable lookups are what make `/e/[invite_code]` work without an
-account. `get_event_host` and the two counters take a raw event id rather than the
-code, so an id alone is enough for a host's name and a headcount. Event ids are not
-published anywhere, so this is small — but keying them on the invite code too would
-leave exactly one public entry point.
-
-Both attendee RPCs return names and avatars only. They returned `birthday` until
-20.08.2026 and `age int` for one day after that; both are gone with the column.
+1. **A poll option cannot always be deleted.** `pool_responses.option_id` is ON DELETE
+   SET NULL, and `pool_responses_pool_user_text_key` is UNIQUE on `(pool_id, user_id)
+   WHERE option_id IS NULL`. On a poll with `allow_multiple = true`, one person's two
+   answers both become `option_id NULL` when their options are deleted — and collide, so
+   the delete fails with a unique violation. Never seen in production: `pools`,
+   `pool_options` and `pool_responses` are all empty.
+2. **A redundant unique index.** `pool_responses_pool_id_user_id_option_id_key` sits
+   next to the two partial indexes that already cover it.
+3. **`profiles` policies break the naming convention.** They are called
+   `Users can read their own profile` and so on, where every other table uses
+   `table_cmd_who`. (That `profiles` has no DELETE policy is deliberate — deletion goes
+   through `delete_self()` and the cascade.)
+4. **`get_party_by_invite_code` is granted to PUBLIC as well as `anon`.** PUBLIC is
+   wider than needed and includes any role added later.
+5. **`delete_self` runs with `search_path = ''`, every other function with
+   `search_path = public`.** The empty one is the hardened form.
