@@ -4,10 +4,11 @@ import LegalTextScreen, { type LegalSection } from '@/features/profile/LegalText
 // Tage zuvor. Die Fassung vom 21.08. hatte zwölf Abschnitte und war an drei Stellen
 // überholt, an einer schlicht falsch.
 //
-// Der Text, auf den sich die gesamte Datensparsamkeit der App stützt: In SCHEMA.md
-// steht als Begründung dafür, dass kein Geburtsdatum gespeichert wird, "The 16+ minimum
-// lives in the terms." § 3 ist die Stelle, die das trägt. Verschwindet dieser Absatz,
-// muss die Entscheidung gegen das Geburtsdatum neu bewertet werden.
+// Der Text, auf den sich die gesamte Datensparsamkeit der App stützt: Die Begründung
+// dafür, dass kein Geburtsdatum gespeichert wird, lautet "The 16+ minimum lives in the
+// terms" — § 3 ist die Stelle, die das trägt. Verschwindet dieser Absatz, muss die
+// Entscheidung gegen das Geburtsdatum neu bewertet werden. Dieselbe Regel steht als
+// harte Regel in CLAUDE.md.
 //
 // Belegstellen für alles, was hier über die App behauptet wird:
 //

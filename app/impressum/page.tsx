@@ -9,8 +9,11 @@ import LegalTextScreen, { type LegalSection } from '@/features/profile/LegalText
 //
 // Alles Weitere aus § 5 (Rechtsform, Vertretungsberechtigte, Register, USt-IdNr.,
 // Aufsichtsbehörde, Berufsbezeichnung) hat kein Gegenstück: kein Gewerbe, keine
-// Gewinnerzielungsabsicht, kein Registereintrag. Siehe RECHTLICHES-BESTANDSAUFNAHME.md,
-// Abschnitt 0. Sobald Geld fließt, ist diese Seite die erste, die sich ändert.
+// Gewinnerzielungsabsicht, kein Registereintrag. Die Herleitung dazu liegt im Second
+// Brain unter '04 Resources/Claude Code/areuout Repo Backup 2026-09-01/
+// RECHTLICHES-BESTANDSAUFNAHME.md', Abschnitt 0 — sie ist am 01.09.2026 aus dem
+// Repository dorthin gezogen. Sobald Geld fließt, ist diese Seite die erste, die sich
+// ändert.
 //
 // Entfernt am 23.08.2026, weil nicht vorgeschrieben: § 18 Abs. 2 MStV (gilt nur für
 // journalistisch-redaktionelle Angebote), Art des Angebots, Haftung für Links und
