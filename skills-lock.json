@@ -1,0 +1,17 @@
+{
+  "version": 1,
+  "skills": {
+    "git-guardrails-claude-code": {
+      "source": "mattpocock/skills",
+      "sourceType": "github",
+      "skillPath": "skills/misc/git-guardrails-claude-code/SKILL.md",
+      "computedHash": "ccf581d304132095c2787b0a3bcb7b4ff125863c9f796fb16311d8f1cacef470"
+    },
+    "verification-before-completion": {
+      "source": "obra/superpowers",
+      "sourceType": "github",
+      "skillPath": "skills/verification-before-completion/SKILL.md",
+      "computedHash": "b529822bdac4b197b180fe12225cff86b930b65910435103c10622df7f041651"
+    }
+  }
+}
