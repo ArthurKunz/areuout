@@ -157,7 +157,7 @@ automatically — not even its own CLAUDE.md. Go and read the file.
 - `02 Projects/areuout/` — `About areuout.md` (what it is and for whom), `Scope.md`
   (what shipped, what is permanently out, what a later version might hold),
   `Constraints.md` (how it is operated and what that rules out), `Status.md`,
-  `To-Dos.md`, `Context.md`.
+  `Context.md`.
 - `Phase 1.md` and `Plan.md` at the vault root — the roadmap, the stages and every real
   date. This file carries no dates on purpose.
 
