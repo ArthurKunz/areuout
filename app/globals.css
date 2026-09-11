@@ -1,10 +1,21 @@
 @import "tailwindcss";
 
 @theme {
-    /* BRAND COLORS */
-    --color-brand-pink: #FF0090;
-    --color-brand-lila: #A336FF;
-    --color-brand-blue: #161BFA;
+    /* ACCENT — Elektroblau, the one colour kept outside the Apple foundation:
+       areuout's own mark, the way WhatsApp's green sits inside an otherwise
+       iOS-native interface.
+
+       Which step to reach for is a contrast question, not a taste one. Measured
+       against the black page: the base is 4.03:1, which clears AA for large text
+       and for controls but NOT the 4.5:1 that body-sized text needs. The tint is
+       7.28:1 and clears AAA. So the base fills a shape — buttons, gradients,
+       markers — and carries white text on top of it at 5.21:1; the tint IS the
+       text when it sits directly on black. Apple's own dark-mode blue (#0A84FF)
+       is lighter than its light-mode one (#007AFF) for exactly this reason. */
+    --color-accent-tint: #6E93FF;
+    --color-accent: #1E5CFF;
+    --color-accent-shade: #1642B8;
+    --color-accent-deep: #0F2B7A;
 
     /* BASE COLORS */
     --color-main: #000;
@@ -26,13 +37,19 @@
     --color-label-large: rgba(255, 255, 255, 0.9);
     --color-label-small: rgba(204, 204, 204, 0.5);
     --color-body: rgba(111, 111, 111, 0.9);
-    --color-link: #0A84FF;
+    /* The accent tint, not the base: a link is body-sized text on black, and the
+       base misses AA there. Same value as --color-accent-tint. */
+    --color-link: #6E93FF;
 
-    /* RSVP STATUS (Apple dark-mode system colors) */
+    /* RSVP STATUS — green, yellow and red stay Apple's own dark-mode system
+       colours. Only the host blue left that set: two near-identical blues doing
+       different jobs read as a mistake rather than a system, so the host wears
+       areuout's accent instead. The tint step again, for the contrast reason
+       above — these are small labels on black. */
     --color-success: #30D158;
     --color-maybe: #FFD60A;
     --color-warning: #FF453A;
-    --color-host: #409CFF;
+    --color-host: #6E93FF;
 
     /* LIGHT SURFACE (the sign-up sheet over the invite page — the only light UI in the app) */
     --color-sheet: #FFFFFF;
@@ -45,20 +62,71 @@
     --color-skeleton: rgba(118, 118, 128, 0.25);
     --color-skeleton-sheen: rgba(255, 255, 255, 0.08);
 
-    /* TEXT SIZES */
-    --text-heading-1: 35px;
-    --text-heading-2: 30px;
-    --text-heading-3: 25px;
-    --text-heading-4: 20px;
+    /* TEXT SIZES
+       rem and not px, so the whole scale follows the reader's own text-size
+       setting instead of ignoring it.
 
-    --text-subheading-1: 15px;
+       Tracking and leading belong to the size, never one value for all of them.
+       Letters drift apart as type grows, so large text pulls in and small text
+       opens up a hair; leading runs the other way, tight on a heading and loose
+       on prose. A call site that sets its own leading-* still wins. */
+    --text-heading-1: 2.1875rem; /* 35px */
+    --text-heading-1--line-height: 1.08;
+    --text-heading-1--letter-spacing: -0.022em;
 
-    --text-label-1: 13px;
-    --text-label-2: 12px;
+    --text-heading-2: 1.875rem; /* 30px */
+    --text-heading-2--line-height: 1.1;
+    --text-heading-2--letter-spacing: -0.021em;
 
-    --text-body-1: 12px;
+    --text-heading-3: 1.5625rem; /* 25px */
+    --text-heading-3--line-height: 1.16;
+    --text-heading-3--letter-spacing: -0.019em;
 
-    --text-button: 16px;
+    --text-heading-4: 1.25rem; /* 20px */
+    --text-heading-4--line-height: 1.25;
+    --text-heading-4--letter-spacing: -0.015em;
+
+    --text-subheading-1: 0.9375rem; /* 15px */
+    --text-subheading-1--line-height: 1.4;
+    --text-subheading-1--letter-spacing: -0.006em;
+
+    --text-label-1: 0.8125rem; /* 13px */
+    --text-label-1--line-height: 1.35;
+    --text-label-1--letter-spacing: 0em;
+
+    --text-label-2: 0.75rem; /* 12px */
+    --text-label-2--line-height: 1.35;
+    --text-label-2--letter-spacing: 0.005em;
+
+    --text-body-1: 0.75rem; /* 12px */
+    --text-body-1--line-height: 1.5;
+    --text-body-1--letter-spacing: 0.005em;
+
+    --text-button: 1rem; /* 16px */
+    --text-button--line-height: 1.2;
+    --text-button--letter-spacing: -0.01em;
+
+    /* FONT
+       An Apple device resolves -apple-system to real San Francisco, which is the
+       one way Apple's licence allows SF Pro on the web. Everyone else gets Inter,
+       self-hosted by next/font — the closest open-licence match — rather than
+       whatever sans-serif their OS happens to default to. Swaps for real SF Pro
+       once there is a native app. */
+    --font-sans: -apple-system, BlinkMacSystemFont, var(--font-inter), 'Segoe UI', system-ui, sans-serif;
+
+    /* CORNER RADII
+       Apple's concentricity model: a nested element's radius is its parent's
+       minus the padding between them (child = parent − padding), so nested shapes
+       share a centre instead of merely both being round. These two are the
+       fallbacks for a shape with no parent to derive from — the card radius the
+       app already speaks in, and the tile that sits one inset inside it. */
+    --radius-card: 25px;
+    --radius-tile: 18px;
+
+    /* SHADOW
+       Only for what floats above content; a flat row inside a card casts nothing.
+       Consumed by .liquid-glass below. */
+    --shadow-floating: 0 8px 24px rgba(0, 0, 0, 0.36);
 }
 
 @layer base {
@@ -67,8 +135,11 @@
         min-height: 100%;
         overflow-x: hidden;
     }
+    /* No font-family here: the stack lives in --font-sans above and reaches the
+       body through the font-sans utility in app/layout.tsx. It used to be stated
+       in both places, and the utility won every time — so the stack written here
+       was never the one on screen. */
     body {
-        font-family: -apple-system, BlinkMacSystemFont, "Inter", "Segoe UI", system-ui, sans-serif;
         min-height: 100%;
         overflow-x: hidden;
     }
@@ -127,6 +198,47 @@
 @layer utilities {
     .border-border { border-width: 0.75px; }
     .border-border-input { border-width: 0.75px; }
+
+    /* THE TWO MATERIALS
+       Apple splits them, and so does this app: glass is for the layer you
+       operate — navigation, toolbars, floating buttons, sheets riding over
+       content — and never for the content itself. Content gets .frosted.
+
+       Neither class sets a background colour on purpose. Every call site already
+       brings its own bg-*, and a background here would sit in the same cascade
+       layer and fight it for no gain.
+
+       Both inherit the constraint the components document at length: an ancestor
+       that animates opacity or transform becomes its own backdrop root and
+       flattens the blur for as long as it runs. Animate a wrapper around the
+       glass, or animate grid-template-rows instead — never transform an
+       ancestor of it. */
+
+    /* The bright top edge is light catching the pane, the dark bottom edge is the
+       pane shadowing itself; together they give it thickness rather than leaving
+       it a tinted box. 0.75px is the same hairline the borders above draw. */
+    .liquid-glass {
+        backdrop-filter: blur(24px) saturate(180%);
+        box-shadow:
+            inset 0 0.75px 0 0 rgba(255, 255, 255, 0.18),
+            inset 0 -0.75px 0 0 rgba(0, 0, 0, 0.25),
+            var(--shadow-floating);
+    }
+
+    /* Cards and list rows: same blur, no specular edge, no lift. */
+    .frosted {
+        backdrop-filter: blur(24px) saturate(180%);
+    }
+
+    /* Asked for less transparency means more blur, not less. Dropping the filter
+       while the background stays semi-transparent would show the content through
+       unblurred — the opposite of what was asked for. */
+    @media (prefers-reduced-transparency: reduce) {
+        .liquid-glass,
+        .frosted {
+            backdrop-filter: blur(60px) saturate(140%);
+        }
+    }
 
     /* Loading placeholder: dark grey block with a sheen sweeping left to right. */
     .skeleton {

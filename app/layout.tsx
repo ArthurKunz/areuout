@@ -1,15 +1,14 @@
 import type { Metadata, Viewport } from 'next';
 import { siteUrl } from '@/lib/site';
-import { Geist, Geist_Mono } from 'next/font/google';
+import { Inter } from 'next/font/google';
 import './globals.css';
 
-const geistSans = Geist({
-  variable: '--font-geist-sans',
-  subsets: ['latin'],
-});
-
-const geistMono = Geist_Mono({
-  variable: '--font-geist-mono',
+// Nur der Ersatz für Geräte ohne San Francisco — die Reihenfolge in --font-sans
+// (app/globals.css) stellt -apple-system davor, damit ein Apple-Gerät weiterhin
+// das echte SF bekommt. Geist und Geist_Mono standen vorher hier, wurden aber nur
+// als CSS-Variablen gesetzt und nirgends referenziert: geladen, nie gerendert.
+const inter = Inter({
+  variable: '--font-inter',
   subsets: ['latin'],
 });
 
@@ -52,7 +51,7 @@ export default function RootLayout({
       {/* bg-main auf dem body, nicht nur auf den Screens: sonst ist die Flaeche zwischen
           erstem Byte und erstem Paint die Standardfarbe des Browsers — also Weiss, bei
           einer durchgehend schwarzen App ein sichtbares Aufblitzen. */}
-      <body className={`${geistSans.variable} ${geistMono.variable} font-sans bg-main`} suppressHydrationWarning>
+      <body className={`${inter.variable} font-sans bg-main`} suppressHydrationWarning>
         {children}
       </body>
     </html>

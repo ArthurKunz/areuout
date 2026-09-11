@@ -7,7 +7,9 @@ export default function PartyMap({ location }: { location: string }) {
   const query = encodeURIComponent(location)
   // A static PNG decodes before onLoad fires, unlike the old iframe embed whose
   // onLoad only meant Google's JS bootstrap had arrived — the tiles came seconds later.
-  const src = `https://maps.googleapis.com/maps/api/staticmap?center=${query}&zoom=15&size=640x246&scale=2&markers=color:0xFF0090%7C${query}&key=${key}`
+  // Der Marker trägt die Akzentfarbe als Fläche, also die Basis der Skala und nicht
+  // den Tint — auf einer hellen Karte ist das der Schritt mit Kontrast.
+  const src = `https://maps.googleapis.com/maps/api/staticmap?center=${query}&zoom=15&size=640x246&scale=2&markers=color:0x1E5CFF%7C${query}&key=${key}`
   const href = `https://www.google.com/maps/search/?api=1&query=${query}`
 
   const [loaded, setLoaded] = useState(false)

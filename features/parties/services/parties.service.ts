@@ -1,6 +1,7 @@
 import { supabase } from '@/lib/supabase/client'
 import { isPartyOver } from '@/lib/utils'
 import { removeStorageFolder } from '@/lib/storage'
+import { AVATAR_COLORS } from '@/features/onboarding/constants/onboarding.constants'
 import type { CreatePartyPayload, PartyWithCount, PartyDetail, Attendee, PartyHost, RsvpStatus } from '../types/parties.types'
 
 export async function createParty(payload: CreatePartyPayload) {
@@ -57,8 +58,9 @@ async function loadCountsAndAttendees(eventIds: string[]): Promise<{
   return { counts, attendees }
 }
 
-const AVATAR_COLORS = ['#FF0090', '#A336FF', '#161BFA', '#5684FF', '#AE4FFF', '#D47AFF', '#E224A1']
-
+// Dieselben neun Farben, die auch das Profilbild anbietet. Hier standen vorher
+// sieben eigene — ein Host konnte also eine Farbe tragen, die niemand auswaehlen
+// kann, und die neun aus den Konstanten versprechen ausdruecklich das Gegenteil.
 function hostColor(hostId: string): string {
   const sum = hostId.split('').reduce((acc, ch) => acc + ch.charCodeAt(0), 0)
   return AVATAR_COLORS[sum % AVATAR_COLORS.length]

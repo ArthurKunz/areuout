@@ -105,10 +105,13 @@ export function getInitials(firstname: string | null, lastname: string | null): 
   return (first + last).toUpperCase() || '?'
 }
 
+// Drei Schritte der Elektroblau-Skala, paarweise. Vorher lag hier ein eigenes
+// Pink/Lila/Blau, das aus der Zeit vor der Akzentfarbe stammte — zwei Farbsysteme
+// nebeneinander in einer App, die nur eines hat.
 const COVER_GRADIENTS = [
-  'from-brand-pink to-brand-lila',
-  'from-brand-lila to-brand-blue',
-  'from-brand-blue to-brand-pink',
+  'from-accent-tint to-accent',
+  'from-accent to-accent-shade',
+  'from-accent-shade to-accent-deep',
 ]
 
 // Deterministic per-party cover gradient (no party images in V1, so we fake a "cover photo").
