@@ -30,6 +30,9 @@ import type { CreatePartyFormValues, PoolDraft } from './types/parties.types'
 // The title is `text-heading-1` (35px semibold) on the party page and must not wrap:
 // roughly 18px per character across 343px of content leaves about 19, so 20.
 const TITLE_MAX = 20
+// Dasselbe Limit wie der Name, und aus demselben Grund: das Motto steht in der
+// Faktenzeile der Partyseite, die nicht umbricht, sondern seitlich scrollt.
+const MOTTO_MAX = 20
 const DESCRIPTION_MAX = 500
 const GUESTS_MAX = 500
 const POOLS_MAX = 5
@@ -39,11 +42,13 @@ const COLLAPSE_MS = 300
 // Ready-made party backgrounds from /public: picking one writes its path straight
 // into parties.background_url, so nothing is uploaded.
 
-type StepId = 'name' | 'description' | 'date' | 'time' | 'location' | 'guests' | 'background' | 'pools' | 'done'
+type StepId = 'name' | 'description' | 'date' | 'time' | 'location' | 'guests' | 'background' | 'pools' | 'motto' | 'done'
 
 // Background sits with the other required answers (name, date, time, location) and
 // ahead of the optional ones, since it is the only later step that cannot be skipped.
-const STEPS: StepId[] = ['name', 'date', 'time', 'location', 'background', 'description', 'guests', 'pools', 'done']
+// Das Motto steht hinter den Umfragen und ist damit die letzte Frage — dort wird die
+// Party angelegt, nicht mehr beim Polls-Schritt.
+const STEPS: StepId[] = ['name', 'date', 'time', 'location', 'background', 'description', 'guests', 'pools', 'motto', 'done']
 const QUESTION_COUNT = STEPS.length - 1
 
 const HEADLINES: Record<StepId, string> = {
@@ -55,6 +60,7 @@ const HEADLINES: Record<StepId, string> = {
   guests: 'Wie viele Gäste?',
   background: 'Hintergrundbild',
   pools: 'Umfragen hinzufügen',
+  motto: 'Gibt es ein Motto?',
   done: 'Deine Party ist bereit! 🎉',
 }
 
@@ -81,6 +87,7 @@ export default function CreatePartyScreen() {
   const [values, setValues] = useState<CreatePartyFormValues>({
     title: '',
     description: '',
+    motto: '',
     day: '',
     month: '',
     year: '',
@@ -194,6 +201,9 @@ export default function CreatePartyScreen() {
       host_id: userId,
       title: values.title.trim(),
       description: values.description.trim() || null,
+      // Leer bleibt null, nicht '': die Faktenzeile prueft auf den Wert, und eine
+      // Party ohne Motto soll dort gar keine Spalte bekommen.
+      motto: values.motto.trim() || null,
       invite_code: code,
       event_date,
       ends_at,
@@ -323,7 +333,9 @@ export default function CreatePartyScreen() {
   }
 
   const handleNext = () => {
-    if (step === 'pools') {
+    // Die letzte Frage legt die Party an, statt auf einen weiteren Schritt zu gehen.
+    // Das ist seit dem Motto-Schritt 'motto' und nicht mehr 'pools'.
+    if (step === 'motto') {
       void handleFinish()
       return
     }
@@ -422,9 +434,10 @@ export default function CreatePartyScreen() {
       <CreateStepLayout
         headline={HEADLINES.pools}
         onCancel={() => router.push('/parties')}
-        onSkip={() => void handleFinish()}
+        // Ueberspringen heisst hier weiter zum Motto, nicht mehr fertig — die
+        // Umfragen sind seit dem Motto-Schritt nicht mehr die letzte Frage.
+        onSkip={skipStep}
         onPrimary={handleNext}
-        busy={creating}
         // Grows with every poll added, so a pinned bar would end up sitting on the
         // list it belongs to.
         pinnedControls={false}
@@ -610,14 +623,18 @@ export default function CreatePartyScreen() {
     )
   }
 
-  if (step === 'name' || step === 'description' || step === 'guests') {
+  if (step === 'name' || step === 'description' || step === 'guests' || step === 'motto') {
     return (
       <CreateStepLayout
         headline={HEADLINES[step]}
         onCancel={() => router.push('/parties')}
-        onSkip={step === 'name' ? undefined : skipStep}
+        // Das Motto ist die letzte Frage: ueberspringen heisst hier anlegen, nicht
+        // weitergehen. Ein skipStep landete auf 'done', ohne dass die Party existiert.
+        onSkip={step === 'name' ? undefined : step === 'motto' ? () => void handleFinish() : skipStep}
         onPrimary={handleNext}
         primaryDisabled={!canContinue}
+        // Nur der Motto-Schritt legt an und braucht deshalb den Ladezustand.
+        busy={step === 'motto' && creating}
         stepCount={QUESTION_COUNT}
         currentStep={stepIndex}
         onSelectStep={handleSelectStep}
@@ -659,6 +676,29 @@ export default function CreatePartyScreen() {
             </div>
             {values.description.length >= DESCRIPTION_MAX && (
               <WarningBanner message={`Maximal ${DESCRIPTION_MAX} Zeichen`} />
+            )}
+          </>
+        )}
+
+        {step === 'motto' && (
+          <>
+            <div className={cardClass}>
+              <div className={rowClass}>
+                <span className={rowLabelClass}>Motto</span>
+                <input
+                  type='text'
+                  value={values.motto}
+                  onChange={(e) => setField('motto', e.target.value)}
+                  onKeyDown={handleEnterAdvance}
+                  placeholder='z.B. Neon Night'
+                  enterKeyHint='done'
+                  maxLength={MOTTO_MAX}
+                  className={rowInputClass}
+                />
+              </div>
+            </div>
+            {values.motto.length >= MOTTO_MAX && (
+              <WarningBanner message={`Maximal ${MOTTO_MAX} Zeichen`} />
             )}
           </>
         )}
