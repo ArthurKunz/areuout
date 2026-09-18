@@ -51,6 +51,7 @@ export type Database = {
           invite_code: string
           location: string
           max_guests: number | null
+          motto: string | null
           title: string
         }
         Insert: {
@@ -64,6 +65,7 @@ export type Database = {
           invite_code: string
           location: string
           max_guests?: number | null
+          motto?: string | null
           title: string
         }
         Update: {
@@ -77,6 +79,7 @@ export type Database = {
           invite_code?: string
           location?: string
           max_guests?: number | null
+          motto?: string | null
           title?: string
         }
         Relationships: [
@@ -357,6 +360,7 @@ export type Database = {
           invite_code: string
           location: string
           max_guests: number
+          motto: string
           title: string
         }[]
       }

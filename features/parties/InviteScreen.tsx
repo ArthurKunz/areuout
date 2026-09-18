@@ -300,6 +300,10 @@ export default function InviteScreen({ inviteCode }: { inviteCode: string }) {
 
   const stats: { label: string; value: string; warn?: boolean }[] = party
     ? [
+        // Wie auf der Partyseite: vorne, und ohne Motto gar kein Eintrag. Anders als
+        // die Location bekommt es keine Sonderbehandlung fuer vergangene Partys — das
+        // betrifft allein die Wohnanschrift, nicht Datum, Uhrzeit oder Motto.
+        ...(party.motto ? [{ label: 'Motto', value: party.motto }] : []),
         {
           label: 'Datum',
           value: new Date(party.event_date).toLocaleDateString('de-DE', {

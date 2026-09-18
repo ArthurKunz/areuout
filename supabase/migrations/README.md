@@ -6,14 +6,26 @@ davon nichts — der Tag, an dem es weh tut, ist der, an dem eine Staging-Umgebu
 gebraucht wird, das Projekt neu aufgesetzt werden muss oder ein Backup zurückgespielt
 wird.
 
-Stand 27.08.2026, geprüft gegen `list_migrations` auf der Live-Datenbank:
+Stand 18.09.2026, gezählt gegen `supabase_migrations.schema_migrations` auf der
+Live-Datenbank:
 
 | | Anzahl |
 |---|---|
-| Dateien in diesem Ordner | 33 |
-| Migrationen auf der Datenbank | 55 |
-| davon **nur** auf der Datenbank, ohne Datei hier | 22 |
+| Dateien in diesem Ordner | 49 |
+| Migrationen auf der Datenbank | 71 |
 | davon **nur** hier, nie angewendet | 0 |
+
+Die Zuordnung der beiden Spalten ist **nicht** über die Dateinamen möglich: 27 Dateien
+tragen eine Version, die so auf der Datenbank nicht steht, obwohl ihr Inhalt dort
+angewendet ist. Das ist dieselbe Abweichung, die weiter unten für zwei Dateien
+beschrieben ist — sie betrifft in Wahrheit deutlich mehr. Wer eine belastbare Zahl
+für „nur auf der Datenbank" braucht, muss über `statements` vergleichen, nicht über
+die Namen.
+
+Die beiden jüngsten Dateien (`20260918214647_add_a_motto_to_a_party.sql`,
+`20260918214737_hand_out_the_motto_with_the_invite.sql`) gehören zum Motto-Feature und
+tragen die Versionen, unter denen sie tatsächlich angewendet wurden — die Regel ganz
+unten, befolgt.
 
 ## Die drei gefährlichen Dateien sind weg
 

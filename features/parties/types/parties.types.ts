@@ -2,6 +2,7 @@ export type CreatePartyPayload = {
   host_id: string
   title: string
   description: string | null
+  motto: string | null
   invite_code: string
   event_date: string
   // When the party ends. Null when the host leaves it open; the next day when the
@@ -14,6 +15,7 @@ export type CreatePartyPayload = {
 export type CreatePartyFormValues = {
   title: string
   description: string
+  motto: string
   day: string
   month: string
   year: string
@@ -48,6 +50,7 @@ export type PartyDetail = {
   host_id: string
   title: string
   description: string | null
+  motto: string | null
   event_date: string
   ends_at: string | null
   location: string
