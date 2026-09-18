@@ -277,6 +277,10 @@ export default function PartyDetailScreen({ partyId }: { partyId: string }) {
 
   const stats: { label: string; value: string; warn?: boolean }[] = party
     ? [
+        // Ganz vorne, weil die Zeile seitlich scrollt: nur hier steht das Motto ohne
+        // Scrollen auf dem Schirm. Ohne Motto entsteht kein Eintrag und die Zeile
+        // sieht aus wie zuvor — dasselbe Muster wie bei Max. Gäste weiter unten.
+        ...(party.motto ? [{ label: 'Motto', value: party.motto }] : []),
         {
           label: 'Datum',
           value: new Date(party.event_date).toLocaleDateString('de-DE', {
