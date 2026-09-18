@@ -46,6 +46,8 @@ import { supabase as db } from '@/lib/supabase/client'
 import type { Pool, PoolDraft } from './types/parties.types'
 
 const TITLE_MAX = 20
+// Wie im Erstellen-Flow: dasselbe Limit wie der Name.
+const MOTTO_MAX = 20
 const POOLS_MAX = 5
 // Matches Collapse's duration: a removed poll folds away before it is dropped.
 const COLLAPSE_MS = 300
@@ -94,6 +96,7 @@ export default function EditPartyScreen({ partyId }: { partyId: string }) {
 
   const [title, setTitle] = useState('')
   const [description, setDescription] = useState('')
+  const [motto, setMotto] = useState('')
   const [location, setLocation] = useState('')
   // Getrennt gehalten wie im Erstellen-Flow: die Suche liefert Strasse und Stadt
   // einzeln, gespeichert wird die Zusammensetzung. Beim Laden wird am LETZTEN Komma
@@ -159,6 +162,7 @@ export default function EditPartyScreen({ partyId }: { partyId: string }) {
       const start = new Date(party.event_date)
       setTitle(party.title)
       setDescription(party.description ?? '')
+      setMotto(party.motto ?? '')
       setHostId(session.user.id)
       setStoredBg(party.background_url ?? null)
       // Ist der gespeicherte Wert eines der acht Motive, steht sein Haken von Anfang
@@ -186,6 +190,7 @@ export default function EditPartyScreen({ partyId }: { partyId: string }) {
         JSON.stringify({
           title: party.title.trim(),
           description: (party.description ?? '').trim(),
+          motto: (party.motto ?? '').trim(),
           location: party.location.trim(),
           maxGuests: party.max_guests != null ? String(party.max_guests) : '',
           iso: storedStart.toISOString(),
@@ -226,6 +231,7 @@ export default function EditPartyScreen({ partyId }: { partyId: string }) {
   const current = JSON.stringify({
     title: title.trim(),
     description: description.trim(),
+    motto: motto.trim(),
     location: fullLocation,
     maxGuests,
     iso: startDate.toISOString(),
@@ -357,6 +363,9 @@ export default function EditPartyScreen({ partyId }: { partyId: string }) {
     const { error } = await updateParty(partyId, {
       title: title.trim(),
       description: description.trim() || null,
+      // Geleert heisst null, nicht '': nur so verschwindet die Spalte in der
+      // Faktenzeile wieder.
+      motto: motto.trim() || null,
       location: fullLocation,
       max_guests: maxGuests ? parseInt(maxGuests, 10) : null,
       event_date: startDate.toISOString(),
@@ -636,6 +645,22 @@ export default function EditPartyScreen({ partyId }: { partyId: string }) {
                     onFocus={caretToEnd}
                     maxLength={TITLE_MAX}
                     placeholder='Partyname'
+                    className={rowInputClass}
+                  />
+                </label>
+
+                <RowDivider />
+
+                {/* Hinter dem Namen und vor dem Datum — dieselbe Reihenfolge, in der
+                    die Faktenzeile der Partyseite die beiden zeigt. */}
+                <label className={rowClass}>
+                  <span className={rowLabelClass}>Motto</span>
+                  <input
+                    value={motto}
+                    onChange={(e) => setMotto(e.target.value)}
+                    onFocus={caretToEnd}
+                    maxLength={MOTTO_MAX}
+                    placeholder='z.B. Neon Night'
                     className={rowInputClass}
                   />
                 </label>
