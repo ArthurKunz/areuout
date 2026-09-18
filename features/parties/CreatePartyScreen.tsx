@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef, type KeyboardEvent } from 'react'
 import { useRouter } from 'next/navigation'
-import { Check, Copy, Plus } from 'lucide-react'
+import { Plus } from 'lucide-react'
 import { supabase } from '@/lib/supabase/client'
 import { alertError, generateInviteCode, getOrigin } from '@/lib/utils'
 import { stripMetadataAndResize, BACKGROUND_MAX_EDGE } from '@/lib/image'
@@ -13,7 +13,8 @@ import PartyDateSheet from './components/PartyDateSheet'
 import PartyTimeSheet from './components/PartyTimeSheet'
 import CreateStepLayout from './components/CreateStepLayout'
 import FloatingEmojis from './components/FloatingEmojis'
-import { cardClass, primaryButtonClass, RowDivider, rowClass, rowInputClass, rowLabelClass, rowValueClass } from '@/components/shared/Card'
+import { cardClass, primaryButtonClass, RowDivider, rowClass, rowInputClass, rowLabelClass } from '@/components/shared/Card'
+import InviteLinkCard from '@/components/shared/InviteLinkCard'
 import PoolDraftForm from './components/PoolDraftForm'
 import PoolDraftCard from './components/PoolDraftCard'
 import Switch from '@/components/shared/Switch'
@@ -64,7 +65,6 @@ export default function CreatePartyScreen() {
   const [creating, setCreating] = useState(false)
   const [created, setCreated] = useState(false)
   const [inviteCode, setInviteCode] = useState('')
-  const [copied, setCopied] = useState(false)
   const [showPoolForm, setShowPoolForm] = useState(false)
   const [editingPool, setEditingPool] = useState<PoolDraft | null>(null)
   const [localPools, setLocalPools] = useState<PoolDraft[]>([])
@@ -340,24 +340,6 @@ export default function CreatePartyScreen() {
     if (e.key !== 'Enter' || !canContinue) return
     e.preventDefault()
     handleNext()
-  }
-
-  const handleCopy = async () => {
-    if (!shareLink) return
-    try {
-      await navigator.clipboard.writeText(shareLink)
-    } catch {
-      const el = document.createElement('textarea')
-      el.value = shareLink
-      el.style.position = 'fixed'
-      el.style.opacity = '0'
-      document.body.appendChild(el)
-      el.select()
-      document.execCommand('copy')
-      document.body.removeChild(el)
-    }
-    setCopied(true)
-    setTimeout(() => setCopied(false), 2000)
   }
 
   if (!userId) return null
@@ -722,28 +704,7 @@ export default function CreatePartyScreen() {
       </span>
 
       <div className='mt-auto w-full'>
-        <div className={cardClass}>
-          <div className={rowClass}>
-            <span className={rowLabelClass}>Einladungslink</span>
-
-            {/* The link is longer than the row, so it FADES OUT under the copy button
-                instead of being cut off. A gradient overlay would not do it here — the
-                card is translucent, so painting `bg-secondary` over the text only dims
-                it; masking makes the text itself transparent, on any background. */}
-            <div className='ml-auto min-w-0 flex-1 overflow-hidden [mask-image:linear-gradient(to_right,#000_65%,transparent)] [-webkit-mask-image:linear-gradient(to_right,#000_65%,transparent)]'>
-              <span className={`block whitespace-nowrap ${rowValueClass}`}>{shareLink}</span>
-            </div>
-
-            <button
-              type='button'
-              onClick={handleCopy}
-              aria-label='Einladungslink kopieren'
-              className='flex h-7.5 w-7.5 shrink-0 items-center justify-center rounded-full bg-sheet text-sheet-heading transition-transform duration-200 ease-[cubic-bezier(0.32,0.72,0,1)] active:scale-90'
-            >
-              {copied ? <Check size={16} strokeWidth={3} /> : <Copy size={15} strokeWidth={2.5} />}
-            </button>
-          </div>
-        </div>
+        <InviteLinkCard link={shareLink} />
 
         <button
           type='button'

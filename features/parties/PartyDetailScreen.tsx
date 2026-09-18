@@ -2,9 +2,9 @@
 
 import { useState, useEffect, useRef } from 'react'
 import { useRouter } from 'next/navigation'
-import { Check, ChevronLeft, Copy, MoreHorizontal, SquarePen, Trash2, UsersRound } from 'lucide-react'
+import { Check, ChevronLeft, Copy, MoreHorizontal, RotateCcw, SquarePen, Trash2, UsersRound } from 'lucide-react'
 import { supabase } from '@/lib/supabase/client'
-import { alertError, getOrigin, isPartyOver } from '@/lib/utils'
+import { alertError, generateInviteCode, getOrigin, isPartyOver } from '@/lib/utils'
 import { getMyProfile, type Profile } from '@/features/profile/services/profile.service'
 import {
   getPartyById,
@@ -15,6 +15,7 @@ import {
   deleteParty,
   deleteRsvp,
   getRsvpCountsByStatus,
+  updateParty,
 } from './services/parties.service'
 import { getPartyPools } from './services/pools.service'
 import Avatar from '@/components/shared/Avatar'
@@ -26,6 +27,9 @@ import PoolsSection from './components/PoolsSection'
 import AttendeeList from './components/AttendeeList'
 import PartyMap from './components/PartyMap'
 import WarningBanner from '@/components/shared/WarningBanner'
+import ConfirmDialog from '@/components/shared/ConfirmDialog'
+import InviteLinkCard from '@/components/shared/InviteLinkCard'
+import { primaryButtonClass } from '@/components/shared/Card'
 import type { PartyDetail, Attendee, PartyHost, RsvpStatus, Pool } from './types/parties.types'
 
 const BackIcon = <ChevronLeft size={24} strokeWidth={3} className='text-white' />
@@ -39,6 +43,8 @@ const TrashIcon = <Trash2 size={20} strokeWidth={2.5} className='text-warning' /
 const EditIcon = <SquarePen size={20} strokeWidth={2.5} className='text-label-large' />
 
 const GuestsIcon = <UsersRound size={20} strokeWidth={2.5} className='text-label-large' />
+
+const ResetIcon = <RotateCcw size={20} strokeWidth={2.5} className='text-label-large' />
 
 const CheckIcon = <Check size={18} strokeWidth={3} className='text-heading' />
 
@@ -75,6 +81,9 @@ export default function PartyDetailScreen({ partyId }: { partyId: string }) {
   // that was tapped, and every row is disabled while any one of them is running.
   const [pendingRsvp, setPendingRsvp] = useState<RsvpStatus | null>(null)
   const [deleting, setDeleting] = useState(false)
+  const [confirmReset, setConfirmReset] = useState(false)
+  const [resetting, setResetting] = useState(false)
+  const [newLink, setNewLink] = useState<string | null>(null)
   const [menuOpen, setMenuOpen] = useState(false)
   const [menuHeight, setMenuHeight] = useState(MENU_CLOSED_SIZE)
   const menuContentRef = useRef<HTMLDivElement>(null)
@@ -91,6 +100,17 @@ export default function PartyDetailScreen({ partyId }: { partyId: string }) {
 
   const toggleSection = (key: keyof typeof openSections) =>
     setOpenSections((prev) => ({ ...prev, [key]: !prev[key] }))
+
+  // Dieselbe Sperre, die ConfirmDialog mitbringt — das Erfolgs-Overlay ist kein eigenes
+  // Component, also hängt sie hier am State.
+  useEffect(() => {
+    if (!newLink) return
+    const previous = document.body.style.overflow
+    document.body.style.overflow = 'hidden'
+    return () => {
+      document.body.style.overflow = previous
+    }
+  }, [newLink])
 
   useEffect(() => {
     let cancelled = false
@@ -176,6 +196,27 @@ export default function PartyDetailScreen({ partyId }: { partyId: string }) {
     await navigator.clipboard.writeText(`${getOrigin()}/e/${party.invite_code}`)
     setCopied(true)
     setTimeout(() => setCopied(false), 2000)
+  }
+
+  // Der Code IST das Geheimnis, nicht die Party-ID — ihn zu ersetzen ist das Einzige,
+  // was einem geleakten Link den Zugang wieder nimmt. Erzeugt wird er hier im Client,
+  // wie beim Anlegen der Party: events_update_host lässt nur den Host an die Zeile,
+  // und das CHECK auf invite_code samt UNIQUE entscheidet, was drinstehen darf.
+  const handleResetLink = async () => {
+    if (!party) return
+    setResetting(true)
+    const code = generateInviteCode()
+    const { error } = await updateParty(party.id, { invite_code: code })
+    if (error) {
+      setResetting(false)
+      alertError('Der Link konnte nicht zurückgesetzt werden.', error.message)
+      return
+    }
+    // Ohne das gibt der Copy-Button im Header weiter den toten Link aus.
+    setParty({ ...party, invite_code: code })
+    setResetting(false)
+    setConfirmReset(false)
+    setNewLink(`${getOrigin()}/e/${code}`)
   }
 
   const handleDeleteParty = async () => {
@@ -408,6 +449,15 @@ export default function PartyDetailScreen({ partyId }: { partyId: string }) {
                           <span className='text-label-1 text-label-large'>Gäste verwalten</span>
                         </button>
 
+                        <button
+                          type='button'
+                          onClick={() => { setMenuOpen(false); setConfirmReset(true) }}
+                          className='flex items-center gap-3 w-full px-4 py-2.5 rounded-full text-left'
+                        >
+                          <span className='w-5 h-5 flex items-center justify-center'>{ResetIcon}</span>
+                          <span className='text-label-1 text-label-large'>Link resetten</span>
+                        </button>
+
                         <div className='h-0.25 w-full bg-divider my-2' />
                       </>
                     )}
@@ -573,6 +623,53 @@ export default function PartyDetailScreen({ partyId }: { partyId: string }) {
         </div>
 
       </div>
+
+      {confirmReset && (
+        <ConfirmDialog
+          title='Link wirklich zurücksetzen?'
+          message='Der alte Link funktioniert danach nicht mehr. Wer ihn schon hat, kommt nicht mehr rein.'
+          confirmLabel='Zurücksetzen'
+          pending={resetting}
+          onConfirm={handleResetLink}
+          onCancel={() => setConfirmReset(false)}
+        />
+      )}
+
+      {/* Der neue Link, sofort zum Weitergeben — dieselbe Karte wie am Ende von Create
+          Party. Das Häkchen über der Überschrift ist die einzige Bestätigung, dass der
+          Reset durch ist; der Copy-Button bringt sein eigenes mit. */}
+      {newLink && (
+        <div
+          role='dialog'
+          aria-modal='true'
+          aria-labelledby='reset-done-title'
+          className='fixed inset-0 z-50 flex items-center justify-center px-7.5'
+        >
+          <div className='absolute inset-0 bg-main/60 backdrop-blur-sm' />
+
+          <div className='relative w-full max-w-80 flex flex-col gap-5 rounded-[25px] bg-quaternary backdrop-blur-2xl p-5 animate-fade-in-up'>
+            <div className='flex flex-col items-center gap-1.5 text-center'>
+              <span className='flex h-10 w-10 items-center justify-center rounded-full bg-sheet text-sheet-heading'>
+                <Check size={22} strokeWidth={3} />
+              </span>
+              <span id='reset-done-title' className='text-heading-4 font-semibold text-heading'>
+                Link zurückgesetzt
+              </span>
+              <span className='text-subheading-1 text-subheading'>
+                Schick den neuen Link an alle, die weiter dabei sein sollen.
+              </span>
+            </div>
+
+            <div className='flex flex-col gap-2'>
+              <InviteLinkCard link={newLink} />
+
+              <button type='button' onClick={() => setNewLink(null)} className={primaryButtonClass}>
+                Fertig
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
