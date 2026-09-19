@@ -25,6 +25,7 @@ import PoolDraftCard from './components/PoolDraftCard'
 import PoolDraftForm from './components/PoolDraftForm'
 import QuestionDraftCard from './components/QuestionDraftCard'
 import QuestionDraftForm from './components/QuestionDraftForm'
+import MitbringItemsEditor from './components/MitbringItemsEditor'
 import AddressSearchField from './components/AddressSearchField'
 import BackgroundPicker from './components/BackgroundPicker'
 import PartyDateSheet, { type PartyDate } from './components/PartyDateSheet'
@@ -39,6 +40,12 @@ import {
   deletePoolOption,
 } from './services/pools.service'
 import { getPartyQuestions, createQuestion, updateQuestion } from './services/questions.service'
+import {
+  getPartyMitbring,
+  createMitbringItem,
+  updateMitbringItem,
+  deleteMitbringItem,
+} from './services/mitbring.service'
 import { getPartyAttendees } from './services/parties.service'
 
 import { BG_BUCKET, BG_MAX_BYTES, BG_PRESETS } from './constants/background.constants'
@@ -46,7 +53,7 @@ import { stripMetadataAndResize, BACKGROUND_MAX_EDGE } from '@/lib/image'
 import { removeStorageFileByUrl } from '@/lib/storage'
 import { supabase as db } from '@/lib/supabase/client'
 
-import type { Pool, PoolDraft, Question, QuestionDraft } from './types/parties.types'
+import type { MitbringItem, Pool, PoolDraft, Question, QuestionDraft } from './types/parties.types'
 
 const TITLE_MAX = 20
 // Wie im Erstellen-Flow: dasselbe Limit wie der Name.
@@ -55,6 +62,7 @@ const DRESSCODE_MAX = 20
 const POOLS_MAX = 5
 // Getrennt von den Umfragen gezaehlt, wie im Erstellen-Flow.
 const QUESTIONS_MAX = 5
+const MITBRING_MAX = 30
 // Matches Collapse's duration: a removed poll folds away before it is dropped.
 const COLLAPSE_MS = 300
 
@@ -144,7 +152,7 @@ export default function EditPartyScreen({ partyId }: { partyId: string }) {
   // written until this screen is saved — and a working copy cannot survive a route
   // change. `loadedPools` is what the database holds; `poolDrafts` is what the host
   // has made of it, and the difference between the two is what save has to apply.
-  const [view, setView] = useState<'main' | 'pools' | 'poolform' | 'questions' | 'questionform' | 'location' | 'background'>('main')
+  const [view, setView] = useState<'main' | 'pools' | 'poolform' | 'questions' | 'questionform' | 'mitbring' | 'location' | 'background'>('main')
   const [loadedPools, setLoadedPools] = useState<Pool[]>([])
   const [poolDrafts, setPoolDrafts] = useState<PoolDraft[]>([])
   const [editingPool, setEditingPool] = useState<PoolDraft | null>(null)
@@ -161,6 +169,12 @@ export default function EditPartyScreen({ partyId }: { partyId: string }) {
   const [questionsLoading, setQuestionsLoading] = useState(true)
   const [removingQuestionId, setRemovingQuestionId] = useState<string | null>(null)
   const removeQuestionTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined)
+
+  // Die Mitbring-Liste, ebenfalls erst beim Speichern geschrieben. `loadedMitbring`
+  // ist der Stand der Datenbank, `mitbringDrafts` der des Gastgebers.
+  const [loadedMitbring, setLoadedMitbring] = useState<MitbringItem[]>([])
+  const [mitbringDrafts, setMitbringDrafts] = useState<string[]>([])
+  const [mitbringLoading, setMitbringLoading] = useState(true)
 
   useEffect(() => {
     let cancelled = false
@@ -229,6 +243,12 @@ export default function EditPartyScreen({ partyId }: { partyId: string }) {
         setPoolDrafts(p.map(toDraft))
         setPoolsLoading(false)
       })
+      void getPartyMitbring(partyId).then((m) => {
+        if (cancelled) return
+        setLoadedMitbring(m)
+        setMitbringDrafts(m.map((i) => i.label))
+        setMitbringLoading(false)
+      })
       void getPartyQuestions(partyId).then((q) => {
         if (cancelled) return
         setLoadedQuestions(q)
@@ -275,10 +295,13 @@ export default function EditPartyScreen({ partyId }: { partyId: string }) {
   // Die Fragen gehoeren zu derselben ungespeicherten Arbeit wie die Umfragen.
   const questionsChanged =
     JSON.stringify(questionDrafts) !== JSON.stringify(loadedQuestions.map(toQuestionDraft))
+  const mitbringChanged =
+    JSON.stringify(mitbringDrafts) !== JSON.stringify(loadedMitbring.map((i) => i.label))
   // Der Hintergrund ebenso. Eine gewaehlte Datei ist immer eine Aenderung; ein Motiv
   // nur, wenn es ein anderes ist als das gespeicherte.
   const backgroundChanged = bgFile !== null || (bgPreset !== null && bgPreset !== storedBg)
-  const changed = !loading && (current !== stored || poolsChanged || questionsChanged || backgroundChanged)
+  const changed =
+    !loading && (current !== stored || poolsChanged || questionsChanged || mitbringChanged || backgroundChanged)
   // Der Kapazitaets-Trigger auf rsvps prueft nur beim Zusagen, nie beim Aendern der
   // Grenze. Ohne diese Regel liesse sich die Gaestezahl unter die Zahl der bereits
   // Zugesagten senken — die Party stuende dann auf '8 von 3', und niemand fliegt
@@ -441,6 +464,26 @@ export default function EditPartyScreen({ partyId }: { partyId: string }) {
     return failed
   }
 
+  // Nach Position abgeglichen, und umbenannt statt ersetzt — dieselbe Begruendung wie
+  // bei den Optionen einer Umfrage: die Beanspruchung haengt per ON DELETE CASCADE am
+  // Gegenstand. Wer 'Chips' zu 'Chips und Dips' praezisiert, naehme sonst dem Gast
+  // seine Zusage weg, ohne es zu merken.
+  const saveMitbring = async (): Promise<number> => {
+    const old = loadedMitbring
+    const writes = await Promise.all([
+      // null steht fuer die Gegenstaende, die unveraendert blieben und deshalb gar
+      // nicht erst geschrieben wurden — die koennen auch nicht scheitern.
+      ...mitbringDrafts
+        .slice(0, old.length)
+        .map((label, i) =>
+          label === old[i].label ? Promise.resolve(null) : updateMitbringItem(old[i].id, label)
+        ),
+      ...old.slice(mitbringDrafts.length).map((item) => deleteMitbringItem(item.id)),
+      ...mitbringDrafts.slice(old.length).map((label) => createMitbringItem(partyId, label)),
+    ])
+    return writes.filter((result) => result !== null && result.error).length
+  }
+
   const handleSave = async () => {
     if (!canSave) return
     setSaving(true)
@@ -508,6 +551,7 @@ export default function EditPartyScreen({ partyId }: { partyId: string }) {
 
     const failedPools = await savePools()
     const failedQuestions = await saveQuestions()
+    const failedMitbring = await saveMitbring()
     setSaving(false)
 
     if (bgFailed) {
@@ -535,6 +579,14 @@ export default function EditPartyScreen({ partyId }: { partyId: string }) {
         failedQuestions === 1
           ? 'Eine Frage konnte nicht gespeichert werden. Alle anderen Änderungen wurden übernommen.'
           : `${failedQuestions} Fragen konnten nicht gespeichert werden. Alle anderen Änderungen wurden übernommen.`
+      )
+    }
+
+    if (failedMitbring > 0) {
+      alertError(
+        failedMitbring === 1
+          ? 'Ein Gegenstand der Mitbring-Liste konnte nicht gespeichert werden. Alle anderen Änderungen wurden übernommen.'
+          : `${failedMitbring} Gegenstände der Mitbring-Liste konnten nicht gespeichert werden. Alle anderen Änderungen wurden übernommen.`
       )
     }
 
@@ -658,6 +710,25 @@ export default function EditPartyScreen({ partyId }: { partyId: string }) {
               })
             }}
           />
+        </div>
+      </SettingsPage>
+    )
+  }
+
+  if (view === 'mitbring') {
+    return (
+      <SettingsPage title='Mitbringen' fill onBack={() => setView('main')}>
+        <div className='mt-auto flex w-full flex-col gap-3'>
+          {mitbringLoading ? (
+            // Eine Karte aus zwei 50px-Zeilen plus der Hinzufuegen-Zeile.
+            <div className='h-37.5 w-full rounded-[25px] skeleton' />
+          ) : (
+            <MitbringItemsEditor
+              items={mitbringDrafts}
+              onChange={setMitbringDrafts}
+              max={MITBRING_MAX}
+            />
+          )}
         </div>
       </SettingsPage>
     )
@@ -973,6 +1044,14 @@ export default function EditPartyScreen({ partyId }: { partyId: string }) {
                 <button type='button' onClick={() => setView('questions')} className={rowClass}>
                   <span className={rowLabelClass}>Fragen</span>
                   <span className={`ml-auto ${rowValueClass}`}>{questionDrafts.length}</span>
+                  {chevron}
+                </button>
+
+                <RowDivider />
+
+                <button type='button' onClick={() => setView('mitbring')} className={rowClass}>
+                  <span className={rowLabelClass}>Mitbringen</span>
+                  <span className={`ml-auto ${rowValueClass}`}>{mitbringDrafts.length}</span>
                   {chevron}
                 </button>
 

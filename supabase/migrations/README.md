@@ -98,3 +98,17 @@ eine Zeile in `pools` mit `type = 'text_only'`, eine Antwort eine Zeile in
 Wer also nach einer Tabelle `questions` sucht, sucht vergeblich — die Trennung der
 beiden Features passiert im Code, in `features/parties/services/questions.service.ts`
 und im Typfilter in `pools.service.ts`.
+
+## Die beiden Mitbring-Migrationen
+
+`20260919132250_create_the_mitbring_list.sql` und
+`20260919132303_hand_out_the_mitbring_list_and_its_claims.sql` (Version 1.5.0) legen
+`mitbring_items` und `mitbring_claims` an, samt RLS und den beiden RPCs. Die
+Dateinamen tragen die Versionen, unter denen sie tatsächlich angewendet wurden —
+so, wie die Regel oben es verlangt.
+
+Das Stück, das beim Lesen leicht untergeht: `mitbring_claims.event_id` ist
+absichtlich verdoppelt, damit `unique (event_id, claimed_by)` „eine Beanspruchung
+pro Person und Party" halten kann. Abgesichert wird diese Verdopplung durch den
+zusammengesetzten Fremdschlüssel auf `(item_id, event_id)` — ohne ihn liesse sich
+die Regel mit einer fremden `event_id` umgehen.

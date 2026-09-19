@@ -19,12 +19,14 @@ import PoolDraftForm from './components/PoolDraftForm'
 import PoolDraftCard from './components/PoolDraftCard'
 import QuestionDraftForm from './components/QuestionDraftForm'
 import QuestionDraftCard from './components/QuestionDraftCard'
+import MitbringItemsEditor from './components/MitbringItemsEditor'
 import Switch from '@/components/shared/Switch'
 import Collapse from '@/components/shared/Collapse'
 import WarningBanner from '@/components/shared/WarningBanner'
 import { createParty } from './services/parties.service'
 import { createPool, addPoolOption } from './services/pools.service'
 import { createQuestion } from './services/questions.service'
+import { createMitbringItem } from './services/mitbring.service'
 import type { CreatePartyFormValues, PoolDraft, QuestionDraft } from './types/parties.types'
 
 
@@ -44,13 +46,16 @@ const POOLS_MAX = 5
 // Dieselbe Obergrenze wie bei den Umfragen, und getrennt davon gezaehlt: fuenf
 // Umfragen und fuenf Fragen sind zwei Listen, nicht eine gemeinsame.
 const QUESTIONS_MAX = 5
+// Eine Mitbring-Liste ist laenger als eine Fragenliste — sie zaehlt Gegenstaende auf,
+// keine Themen.
+const MITBRING_MAX = 30
 // Matches Collapse's duration: a deleted poll folds away before it is dropped.
 const COLLAPSE_MS = 300
 
 // Ready-made party backgrounds from /public: picking one writes its path straight
 // into parties.background_url, so nothing is uploaded.
 
-type StepId = 'name' | 'description' | 'date' | 'time' | 'location' | 'guests' | 'background' | 'pools' | 'questions' | 'motto' | 'dresscode' | 'done'
+type StepId = 'name' | 'description' | 'date' | 'time' | 'location' | 'guests' | 'background' | 'pools' | 'questions' | 'mitbring' | 'motto' | 'dresscode' | 'done'
 
 // Background sits with the other required answers (name, date, time, location) and
 // ahead of the optional ones, since it is the only later step that cannot be skipped.
@@ -58,7 +63,7 @@ type StepId = 'name' | 'description' | 'date' | 'time' | 'location' | 'guests' |
 // dort wird die Party angelegt, nicht mehr beim Polls- oder Motto-Schritt.
 // Die Fragen stehen direkt hinter den Umfragen: beides sind Inhalte fuer die
 // Partyseite, waehrend Motto und Dresscode wieder die Party selbst beschreiben.
-const STEPS: StepId[] = ['name', 'date', 'time', 'location', 'background', 'description', 'guests', 'pools', 'questions', 'motto', 'dresscode', 'done']
+const STEPS: StepId[] = ['name', 'date', 'time', 'location', 'background', 'description', 'guests', 'pools', 'questions', 'mitbring', 'motto', 'dresscode', 'done']
 const QUESTION_COUNT = STEPS.length - 1
 
 const HEADLINES: Record<StepId, string> = {
@@ -71,6 +76,7 @@ const HEADLINES: Record<StepId, string> = {
   background: 'Hintergrundbild',
   pools: 'Umfragen hinzufügen',
   questions: 'Fragen hinzufügen',
+  mitbring: 'Was soll mitgebracht werden?',
   motto: 'Gibt es ein Motto?',
   dresscode: 'Gibt es einen Dresscode?',
   done: 'Deine Party ist bereit! 🎉',
@@ -93,6 +99,9 @@ export default function CreatePartyScreen() {
   const [localQuestions, setLocalQuestions] = useState<QuestionDraft[]>([])
   const [removingQuestionId, setRemovingQuestionId] = useState<string | null>(null)
   const removeQuestionTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined)
+  // Nur die Texte. Die Gegenstaende haben weder Optionen noch Beschreibung, es gibt
+  // also nichts zu entwerfen, das ueber eine Zeichenkette hinausginge.
+  const [localMitbring, setLocalMitbring] = useState<string[]>([])
   const [bgPreset, setBgPreset] = useState<string | null>(null)
   const [locationPicked, setLocationPicked] = useState(false)
   const [hasEndTime, setHasEndTime] = useState(false)
@@ -333,6 +342,23 @@ export default function CreatePartyScreen() {
         failedQuestions.length === 1
           ? `Die Frage „${failedQuestions[0]}“ konnte nicht angelegt werden. Die Party wurde trotzdem erstellt — du kannst die Frage beim Bearbeiten nachtragen.`
           : `${failedQuestions.length} Fragen konnten nicht angelegt werden. Die Party wurde trotzdem erstellt — du kannst sie beim Bearbeiten nachtragen.`
+      )
+    }
+
+    // Dieselbe Regel ein drittes Mal: die Party steht, ein gescheiterter Gegenstand
+    // bricht nichts ab, gemeldet wird er trotzdem.
+    const failedMitbring: string[] = []
+
+    for (const label of localMitbring) {
+      const { error: itemError } = await createMitbringItem(newPartyId, label)
+      if (itemError) failedMitbring.push(label)
+    }
+
+    if (failedMitbring.length > 0) {
+      alertError(
+        failedMitbring.length === 1
+          ? `„${failedMitbring[0]}“ konnte nicht auf die Mitbring-Liste gesetzt werden. Die Party wurde trotzdem erstellt — du kannst den Gegenstand beim Bearbeiten nachtragen.`
+          : `${failedMitbring.length} Gegenstände konnten nicht auf die Mitbring-Liste gesetzt werden. Die Party wurde trotzdem erstellt — du kannst sie beim Bearbeiten nachtragen.`
       )
     }
 
@@ -612,6 +638,25 @@ export default function CreatePartyScreen() {
             </button>
           </div>
         )}
+      </CreateStepLayout>
+    )
+  }
+
+  if (step === 'mitbring') {
+    return (
+      <CreateStepLayout
+        headline={HEADLINES.mitbring}
+        onCancel={() => router.push('/parties')}
+        onSkip={skipStep}
+        onPrimary={handleNext}
+        // Waechst mit jedem Gegenstand — bis zu dreissig passen nicht unter eine
+        // gepinnte Leiste.
+        pinnedControls={false}
+        stepCount={QUESTION_COUNT}
+        currentStep={stepIndex}
+        onSelectStep={handleSelectStep}
+      >
+        <MitbringItemsEditor items={localMitbring} onChange={setLocalMitbring} max={MITBRING_MAX} />
       </CreateStepLayout>
     )
   }
