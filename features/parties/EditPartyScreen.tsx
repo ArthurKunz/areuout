@@ -23,6 +23,8 @@ import Switch from '@/components/shared/Switch'
 import FloatingEmojis from './components/FloatingEmojis'
 import PoolDraftCard from './components/PoolDraftCard'
 import PoolDraftForm from './components/PoolDraftForm'
+import QuestionDraftCard from './components/QuestionDraftCard'
+import QuestionDraftForm from './components/QuestionDraftForm'
 import AddressSearchField from './components/AddressSearchField'
 import BackgroundPicker from './components/BackgroundPicker'
 import PartyDateSheet, { type PartyDate } from './components/PartyDateSheet'
@@ -36,6 +38,7 @@ import {
   updatePoolOption,
   deletePoolOption,
 } from './services/pools.service'
+import { getPartyQuestions, createQuestion, updateQuestion } from './services/questions.service'
 import { getPartyAttendees } from './services/parties.service'
 
 import { BG_BUCKET, BG_MAX_BYTES, BG_PRESETS } from './constants/background.constants'
@@ -43,13 +46,15 @@ import { stripMetadataAndResize, BACKGROUND_MAX_EDGE } from '@/lib/image'
 import { removeStorageFileByUrl } from '@/lib/storage'
 import { supabase as db } from '@/lib/supabase/client'
 
-import type { Pool, PoolDraft } from './types/parties.types'
+import type { Pool, PoolDraft, Question, QuestionDraft } from './types/parties.types'
 
 const TITLE_MAX = 20
 // Wie im Erstellen-Flow: dasselbe Limit wie der Name.
 const MOTTO_MAX = 20
 const DRESSCODE_MAX = 20
 const POOLS_MAX = 5
+// Getrennt von den Umfragen gezaehlt, wie im Erstellen-Flow.
+const QUESTIONS_MAX = 5
 // Matches Collapse's duration: a removed poll folds away before it is dropped.
 const COLLAPSE_MS = 300
 
@@ -59,6 +64,11 @@ const toDraft = (pool: Pool): PoolDraft => ({
   description: pool.description,
   options: pool.options.map((o) => o.label),
   allow_multiple: pool.allow_multiple,
+})
+const toQuestionDraft = (question: Question): QuestionDraft => ({
+  id: question.id,
+  question: question.question,
+  description: question.description,
 })
 const DESCRIPTION_MAX = 500
 const GUESTS_MAX = 500
@@ -134,13 +144,23 @@ export default function EditPartyScreen({ partyId }: { partyId: string }) {
   // written until this screen is saved — and a working copy cannot survive a route
   // change. `loadedPools` is what the database holds; `poolDrafts` is what the host
   // has made of it, and the difference between the two is what save has to apply.
-  const [view, setView] = useState<'main' | 'pools' | 'poolform' | 'location' | 'background'>('main')
+  const [view, setView] = useState<'main' | 'pools' | 'poolform' | 'questions' | 'questionform' | 'location' | 'background'>('main')
   const [loadedPools, setLoadedPools] = useState<Pool[]>([])
   const [poolDrafts, setPoolDrafts] = useState<PoolDraft[]>([])
   const [editingPool, setEditingPool] = useState<PoolDraft | null>(null)
   const [poolsLoading, setPoolsLoading] = useState(true)
   const [removingPoolId, setRemovingPoolId] = useState<string | null>(null)
   const removePoolTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined)
+
+  // Die Fragen liegen aus demselben Grund hier und nicht auf einer eigenen Route:
+  // geschrieben wird erst beim Speichern dieses Screens, und eine Arbeitskopie
+  // ueberlebt keinen Routenwechsel.
+  const [loadedQuestions, setLoadedQuestions] = useState<Question[]>([])
+  const [questionDrafts, setQuestionDrafts] = useState<QuestionDraft[]>([])
+  const [editingQuestion, setEditingQuestion] = useState<QuestionDraft | null>(null)
+  const [questionsLoading, setQuestionsLoading] = useState(true)
+  const [removingQuestionId, setRemovingQuestionId] = useState<string | null>(null)
+  const removeQuestionTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined)
 
   useEffect(() => {
     let cancelled = false
@@ -209,12 +229,19 @@ export default function EditPartyScreen({ partyId }: { partyId: string }) {
         setPoolDrafts(p.map(toDraft))
         setPoolsLoading(false)
       })
+      void getPartyQuestions(partyId).then((q) => {
+        if (cancelled) return
+        setLoadedQuestions(q)
+        setQuestionDrafts(q.map(toQuestionDraft))
+        setQuestionsLoading(false)
+      })
       void getPartyAttendees(partyId).then((a) => !cancelled && setGuestCount(a.filter((x) => x.status === 'going').length))
     })
 
     return () => {
       cancelled = true
       clearTimeout(removePoolTimer.current)
+      clearTimeout(removeQuestionTimer.current)
     }
   }, [partyId, router])
 
@@ -245,10 +272,13 @@ export default function EditPartyScreen({ partyId }: { partyId: string }) {
   // Polls are part of the same unsaved work, so they belong in the same question the
   // back button asks.
   const poolsChanged = JSON.stringify(poolDrafts) !== JSON.stringify(loadedPools.map(toDraft))
+  // Die Fragen gehoeren zu derselben ungespeicherten Arbeit wie die Umfragen.
+  const questionsChanged =
+    JSON.stringify(questionDrafts) !== JSON.stringify(loadedQuestions.map(toQuestionDraft))
   // Der Hintergrund ebenso. Eine gewaehlte Datei ist immer eine Aenderung; ein Motiv
   // nur, wenn es ein anderes ist als das gespeicherte.
   const backgroundChanged = bgFile !== null || (bgPreset !== null && bgPreset !== storedBg)
-  const changed = !loading && (current !== stored || poolsChanged || backgroundChanged)
+  const changed = !loading && (current !== stored || poolsChanged || questionsChanged || backgroundChanged)
   // Der Kapazitaets-Trigger auf rsvps prueft nur beim Zusagen, nie beim Aendern der
   // Grenze. Ohne diese Regel liesse sich die Gaestezahl unter die Zahl der bereits
   // Zugesagten senken — die Party stuende dann auf '8 von 3', und niemand fliegt
@@ -278,6 +308,15 @@ export default function EditPartyScreen({ partyId }: { partyId: string }) {
       if (prev) URL.revokeObjectURL(prev)
       return URL.createObjectURL(picked)
     })
+  }
+
+  const removeQuestion = (id: string) => {
+    if (removingQuestionId) return
+    setRemovingQuestionId(id)
+    removeQuestionTimer.current = setTimeout(() => {
+      setQuestionDrafts((prev) => prev.filter((q) => q.id !== id))
+      setRemovingQuestionId(null)
+    }, COLLAPSE_MS)
   }
 
   const removePool = (id: string) => {
@@ -362,6 +401,46 @@ export default function EditPartyScreen({ partyId }: { partyId: string }) {
     return failed
   }
 
+  // Wie savePools, nur ohne den Optionsabgleich: eine Frage hat nichts, was in
+  // seiner Position erhalten bleiben muesste. Geloescht wird zuerst, danach wird
+  // angelegt, uebersprungen oder aktualisiert. Gibt zurueck, wie viele Fragen NICHT
+  // durchgingen — wer auf speichern drueckt, erwartet, dass gespeichert wurde.
+  const saveQuestions = async (): Promise<number> => {
+    let failed = 0
+    const keptIds = new Set(questionDrafts.map((d) => d.id))
+
+    // Eine Frage IST eine pools-Zeile, deshalb loescht deletePool sie mit. Die
+    // Antworten gehen per Kaskade mit ihr.
+    const deletions = await Promise.all(
+      loadedQuestions.filter((q) => !keptIds.has(q.id)).map((q) => deletePool(q.id))
+    )
+    failed += deletions.filter((result) => result.error).length
+
+    for (const d of questionDrafts) {
+      const existing = loadedQuestions.find((q) => q.id === d.id)
+
+      if (!existing) {
+        const { error } = await createQuestion({
+          event_id: partyId,
+          question: d.question,
+          description: d.description,
+        })
+        if (error) failed++
+        continue
+      }
+
+      if (JSON.stringify(toQuestionDraft(existing)) === JSON.stringify(d)) continue
+
+      const { error } = await updateQuestion(existing.id, {
+        question: d.question,
+        description: d.description,
+      })
+      if (error) failed++
+    }
+
+    return failed
+  }
+
   const handleSave = async () => {
     if (!canSave) return
     setSaving(true)
@@ -428,6 +507,7 @@ export default function EditPartyScreen({ partyId }: { partyId: string }) {
     }
 
     const failedPools = await savePools()
+    const failedQuestions = await saveQuestions()
     setSaving(false)
 
     if (bgFailed) {
@@ -445,6 +525,16 @@ export default function EditPartyScreen({ partyId }: { partyId: string }) {
         failedPools === 1
           ? 'Eine Umfrage konnte nicht gespeichert werden. Alle anderen Änderungen wurden übernommen.'
           : `${failedPools} Umfragen konnten nicht gespeichert werden. Alle anderen Änderungen wurden übernommen.`
+      )
+    }
+
+    // Eigene Meldung, aus demselben Grund wie im Erstellen-Flow: der Gastgeber soll
+    // sehen, WAS nicht gespeichert wurde, nicht nur dass etwas fehlschlug.
+    if (failedQuestions > 0) {
+      alertError(
+        failedQuestions === 1
+          ? 'Eine Frage konnte nicht gespeichert werden. Alle anderen Änderungen wurden übernommen.'
+          : `${failedQuestions} Fragen konnten nicht gespeichert werden. Alle anderen Änderungen wurden übernommen.`
       )
     }
 
@@ -483,6 +573,31 @@ export default function EditPartyScreen({ partyId }: { partyId: string }) {
             )
             setEditingPool(null)
             setView('pools')
+          }}
+        />
+      </div>
+    )
+  }
+
+  if (view === 'questionform') {
+    return (
+      // Wie PoolDraftForm bringt das Formular keinen eigenen Hintergrund mit: im
+      // Erstellen-Flow sitzt es in derselben Huelle.
+      <div className='relative w-full min-h-dvh bg-main'>
+        <FloatingEmojis active />
+        <QuestionDraftForm
+          commit='onBack'
+          draft={editingQuestion ?? undefined}
+          onCancel={() => {
+            setEditingQuestion(null)
+            setView('questions')
+          }}
+          onAdd={(d) => {
+            setQuestionDrafts((prev) =>
+              prev.some((q) => q.id === d.id) ? prev.map((q) => (q.id === d.id ? d : q)) : [...prev, d]
+            )
+            setEditingQuestion(null)
+            setView('questions')
           }}
         />
       </div>
@@ -543,6 +658,66 @@ export default function EditPartyScreen({ partyId }: { partyId: string }) {
               })
             }}
           />
+        </div>
+      </SettingsPage>
+    )
+  }
+
+  if (view === 'questions') {
+    return (
+      <SettingsPage title='Fragen' fill onBack={() => setView('main')}>
+        {/* Wie die Umfragen-Unterseite: der Block haengt unten (`mt-auto`), die
+            Hinzufuegen-Zeile steht zuletzt, und die Seite waechst nach oben. */}
+        <div className='mt-auto flex w-full flex-col gap-3'>
+        {questionsLoading ? (
+          // Eine Fragenkarte ist eine 50px-Zeile plus hoechstens eine fuer die
+          // Details — also 100px, zweimal.
+          <div className='flex flex-col gap-3'>
+            <div className='h-25 w-full rounded-[25px] skeleton' />
+            <div className='h-25 w-full rounded-[25px] skeleton' />
+          </div>
+        ) : (
+        <>
+        {/* Eigene Spalte ohne gap, damit eine geloeschte Frage kein Loch hinterlaesst. */}
+        <div className='flex flex-col'>
+          {questionDrafts.map((question) => (
+            <Collapse key={question.id} open={question.id !== removingQuestionId}>
+              <div className='pb-3'>
+                <QuestionDraftCard
+                  question={question}
+                  deleting={question.id === removingQuestionId}
+                  onEdit={() => {
+                    setEditingQuestion(question)
+                    setView('questionform')
+                  }}
+                  onDelete={() => removeQuestion(question.id)}
+                />
+              </div>
+            </Collapse>
+          ))}
+        </div>
+
+        {questionDrafts.length >= QUESTIONS_MAX ? (
+          <WarningBanner message={`Maximal ${QUESTIONS_MAX} Fragen`} />
+        ) : (
+          <div className={cardClass}>
+            <button
+              type='button'
+              onClick={() => {
+                setEditingQuestion(null)
+                setView('questionform')
+              }}
+              className={rowClass}
+            >
+              <span className='flex h-6 w-6 items-center justify-center rounded-full bg-success'>
+                <Plus size={16} strokeWidth={3} className='text-white' />
+              </span>
+              <span className='text-button text-label-large'>Frage hinzufügen</span>
+            </button>
+          </div>
+        )}
+        </>
+        )}
         </div>
       </SettingsPage>
     )
@@ -790,6 +965,14 @@ export default function EditPartyScreen({ partyId }: { partyId: string }) {
                 <button type='button' onClick={() => setView('pools')} className={rowClass}>
                   <span className={rowLabelClass}>Umfragen</span>
                   <span className={`ml-auto ${rowValueClass}`}>{poolDrafts.length}</span>
+                  {chevron}
+                </button>
+
+                <RowDivider />
+
+                <button type='button' onClick={() => setView('questions')} className={rowClass}>
+                  <span className={rowLabelClass}>Fragen</span>
+                  <span className={`ml-auto ${rowValueClass}`}>{questionDrafts.length}</span>
                   {chevron}
                 </button>
 

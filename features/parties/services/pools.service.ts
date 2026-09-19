@@ -25,6 +25,10 @@ export async function getPartyPools(partyId: string): Promise<Pool[]> {
       .from('pools')
       .select('id, event_id, question, description, type, allow_text_response, allow_multiple, created_at')
       .eq('event_id', partyId)
+      // Auf derselben Tabelle liegen auch die Fragen, als type = 'text_only'. Ohne
+      // diese Zeile stuenden sie hier als Umfragen ohne eine einzige Option.
+      // Begruendung in questions.service.ts.
+      .eq('type', 'options')
       .order('created_at'),
     supabase.rpc('get_pool_responses_by_event', { p_event_id: partyId }),
   ])
@@ -68,7 +72,9 @@ export async function getPartyPoolsByInviteCode(inviteCode: string, partyId: str
     supabase.rpc('get_pool_responses_by_event', { p_event_id: partyId }),
   ])
 
-  const pools = (poolJson ?? []) as Omit<Pool, 'responses'>[]
+  // Der RPC kennt den Unterschied nicht und gibt beides heraus, Umfragen wie Fragen —
+  // derselbe Filter wie oben, nur hier im Client, weil die Funktion fest steht.
+  const pools = ((poolJson ?? []) as Omit<Pool, 'responses'>[]).filter((p) => p.type === 'options')
   const responses = (responseRows ?? []) as PoolResponse[]
 
   return pools.map((pool) => ({ ...pool, responses: responses.filter((r) => r.pool_id === pool.id) }))

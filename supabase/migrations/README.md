@@ -84,3 +84,17 @@ Version verwenden, unter der sie tatsächlich angewendet wird. Die beiden jüngs
 Migrationen (`20260820230141_…`, `20260820230226_…`) sind genau so benannt — ihre
 Dateinamen tragen die Versionsnummern, die auf der Datenbank stehen, nicht die
 Uhrzeit, zu der sie geschrieben wurden.
+
+## Warum zum Fragen-Feature keine Migration hier liegt
+
+Die Fragen (Version 1.4.0) haben keine eigenen Tabellen bekommen. Eine Frage ist
+eine Zeile in `pools` mit `type = 'text_only'`, eine Antwort eine Zeile in
+`pool_responses` mit `option_id = null`. Beides sah die Datenbank schon vor:
+`pools_type_check` erlaubt `'text_only'` seit der ersten Pools-Migration,
+`text_response` steht samt Längen-CHECK in `pool_responses`,
+`get_pool_responses_by_event` gibt den Freitext heraus und
+`set_single_pool_response` schreibt den Antwortwechsel in einer Transaktion.
+
+Wer also nach einer Tabelle `questions` sucht, sucht vergeblich — die Trennung der
+beiden Features passiert im Code, in `features/parties/services/questions.service.ts`
+und im Typfilter in `pools.service.ts`.
