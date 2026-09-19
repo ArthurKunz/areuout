@@ -6,13 +6,13 @@ davon nichts — der Tag, an dem es weh tut, ist der, an dem eine Staging-Umgebu
 gebraucht wird, das Projekt neu aufgesetzt werden muss oder ein Backup zurückgespielt
 wird.
 
-Stand 18.09.2026, gezählt gegen `supabase_migrations.schema_migrations` auf der
+Stand 19.09.2026, gezählt gegen `supabase_migrations.schema_migrations` auf der
 Live-Datenbank:
 
 | | Anzahl |
 |---|---|
-| Dateien in diesem Ordner | 49 |
-| Migrationen auf der Datenbank | 71 |
+| Dateien in diesem Ordner | 51 |
+| Migrationen auf der Datenbank | 73 |
 | davon **nur** hier, nie angewendet | 0 |
 
 Die Zuordnung der beiden Spalten ist **nicht** über die Dateinamen möglich: 27 Dateien
@@ -22,10 +22,12 @@ beschrieben ist — sie betrifft in Wahrheit deutlich mehr. Wer eine belastbare 
 für „nur auf der Datenbank" braucht, muss über `statements` vergleichen, nicht über
 die Namen.
 
-Die beiden jüngsten Dateien (`20260918214647_add_a_motto_to_a_party.sql`,
-`20260918214737_hand_out_the_motto_with_the_invite.sql`) gehören zum Motto-Feature und
-tragen die Versionen, unter denen sie tatsächlich angewendet wurden — die Regel ganz
-unten, befolgt.
+Die vier jüngsten Dateien (`20260918214647_add_a_motto_to_a_party.sql`,
+`20260918214737_hand_out_the_motto_with_the_invite.sql`,
+`20260919112857_add_a_dresscode_to_a_party.sql`,
+`20260919112921_hand_out_the_dresscode_with_the_invite.sql`) gehören zum Motto- und zum
+Dresscode-Feature und tragen die Versionen, unter denen sie tatsächlich angewendet
+wurden — die Regel ganz unten, befolgt.
 
 ## Die drei gefährlichen Dateien sind weg
 

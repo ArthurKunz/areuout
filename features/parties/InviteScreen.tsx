@@ -304,6 +304,7 @@ export default function InviteScreen({ inviteCode }: { inviteCode: string }) {
         // die Location bekommt es keine Sonderbehandlung fuer vergangene Partys — das
         // betrifft allein die Wohnanschrift, nicht Datum, Uhrzeit oder Motto.
         ...(party.motto ? [{ label: 'Motto', value: party.motto }] : []),
+        ...(party.dresscode ? [{ label: 'Dresscode', value: party.dresscode }] : []),
         {
           label: 'Datum',
           value: new Date(party.event_date).toLocaleDateString('de-DE', {

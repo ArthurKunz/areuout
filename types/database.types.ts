@@ -44,6 +44,7 @@ export type Database = {
           background_url: string | null
           created_at: string | null
           description: string | null
+          dresscode: string | null
           ends_at: string | null
           event_date: string
           host_id: string
@@ -58,6 +59,7 @@ export type Database = {
           background_url?: string | null
           created_at?: string | null
           description?: string | null
+          dresscode?: string | null
           ends_at?: string | null
           event_date: string
           host_id: string
@@ -72,6 +74,7 @@ export type Database = {
           background_url?: string | null
           created_at?: string | null
           description?: string | null
+          dresscode?: string | null
           ends_at?: string | null
           event_date?: string
           host_id?: string
@@ -353,6 +356,7 @@ export type Database = {
         Returns: {
           background_url: string
           description: string
+          dresscode: string
           ends_at: string
           event_date: string
           host_id: string

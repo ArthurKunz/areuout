@@ -281,6 +281,9 @@ export default function PartyDetailScreen({ partyId }: { partyId: string }) {
         // Scrollen auf dem Schirm. Ohne Motto entsteht kein Eintrag und die Zeile
         // sieht aus wie zuvor — dasselbe Muster wie bei Max. Gäste weiter unten.
         ...(party.motto ? [{ label: 'Motto', value: party.motto }] : []),
+        // Direkt hinter dem Motto, aus demselben Grund und nach derselben Regel: ohne
+        // Dresscode entsteht kein Eintrag.
+        ...(party.dresscode ? [{ label: 'Dresscode', value: party.dresscode }] : []),
         {
           label: 'Datum',
           value: new Date(party.event_date).toLocaleDateString('de-DE', {
