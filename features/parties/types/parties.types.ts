@@ -3,6 +3,7 @@ export type CreatePartyPayload = {
   title: string
   description: string | null
   motto: string | null
+  dresscode: string | null
   invite_code: string
   event_date: string
   // When the party ends. Null when the host leaves it open; the next day when the
@@ -16,6 +17,7 @@ export type CreatePartyFormValues = {
   title: string
   description: string
   motto: string
+  dresscode: string
   day: string
   month: string
   year: string
@@ -51,6 +53,7 @@ export type PartyDetail = {
   title: string
   description: string | null
   motto: string | null
+  dresscode: string | null
   event_date: string
   ends_at: string | null
   location: string

@@ -48,6 +48,7 @@ import type { Pool, PoolDraft } from './types/parties.types'
 const TITLE_MAX = 20
 // Wie im Erstellen-Flow: dasselbe Limit wie der Name.
 const MOTTO_MAX = 20
+const DRESSCODE_MAX = 20
 const POOLS_MAX = 5
 // Matches Collapse's duration: a removed poll folds away before it is dropped.
 const COLLAPSE_MS = 300
@@ -97,6 +98,7 @@ export default function EditPartyScreen({ partyId }: { partyId: string }) {
   const [title, setTitle] = useState('')
   const [description, setDescription] = useState('')
   const [motto, setMotto] = useState('')
+  const [dresscode, setDresscode] = useState('')
   const [location, setLocation] = useState('')
   // Getrennt gehalten wie im Erstellen-Flow: die Suche liefert Strasse und Stadt
   // einzeln, gespeichert wird die Zusammensetzung. Beim Laden wird am LETZTEN Komma
@@ -163,6 +165,7 @@ export default function EditPartyScreen({ partyId }: { partyId: string }) {
       setTitle(party.title)
       setDescription(party.description ?? '')
       setMotto(party.motto ?? '')
+      setDresscode(party.dresscode ?? '')
       setHostId(session.user.id)
       setStoredBg(party.background_url ?? null)
       // Ist der gespeicherte Wert eines der acht Motive, steht sein Haken von Anfang
@@ -191,6 +194,7 @@ export default function EditPartyScreen({ partyId }: { partyId: string }) {
           title: party.title.trim(),
           description: (party.description ?? '').trim(),
           motto: (party.motto ?? '').trim(),
+          dresscode: (party.dresscode ?? '').trim(),
           location: party.location.trim(),
           maxGuests: party.max_guests != null ? String(party.max_guests) : '',
           iso: storedStart.toISOString(),
@@ -232,6 +236,7 @@ export default function EditPartyScreen({ partyId }: { partyId: string }) {
     title: title.trim(),
     description: description.trim(),
     motto: motto.trim(),
+    dresscode: dresscode.trim(),
     location: fullLocation,
     maxGuests,
     iso: startDate.toISOString(),
@@ -366,6 +371,7 @@ export default function EditPartyScreen({ partyId }: { partyId: string }) {
       // Geleert heisst null, nicht '': nur so verschwindet die Spalte in der
       // Faktenzeile wieder.
       motto: motto.trim() || null,
+      dresscode: dresscode.trim() || null,
       location: fullLocation,
       max_guests: maxGuests ? parseInt(maxGuests, 10) : null,
       event_date: startDate.toISOString(),
@@ -661,6 +667,22 @@ export default function EditPartyScreen({ partyId }: { partyId: string }) {
                     onFocus={caretToEnd}
                     maxLength={MOTTO_MAX}
                     placeholder='z.B. Neon Night'
+                    className={rowInputClass}
+                  />
+                </label>
+
+                <RowDivider />
+
+                {/* Direkt hinter dem Motto — dieselbe Reihenfolge, in der die
+                    Faktenzeile der Partyseite die beiden zeigt. */}
+                <label className={rowClass}>
+                  <span className={rowLabelClass}>Dresscode</span>
+                  <input
+                    value={dresscode}
+                    onChange={(e) => setDresscode(e.target.value)}
+                    onFocus={caretToEnd}
+                    maxLength={DRESSCODE_MAX}
+                    placeholder='z.B. Casual'
                     className={rowInputClass}
                   />
                 </label>

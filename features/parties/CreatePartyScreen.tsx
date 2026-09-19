@@ -33,6 +33,8 @@ const TITLE_MAX = 20
 // Dasselbe Limit wie der Name, und aus demselben Grund: das Motto steht in der
 // Faktenzeile der Partyseite, die nicht umbricht, sondern seitlich scrollt.
 const MOTTO_MAX = 20
+// Derselbe Grund und dieselbe Zahl: der Dresscode steht in derselben Faktenzeile.
+const DRESSCODE_MAX = 20
 const DESCRIPTION_MAX = 500
 const GUESTS_MAX = 500
 const POOLS_MAX = 5
@@ -42,13 +44,13 @@ const COLLAPSE_MS = 300
 // Ready-made party backgrounds from /public: picking one writes its path straight
 // into parties.background_url, so nothing is uploaded.
 
-type StepId = 'name' | 'description' | 'date' | 'time' | 'location' | 'guests' | 'background' | 'pools' | 'motto' | 'done'
+type StepId = 'name' | 'description' | 'date' | 'time' | 'location' | 'guests' | 'background' | 'pools' | 'motto' | 'dresscode' | 'done'
 
 // Background sits with the other required answers (name, date, time, location) and
 // ahead of the optional ones, since it is the only later step that cannot be skipped.
-// Das Motto steht hinter den Umfragen und ist damit die letzte Frage — dort wird die
-// Party angelegt, nicht mehr beim Polls-Schritt.
-const STEPS: StepId[] = ['name', 'date', 'time', 'location', 'background', 'description', 'guests', 'pools', 'motto', 'done']
+// Motto und Dresscode stehen hinter den Umfragen. Der Dresscode ist die letzte Frage —
+// dort wird die Party angelegt, nicht mehr beim Polls- oder Motto-Schritt.
+const STEPS: StepId[] = ['name', 'date', 'time', 'location', 'background', 'description', 'guests', 'pools', 'motto', 'dresscode', 'done']
 const QUESTION_COUNT = STEPS.length - 1
 
 const HEADLINES: Record<StepId, string> = {
@@ -61,6 +63,7 @@ const HEADLINES: Record<StepId, string> = {
   background: 'Hintergrundbild',
   pools: 'Umfragen hinzufügen',
   motto: 'Gibt es ein Motto?',
+  dresscode: 'Gibt es einen Dresscode?',
   done: 'Deine Party ist bereit! 🎉',
 }
 
@@ -88,6 +91,7 @@ export default function CreatePartyScreen() {
     title: '',
     description: '',
     motto: '',
+    dresscode: '',
     day: '',
     month: '',
     year: '',
@@ -204,6 +208,9 @@ export default function CreatePartyScreen() {
       // Leer bleibt null, nicht '': die Faktenzeile prueft auf den Wert, und eine
       // Party ohne Motto soll dort gar keine Spalte bekommen.
       motto: values.motto.trim() || null,
+      // Aus demselben Grund null statt '': ohne Dresscode gibt es in der Faktenzeile
+      // keinen Eintrag.
+      dresscode: values.dresscode.trim() || null,
       invite_code: code,
       event_date,
       ends_at,
@@ -334,8 +341,8 @@ export default function CreatePartyScreen() {
 
   const handleNext = () => {
     // Die letzte Frage legt die Party an, statt auf einen weiteren Schritt zu gehen.
-    // Das ist seit dem Motto-Schritt 'motto' und nicht mehr 'pools'.
-    if (step === 'motto') {
+    // Das ist seit dem Dresscode-Schritt 'dresscode' und nicht mehr 'motto'.
+    if (step === 'dresscode') {
       void handleFinish()
       return
     }
@@ -623,18 +630,18 @@ export default function CreatePartyScreen() {
     )
   }
 
-  if (step === 'name' || step === 'description' || step === 'guests' || step === 'motto') {
+  if (step === 'name' || step === 'description' || step === 'guests' || step === 'motto' || step === 'dresscode') {
     return (
       <CreateStepLayout
         headline={HEADLINES[step]}
         onCancel={() => router.push('/parties')}
-        // Das Motto ist die letzte Frage: ueberspringen heisst hier anlegen, nicht
+        // Der Dresscode ist die letzte Frage: ueberspringen heisst hier anlegen, nicht
         // weitergehen. Ein skipStep landete auf 'done', ohne dass die Party existiert.
-        onSkip={step === 'name' ? undefined : step === 'motto' ? () => void handleFinish() : skipStep}
+        onSkip={step === 'name' ? undefined : step === 'dresscode' ? () => void handleFinish() : skipStep}
         onPrimary={handleNext}
         primaryDisabled={!canContinue}
-        // Nur der Motto-Schritt legt an und braucht deshalb den Ladezustand.
-        busy={step === 'motto' && creating}
+        // Nur der Dresscode-Schritt legt an und braucht deshalb den Ladezustand.
+        busy={step === 'dresscode' && creating}
         stepCount={QUESTION_COUNT}
         currentStep={stepIndex}
         onSelectStep={handleSelectStep}
@@ -691,7 +698,7 @@ export default function CreatePartyScreen() {
                   onChange={(e) => setField('motto', e.target.value)}
                   onKeyDown={handleEnterAdvance}
                   placeholder='z.B. Neon Night'
-                  enterKeyHint='done'
+                  enterKeyHint='next'
                   maxLength={MOTTO_MAX}
                   className={rowInputClass}
                 />
@@ -699,6 +706,29 @@ export default function CreatePartyScreen() {
             </div>
             {values.motto.length >= MOTTO_MAX && (
               <WarningBanner message={`Maximal ${MOTTO_MAX} Zeichen`} />
+            )}
+          </>
+        )}
+
+        {step === 'dresscode' && (
+          <>
+            <div className={cardClass}>
+              <div className={rowClass}>
+                <span className={rowLabelClass}>Dresscode</span>
+                <input
+                  type='text'
+                  value={values.dresscode}
+                  onChange={(e) => setField('dresscode', e.target.value)}
+                  onKeyDown={handleEnterAdvance}
+                  placeholder='z.B. Casual'
+                  enterKeyHint='done'
+                  maxLength={DRESSCODE_MAX}
+                  className={rowInputClass}
+                />
+              </div>
+            </div>
+            {values.dresscode.length >= DRESSCODE_MAX && (
+              <WarningBanner message={`Maximal ${DRESSCODE_MAX} Zeichen`} />
             )}
           </>
         )}
