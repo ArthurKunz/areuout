@@ -10,7 +10,7 @@ export type Database = {
   // Allows to automatically instantiate createClient with right options
   // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
   __InternalSupabase: {
-    PostgrestVersion: "14.4"
+    PostgrestVersion: "14.5"
   }
   graphql_public: {
     Tables: {
@@ -91,6 +91,74 @@ export type Database = {
             columns: ["host_id"]
             isOneToOne: false
             referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      mitbring_claims: {
+        Row: {
+          claimed_by: string
+          created_at: string
+          event_id: string
+          id: string
+          item_id: string
+        }
+        Insert: {
+          claimed_by: string
+          created_at?: string
+          event_id: string
+          id?: string
+          item_id: string
+        }
+        Update: {
+          claimed_by?: string
+          created_at?: string
+          event_id?: string
+          id?: string
+          item_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "mitbring_claims_claimed_by_fkey"
+            columns: ["claimed_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "mitbring_claims_item_fkey"
+            columns: ["item_id", "event_id"]
+            isOneToOne: false
+            referencedRelation: "mitbring_items"
+            referencedColumns: ["id", "event_id"]
+          },
+        ]
+      }
+      mitbring_items: {
+        Row: {
+          created_at: string
+          event_id: string
+          id: string
+          label: string
+        }
+        Insert: {
+          created_at?: string
+          event_id: string
+          id?: string
+          label: string
+        }
+        Update: {
+          created_at?: string
+          event_id?: string
+          id?: string
+          label?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "mitbring_items_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "events"
             referencedColumns: ["id"]
           },
         ]
@@ -351,6 +419,17 @@ export type Database = {
           lastname: string
         }[]
       }
+      get_mitbring_claims_by_event: {
+        Args: { p_event_id: string }
+        Returns: {
+          avatar_color: string
+          avatar_url: string
+          claimed_by: string
+          firstname: string
+          item_id: string
+          lastname: string
+        }[]
+      }
       get_party_by_invite_code: {
         Args: { p_invite_code: string }
         Returns: {
@@ -367,6 +446,10 @@ export type Database = {
           motto: string
           title: string
         }[]
+      }
+      get_party_mitbring_by_invite_code: {
+        Args: { p_invite_code: string }
+        Returns: Json
       }
       get_party_pools_by_invite_code: {
         Args: { p_invite_code: string }
@@ -411,13 +494,17 @@ export type Database = {
         }[]
       }
       is_party_member: { Args: { p_event_id: string }; Returns: boolean }
-      set_single_pool_response: {
-        Args: { p_option_id: string; p_pool_id: string; p_text_response: string }
-        Returns: undefined
-      }
       party_has_room: {
         Args: { p_event_id: string; p_user_id: string }
         Returns: boolean
+      }
+      set_single_pool_response: {
+        Args: {
+          p_option_id: string
+          p_pool_id: string
+          p_text_response: string
+        }
+        Returns: undefined
       }
     }
     Enums: {
@@ -437,12 +524,12 @@ export type Tables<
   DefaultSchemaTableNameOrOptions extends
     | keyof (DefaultSchema["Tables"] & DefaultSchema["Views"])
     | { schema: keyof DatabaseWithoutInternals },
-  TableName extends DefaultSchemaTableNameOrOptions extends {
+  TableName extends (DefaultSchemaTableNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
     ? keyof (DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"] &
         DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Views"])
-    : never = never,
+    : never) = never,
 > = DefaultSchemaTableNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
@@ -466,11 +553,11 @@ export type TablesInsert<
   DefaultSchemaTableNameOrOptions extends
     | keyof DefaultSchema["Tables"]
     | { schema: keyof DatabaseWithoutInternals },
-  TableName extends DefaultSchemaTableNameOrOptions extends {
+  TableName extends (DefaultSchemaTableNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
     ? keyof DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
-    : never = never,
+    : never) = never,
 > = DefaultSchemaTableNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
@@ -491,11 +578,11 @@ export type TablesUpdate<
   DefaultSchemaTableNameOrOptions extends
     | keyof DefaultSchema["Tables"]
     | { schema: keyof DatabaseWithoutInternals },
-  TableName extends DefaultSchemaTableNameOrOptions extends {
+  TableName extends (DefaultSchemaTableNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
     ? keyof DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
-    : never = never,
+    : never) = never,
 > = DefaultSchemaTableNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
@@ -516,11 +603,11 @@ export type Enums<
   DefaultSchemaEnumNameOrOptions extends
     | keyof DefaultSchema["Enums"]
     | { schema: keyof DatabaseWithoutInternals },
-  EnumName extends DefaultSchemaEnumNameOrOptions extends {
+  EnumName extends (DefaultSchemaEnumNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
     ? keyof DatabaseWithoutInternals[DefaultSchemaEnumNameOrOptions["schema"]]["Enums"]
-    : never = never,
+    : never) = never,
 > = DefaultSchemaEnumNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
@@ -533,11 +620,11 @@ export type CompositeTypes<
   PublicCompositeTypeNameOrOptions extends
     | keyof DefaultSchema["CompositeTypes"]
     | { schema: keyof DatabaseWithoutInternals },
-  CompositeTypeName extends PublicCompositeTypeNameOrOptions extends {
+  CompositeTypeName extends (PublicCompositeTypeNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
     ? keyof DatabaseWithoutInternals[PublicCompositeTypeNameOrOptions["schema"]]["CompositeTypes"]
-    : never = never,
+    : never) = never,
 > = PublicCompositeTypeNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }

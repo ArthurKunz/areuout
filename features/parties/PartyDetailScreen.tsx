@@ -19,6 +19,7 @@ import {
 } from './services/parties.service'
 import { getPartyPools } from './services/pools.service'
 import { getPartyQuestions } from './services/questions.service'
+import { getPartyMitbring } from './services/mitbring.service'
 import Avatar from '@/components/shared/Avatar'
 import Spinner from '@/components/shared/Spinner'
 import Section from './components/Section'
@@ -26,13 +27,14 @@ import CapacityWarning, { isFull, isNearlyFull } from './components/CapacityWarn
 import PartyDescription from './components/PartyDescription'
 import PoolsSection from './components/PoolsSection'
 import QuestionsSection from './components/QuestionsSection'
+import MitbringSection from './components/MitbringSection'
 import AttendeeList from './components/AttendeeList'
 import PartyMap from './components/PartyMap'
 import WarningBanner from '@/components/shared/WarningBanner'
 import ConfirmDialog from '@/components/shared/ConfirmDialog'
 import InviteLinkCard from '@/components/shared/InviteLinkCard'
 import { primaryButtonClass } from '@/components/shared/Card'
-import type { PartyDetail, Attendee, PartyHost, RsvpStatus, Pool, Question } from './types/parties.types'
+import type { PartyDetail, Attendee, PartyHost, RsvpStatus, Pool, Question, MitbringItem } from './types/parties.types'
 
 const BackIcon = <ChevronLeft size={24} strokeWidth={3} className='text-white' />
 
@@ -91,15 +93,17 @@ export default function PartyDetailScreen({ partyId }: { partyId: string }) {
   const menuContentRef = useRef<HTMLDivElement>(null)
   const [pools, setPools] = useState<Pool[]>([])
   const [questions, setQuestions] = useState<Question[]>([])
+  const [mitbring, setMitbring] = useState<MitbringItem[]>([])
   const [myProfile, setMyProfile] = useState<Profile | null>(null)
   const [heroLoaded, setHeroLoaded] = useState(false)
-  const [openSections, setOpenSections] = useState({ location: true, polls: true, questions: true, guests: true })
+  const [openSections, setOpenSections] = useState({ location: true, polls: true, questions: true, mitbring: true, guests: true })
 
   // One flag per block, so every section clears its own skeleton the moment its data lands.
   const [partyLoading, setPartyLoading] = useState(true)
   const [countsLoading, setCountsLoading] = useState(true)
   const [poolsLoading, setPoolsLoading] = useState(true)
   const [questionsLoading, setQuestionsLoading] = useState(true)
+  const [mitbringLoading, setMitbringLoading] = useState(true)
   const [attendeesLoading, setAttendeesLoading] = useState(true)
 
   const toggleSection = (key: keyof typeof openSections) =>
@@ -167,6 +171,12 @@ export default function PartyDetailScreen({ partyId }: { partyId: string }) {
         setQuestionsLoading(false)
       })
 
+      void getPartyMitbring(partyId).then((data) => {
+        if (cancelled) return
+        setMitbring(data)
+        setMitbringLoading(false)
+      })
+
       // Needed so my own avatar can be rendered optimistically when I vote in a poll.
       void getMyProfile(uid).then((data) => {
         if (!cancelled) setMyProfile(data)
@@ -195,6 +205,10 @@ export default function PartyDetailScreen({ partyId }: { partyId: string }) {
 
   const refreshQuestions = () => {
     void getPartyQuestions(partyId).then(setQuestions)
+  }
+
+  const refreshMitbring = () => {
+    void getPartyMitbring(partyId).then(setMitbring)
   }
 
   // Measured on open (the rows are static, so this is read lazily rather than watched)
@@ -640,6 +654,29 @@ export default function PartyDetailScreen({ partyId }: { partyId: string }) {
                   userId={userId}
                   myProfile={myProfile}
                   onRefresh={refreshQuestions}
+                />
+              </div>
+            </Section>
+          ) : null}
+
+          {/* Neben den Fragen, mit denselben Regeln: keine Gegenstaende, kein Abschnitt. */}
+          {mitbringLoading ? (
+            <Section title='Mitbringen' open={openSections.mitbring} onToggle={() => toggleSection('mitbring')}>
+              <div className='flex flex-col gap-2 pb-7.5'>
+                {[0, 1, 2].map((i) => (
+                  <div key={i} className='h-12.5 w-full rounded-full skeleton' />
+                ))}
+              </div>
+            </Section>
+          ) : mitbring.length > 0 && userId ? (
+            <Section title='Mitbringen' open={openSections.mitbring} onToggle={() => toggleSection('mitbring')}>
+              <div className='pb-7.5'>
+                <MitbringSection
+                  items={mitbring}
+                  userId={userId}
+                  isHost={isHost}
+                  myProfile={myProfile}
+                  onRefresh={refreshMitbring}
                 />
               </div>
             </Section>

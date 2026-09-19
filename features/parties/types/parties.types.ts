@@ -146,3 +146,23 @@ export type QuestionDraft = {
   question: string
   description: string | null
 }
+
+// Die Mitbring-Liste. Ein Gegenstand traegt hoechstens eine Beanspruchung — das
+// erzwingt die Datenbank ueber unique (item_id), nicht die Oberflaeche, deshalb steht
+// hier ein einzelnes Objekt und keine Liste.
+export type MitbringClaim = {
+  item_id: string
+  claimed_by: string
+  firstname: string | null
+  lastname: string | null
+  avatar_url: string | null
+  avatar_color: string | null
+}
+
+export type MitbringItem = {
+  id: string
+  event_id: string
+  label: string
+  created_at: string
+  claim: MitbringClaim | null
+}

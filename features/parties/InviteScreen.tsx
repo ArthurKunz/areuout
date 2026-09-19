@@ -18,6 +18,7 @@ import {
 } from './services/parties.service'
 import { getPartyPoolsByInviteCode } from './services/pools.service'
 import { getPartyQuestionsByInviteCode } from './services/questions.service'
+import { getPartyMitbringByInviteCode } from './services/mitbring.service'
 import Avatar from '@/components/shared/Avatar'
 import Spinner from '@/components/shared/Spinner'
 import WarningBanner from '@/components/shared/WarningBanner'
@@ -27,9 +28,10 @@ import CapacityWarning, { isFull, isNearlyFull } from './components/CapacityWarn
 import PartyDescription from './components/PartyDescription'
 import PoolsSection from './components/PoolsSection'
 import QuestionsSection from './components/QuestionsSection'
+import MitbringSection from './components/MitbringSection'
 import AttendeeList from './components/AttendeeList'
 import PartyMap from './components/PartyMap'
-import type { PartyDetail, Attendee, PartyHost, RsvpStatus, Pool, Question } from './types/parties.types'
+import type { PartyDetail, Attendee, PartyHost, RsvpStatus, Pool, Question, MitbringItem } from './types/parties.types'
 
 const BackIcon = <ChevronLeft size={24} strokeWidth={3} className='text-white' />
 
@@ -85,16 +87,18 @@ export default function InviteScreen({ inviteCode }: { inviteCode: string }) {
   const menuContentRef = useRef<HTMLDivElement>(null)
   const [pools, setPools] = useState<Pool[]>([])
   const [questions, setQuestions] = useState<Question[]>([])
+  const [mitbring, setMitbring] = useState<MitbringItem[]>([])
   const [myProfile, setMyProfile] = useState<Profile | null>(null)
   const [heroLoaded, setHeroLoaded] = useState(false)
   const [notFound, setNotFound] = useState(false)
-  const [openSections, setOpenSections] = useState({ location: true, polls: true, questions: true, guests: true })
+  const [openSections, setOpenSections] = useState({ location: true, polls: true, questions: true, mitbring: true, guests: true })
 
   // One flag per block, so every section clears its own skeleton the moment its data lands.
   const [partyLoading, setPartyLoading] = useState(true)
   const [countsLoading, setCountsLoading] = useState(true)
   const [poolsLoading, setPoolsLoading] = useState(true)
   const [questionsLoading, setQuestionsLoading] = useState(true)
+  const [mitbringLoading, setMitbringLoading] = useState(true)
   const [attendeesLoading, setAttendeesLoading] = useState(true)
 
   const toggleSection = (key: keyof typeof openSections) =>
@@ -204,6 +208,12 @@ export default function InviteScreen({ inviteCode }: { inviteCode: string }) {
         setQuestionsLoading(false)
       })
 
+      void getPartyMitbringByInviteCode(inviteCode, partyData.id).then((data) => {
+        if (cancelled) return
+        setMitbring(data)
+        setMitbringLoading(false)
+      })
+
       // Needed so my own avatar can be rendered optimistically when I vote in a poll.
       if (uid) {
         void getMyProfile(uid).then((data) => {
@@ -225,6 +235,11 @@ export default function InviteScreen({ inviteCode }: { inviteCode: string }) {
   const refreshQuestions = () => {
     if (!party) return
     void getPartyQuestionsByInviteCode(inviteCode, party.id).then(setQuestions)
+  }
+
+  const refreshMitbring = () => {
+    if (!party) return
+    void getPartyMitbringByInviteCode(inviteCode, party.id).then(setMitbring)
   }
 
   // Measured on open (the rows are static, so this is read lazily rather than watched)
@@ -302,6 +317,7 @@ export default function InviteScreen({ inviteCode }: { inviteCode: string }) {
     if (oldStatus === null) {
       refreshPools()
       refreshQuestions()
+      refreshMitbring()
     }
     // Hold the menu open briefly so the ✓ visibly lands on the row that was tapped.
     setTimeout(() => setMenuOpen(false), 600)
@@ -655,6 +671,29 @@ export default function InviteScreen({ inviteCode }: { inviteCode: string }) {
                   userId={userId}
                   myProfile={myProfile}
                   onRefresh={refreshQuestions}
+                />
+              </div>
+            </Section>
+          ) : null}
+
+          {/* Beanspruchen braucht ebenso einen Account — ohne Anmeldung kein Abschnitt. */}
+          {mitbringLoading && userId ? (
+            <Section title='Mitbringen' open={openSections.mitbring} onToggle={() => toggleSection('mitbring')}>
+              <div className='flex flex-col gap-2 pb-7.5'>
+                {[0, 1, 2].map((i) => (
+                  <div key={i} className='h-12.5 w-full rounded-full skeleton' />
+                ))}
+              </div>
+            </Section>
+          ) : mitbring.length > 0 && userId ? (
+            <Section title='Mitbringen' open={openSections.mitbring} onToggle={() => toggleSection('mitbring')}>
+              <div className='pb-7.5'>
+                <MitbringSection
+                  items={mitbring}
+                  userId={userId}
+                  isHost={isHost}
+                  myProfile={myProfile}
+                  onRefresh={refreshMitbring}
                 />
               </div>
             </Section>
