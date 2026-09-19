@@ -18,19 +18,21 @@ import {
   updateParty,
 } from './services/parties.service'
 import { getPartyPools } from './services/pools.service'
+import { getPartyQuestions } from './services/questions.service'
 import Avatar from '@/components/shared/Avatar'
 import Spinner from '@/components/shared/Spinner'
 import Section from './components/Section'
 import CapacityWarning, { isFull, isNearlyFull } from './components/CapacityWarning'
 import PartyDescription from './components/PartyDescription'
 import PoolsSection from './components/PoolsSection'
+import QuestionsSection from './components/QuestionsSection'
 import AttendeeList from './components/AttendeeList'
 import PartyMap from './components/PartyMap'
 import WarningBanner from '@/components/shared/WarningBanner'
 import ConfirmDialog from '@/components/shared/ConfirmDialog'
 import InviteLinkCard from '@/components/shared/InviteLinkCard'
 import { primaryButtonClass } from '@/components/shared/Card'
-import type { PartyDetail, Attendee, PartyHost, RsvpStatus, Pool } from './types/parties.types'
+import type { PartyDetail, Attendee, PartyHost, RsvpStatus, Pool, Question } from './types/parties.types'
 
 const BackIcon = <ChevronLeft size={24} strokeWidth={3} className='text-white' />
 
@@ -88,14 +90,16 @@ export default function PartyDetailScreen({ partyId }: { partyId: string }) {
   const [menuHeight, setMenuHeight] = useState(MENU_CLOSED_SIZE)
   const menuContentRef = useRef<HTMLDivElement>(null)
   const [pools, setPools] = useState<Pool[]>([])
+  const [questions, setQuestions] = useState<Question[]>([])
   const [myProfile, setMyProfile] = useState<Profile | null>(null)
   const [heroLoaded, setHeroLoaded] = useState(false)
-  const [openSections, setOpenSections] = useState({ location: true, polls: true, guests: true })
+  const [openSections, setOpenSections] = useState({ location: true, polls: true, questions: true, guests: true })
 
   // One flag per block, so every section clears its own skeleton the moment its data lands.
   const [partyLoading, setPartyLoading] = useState(true)
   const [countsLoading, setCountsLoading] = useState(true)
   const [poolsLoading, setPoolsLoading] = useState(true)
+  const [questionsLoading, setQuestionsLoading] = useState(true)
   const [attendeesLoading, setAttendeesLoading] = useState(true)
 
   const toggleSection = (key: keyof typeof openSections) =>
@@ -157,6 +161,12 @@ export default function PartyDetailScreen({ partyId }: { partyId: string }) {
         setPoolsLoading(false)
       })
 
+      void getPartyQuestions(partyId).then((data) => {
+        if (cancelled) return
+        setQuestions(data)
+        setQuestionsLoading(false)
+      })
+
       // Needed so my own avatar can be rendered optimistically when I vote in a poll.
       void getMyProfile(uid).then((data) => {
         if (!cancelled) setMyProfile(data)
@@ -181,6 +191,10 @@ export default function PartyDetailScreen({ partyId }: { partyId: string }) {
 
   const refreshPools = () => {
     void getPartyPools(partyId).then(setPools)
+  }
+
+  const refreshQuestions = () => {
+    void getPartyQuestions(partyId).then(setQuestions)
   }
 
   // Measured on open (the rows are static, so this is read lazily rather than watched)
@@ -602,6 +616,30 @@ export default function PartyDetailScreen({ partyId }: { partyId: string }) {
                   userId={userId}
                   myProfile={myProfile}
                   onRefresh={refreshPools}
+                />
+              </div>
+            </Section>
+          ) : null}
+
+          {/* Die Fragen stehen neben den Umfragen, nicht darin — eigener Abschnitt,
+              gleiche Regeln: keine Fragen, kein Abschnitt. */}
+          {questionsLoading ? (
+            <Section title='Fragen' open={openSections.questions} onToggle={() => toggleSection('questions')}>
+              <div className='flex flex-col gap-4 pb-7.5'>
+                <div className='h-4 w-2/3 rounded-full skeleton' />
+                {[0, 1].map((i) => (
+                  <div key={i} className='h-12.5 w-full rounded-full skeleton' />
+                ))}
+              </div>
+            </Section>
+          ) : questions.length > 0 && userId ? (
+            <Section title='Fragen' open={openSections.questions} onToggle={() => toggleSection('questions')}>
+              <div className='pb-7.5'>
+                <QuestionsSection
+                  questions={questions}
+                  userId={userId}
+                  myProfile={myProfile}
+                  onRefresh={refreshQuestions}
                 />
               </div>
             </Section>

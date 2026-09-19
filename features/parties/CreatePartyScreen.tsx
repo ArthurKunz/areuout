@@ -17,12 +17,15 @@ import { cardClass, primaryButtonClass, RowDivider, rowClass, rowInputClass, row
 import InviteLinkCard from '@/components/shared/InviteLinkCard'
 import PoolDraftForm from './components/PoolDraftForm'
 import PoolDraftCard from './components/PoolDraftCard'
+import QuestionDraftForm from './components/QuestionDraftForm'
+import QuestionDraftCard from './components/QuestionDraftCard'
 import Switch from '@/components/shared/Switch'
 import Collapse from '@/components/shared/Collapse'
 import WarningBanner from '@/components/shared/WarningBanner'
 import { createParty } from './services/parties.service'
 import { createPool, addPoolOption } from './services/pools.service'
-import type { CreatePartyFormValues, PoolDraft } from './types/parties.types'
+import { createQuestion } from './services/questions.service'
+import type { CreatePartyFormValues, PoolDraft, QuestionDraft } from './types/parties.types'
 
 
 // The bucket is still called event-backgrounds; only the app renamed events to parties.
@@ -38,19 +41,24 @@ const DRESSCODE_MAX = 20
 const DESCRIPTION_MAX = 500
 const GUESTS_MAX = 500
 const POOLS_MAX = 5
+// Dieselbe Obergrenze wie bei den Umfragen, und getrennt davon gezaehlt: fuenf
+// Umfragen und fuenf Fragen sind zwei Listen, nicht eine gemeinsame.
+const QUESTIONS_MAX = 5
 // Matches Collapse's duration: a deleted poll folds away before it is dropped.
 const COLLAPSE_MS = 300
 
 // Ready-made party backgrounds from /public: picking one writes its path straight
 // into parties.background_url, so nothing is uploaded.
 
-type StepId = 'name' | 'description' | 'date' | 'time' | 'location' | 'guests' | 'background' | 'pools' | 'motto' | 'dresscode' | 'done'
+type StepId = 'name' | 'description' | 'date' | 'time' | 'location' | 'guests' | 'background' | 'pools' | 'questions' | 'motto' | 'dresscode' | 'done'
 
 // Background sits with the other required answers (name, date, time, location) and
 // ahead of the optional ones, since it is the only later step that cannot be skipped.
 // Motto und Dresscode stehen hinter den Umfragen. Der Dresscode ist die letzte Frage —
 // dort wird die Party angelegt, nicht mehr beim Polls- oder Motto-Schritt.
-const STEPS: StepId[] = ['name', 'date', 'time', 'location', 'background', 'description', 'guests', 'pools', 'motto', 'dresscode', 'done']
+// Die Fragen stehen direkt hinter den Umfragen: beides sind Inhalte fuer die
+// Partyseite, waehrend Motto und Dresscode wieder die Party selbst beschreiben.
+const STEPS: StepId[] = ['name', 'date', 'time', 'location', 'background', 'description', 'guests', 'pools', 'questions', 'motto', 'dresscode', 'done']
 const QUESTION_COUNT = STEPS.length - 1
 
 const HEADLINES: Record<StepId, string> = {
@@ -62,6 +70,7 @@ const HEADLINES: Record<StepId, string> = {
   guests: 'Wie viele Gäste?',
   background: 'Hintergrundbild',
   pools: 'Umfragen hinzufügen',
+  questions: 'Fragen hinzufügen',
   motto: 'Gibt es ein Motto?',
   dresscode: 'Gibt es einen Dresscode?',
   done: 'Deine Party ist bereit! 🎉',
@@ -79,6 +88,11 @@ export default function CreatePartyScreen() {
   const [localPools, setLocalPools] = useState<PoolDraft[]>([])
   const [removingPoolId, setRemovingPoolId] = useState<string | null>(null)
   const removePoolTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined)
+  const [showQuestionForm, setShowQuestionForm] = useState(false)
+  const [editingQuestion, setEditingQuestion] = useState<QuestionDraft | null>(null)
+  const [localQuestions, setLocalQuestions] = useState<QuestionDraft[]>([])
+  const [removingQuestionId, setRemovingQuestionId] = useState<string | null>(null)
+  const removeQuestionTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined)
   const [bgPreset, setBgPreset] = useState<string | null>(null)
   const [locationPicked, setLocationPicked] = useState(false)
   const [hasEndTime, setHasEndTime] = useState(false)
@@ -105,6 +119,7 @@ export default function CreatePartyScreen() {
   })
 
   useEffect(() => () => clearTimeout(removePoolTimer.current), [])
+  useEffect(() => () => clearTimeout(removeQuestionTimer.current), [])
 
   useEffect(() => {
     supabase.auth.getSession().then(async ({ data: { session } }) => {
@@ -299,6 +314,28 @@ export default function CreatePartyScreen() {
       )
     }
 
+    // Dieselbe Regel wie eine Zeile darueber: die Party steht schon, eine gescheiterte
+    // Frage bricht den Ablauf also nicht ab, gemeldet wird sie trotzdem. Eigene
+    // Sammlung und eigene Meldung, damit der Gastgeber weiss, WAS fehlt.
+    const failedQuestions: string[] = []
+
+    for (const question of localQuestions) {
+      const { error: questionError } = await createQuestion({
+        event_id: newPartyId,
+        question: question.question,
+        description: question.description,
+      })
+      if (questionError) failedQuestions.push(question.question)
+    }
+
+    if (failedQuestions.length > 0) {
+      alertError(
+        failedQuestions.length === 1
+          ? `Die Frage „${failedQuestions[0]}“ konnte nicht angelegt werden. Die Party wurde trotzdem erstellt — du kannst die Frage beim Bearbeiten nachtragen.`
+          : `${failedQuestions.length} Fragen konnten nicht angelegt werden. Die Party wurde trotzdem erstellt — du kannst sie beim Bearbeiten nachtragen.`
+      )
+    }
+
     setInviteCode(code)
     setCreated(true)
     setCreating(false)
@@ -336,6 +373,28 @@ export default function CreatePartyScreen() {
   const closePoolForm = () => {
     setShowPoolForm(false)
     setEditingPool(null)
+    window.scrollTo({ top: 0 })
+  }
+
+  // Dieselben drei Handgriffe wie bei den Umfragen, auf der eigenen Liste.
+  const removeQuestion = (id: string) => {
+    if (removingQuestionId) return
+    setRemovingQuestionId(id)
+    removeQuestionTimer.current = setTimeout(() => {
+      setLocalQuestions((prev) => prev.filter((q) => q.id !== id))
+      setRemovingQuestionId(null)
+    }, COLLAPSE_MS)
+  }
+
+  const openQuestionForm = (draft: QuestionDraft | null) => {
+    setEditingQuestion(draft)
+    setShowQuestionForm(true)
+    window.scrollTo({ top: 0 })
+  }
+
+  const closeQuestionForm = () => {
+    setShowQuestionForm(false)
+    setEditingQuestion(null)
     window.scrollTo({ top: 0 })
   }
 
@@ -482,6 +541,74 @@ export default function CreatePartyScreen() {
                 <Plus size={16} strokeWidth={3} className='text-white' />
               </span>
               <span className='text-button text-label-large'>Umfrage hinzufügen</span>
+            </button>
+          </div>
+        )}
+      </CreateStepLayout>
+    )
+  }
+
+  if (step === 'questions') {
+    if (showQuestionForm) {
+      return (
+        <QuestionDraftForm
+          draft={editingQuestion ?? undefined}
+          onCancel={closeQuestionForm}
+          onAdd={(draft) => {
+            // Wie bei den Umfragen: das Formular gibt die Id zurueck, mit der es
+            // geoeffnet wurde — eine Bearbeitung ersetzt ihre Frage an Ort und
+            // Stelle, eine neue landet am Ende.
+            setLocalQuestions((prev) =>
+              prev.some((q) => q.id === draft.id)
+                ? prev.map((q) => (q.id === draft.id ? draft : q))
+                : [...prev, draft],
+            )
+            closeQuestionForm()
+          }}
+        />
+      )
+    }
+
+    return (
+      <CreateStepLayout
+        headline={HEADLINES.questions}
+        onCancel={() => router.push('/parties')}
+        onSkip={skipStep}
+        onPrimary={handleNext}
+        // Waechst mit jeder Frage, eine gepinnte Leiste saesse also auf der Liste,
+        // zu der sie gehoert.
+        pinnedControls={false}
+        stepCount={QUESTION_COUNT}
+        currentStep={stepIndex}
+        onSelectStep={handleSelectStep}
+      >
+        {/* Eigene Spalte ohne gap — eine zusammengefaltete Karte ist immer noch ein
+            Flex-Element, ein gap hier liesse also ein Loch, wo eine geloeschte Frage
+            stand. Der Abstand sitzt stattdessen in jeder Box und faellt mit ihr weg. */}
+        <div className='flex flex-col'>
+          {localQuestions.map((question) => (
+            <Collapse key={question.id} open={question.id !== removingQuestionId}>
+              <div className='pb-3'>
+                <QuestionDraftCard
+                  question={question}
+                  deleting={question.id === removingQuestionId}
+                  onEdit={() => openQuestionForm(question)}
+                  onDelete={() => removeQuestion(question.id)}
+                />
+              </div>
+            </Collapse>
+          ))}
+        </div>
+
+        {localQuestions.length >= QUESTIONS_MAX ? (
+          <WarningBanner message={`Maximal ${QUESTIONS_MAX} Fragen`} />
+        ) : (
+          <div className={cardClass}>
+            <button type='button' onClick={() => openQuestionForm(null)} className={rowClass}>
+              <span className='flex h-6 w-6 items-center justify-center rounded-full bg-success'>
+                <Plus size={16} strokeWidth={3} className='text-white' />
+              </span>
+              <span className='text-button text-label-large'>Frage hinzufügen</span>
             </button>
           </div>
         )}

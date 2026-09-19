@@ -17,6 +17,7 @@ import {
   getRsvpCountsByStatusByInviteCode,
 } from './services/parties.service'
 import { getPartyPoolsByInviteCode } from './services/pools.service'
+import { getPartyQuestionsByInviteCode } from './services/questions.service'
 import Avatar from '@/components/shared/Avatar'
 import Spinner from '@/components/shared/Spinner'
 import WarningBanner from '@/components/shared/WarningBanner'
@@ -25,9 +26,10 @@ import AuthSheet from '@/features/auth/components/AuthSheet'
 import CapacityWarning, { isFull, isNearlyFull } from './components/CapacityWarning'
 import PartyDescription from './components/PartyDescription'
 import PoolsSection from './components/PoolsSection'
+import QuestionsSection from './components/QuestionsSection'
 import AttendeeList from './components/AttendeeList'
 import PartyMap from './components/PartyMap'
-import type { PartyDetail, Attendee, PartyHost, RsvpStatus, Pool } from './types/parties.types'
+import type { PartyDetail, Attendee, PartyHost, RsvpStatus, Pool, Question } from './types/parties.types'
 
 const BackIcon = <ChevronLeft size={24} strokeWidth={3} className='text-white' />
 
@@ -82,15 +84,17 @@ export default function InviteScreen({ inviteCode }: { inviteCode: string }) {
   const [menuHeight, setMenuHeight] = useState(MENU_CLOSED_SIZE)
   const menuContentRef = useRef<HTMLDivElement>(null)
   const [pools, setPools] = useState<Pool[]>([])
+  const [questions, setQuestions] = useState<Question[]>([])
   const [myProfile, setMyProfile] = useState<Profile | null>(null)
   const [heroLoaded, setHeroLoaded] = useState(false)
   const [notFound, setNotFound] = useState(false)
-  const [openSections, setOpenSections] = useState({ location: true, polls: true, guests: true })
+  const [openSections, setOpenSections] = useState({ location: true, polls: true, questions: true, guests: true })
 
   // One flag per block, so every section clears its own skeleton the moment its data lands.
   const [partyLoading, setPartyLoading] = useState(true)
   const [countsLoading, setCountsLoading] = useState(true)
   const [poolsLoading, setPoolsLoading] = useState(true)
+  const [questionsLoading, setQuestionsLoading] = useState(true)
   const [attendeesLoading, setAttendeesLoading] = useState(true)
 
   const toggleSection = (key: keyof typeof openSections) =>
@@ -194,6 +198,12 @@ export default function InviteScreen({ inviteCode }: { inviteCode: string }) {
         setPoolsLoading(false)
       })
 
+      void getPartyQuestionsByInviteCode(inviteCode, partyData.id).then((data) => {
+        if (cancelled) return
+        setQuestions(data)
+        setQuestionsLoading(false)
+      })
+
       // Needed so my own avatar can be rendered optimistically when I vote in a poll.
       if (uid) {
         void getMyProfile(uid).then((data) => {
@@ -210,6 +220,11 @@ export default function InviteScreen({ inviteCode }: { inviteCode: string }) {
   const refreshPools = () => {
     if (!party) return
     void getPartyPoolsByInviteCode(inviteCode, party.id).then(setPools)
+  }
+
+  const refreshQuestions = () => {
+    if (!party) return
+    void getPartyQuestionsByInviteCode(inviteCode, party.id).then(setQuestions)
   }
 
   // Measured on open (the rows are static, so this is read lazily rather than watched)
@@ -283,7 +298,11 @@ export default function InviteScreen({ inviteCode }: { inviteCode: string }) {
     // click is what made that true — the copy in state was fetched a moment ago,
     // when the answer was still none of this visitor's business, so it came back
     // empty. Without this refetch the polls would sit there answerless until a reload.
-    if (oldStatus === null) refreshPools()
+    // Fuer die Antworten auf die Fragen gilt Wort fuer Wort dasselbe.
+    if (oldStatus === null) {
+      refreshPools()
+      refreshQuestions()
+    }
     // Hold the menu open briefly so the ✓ visibly lands on the row that was tapped.
     setTimeout(() => setMenuOpen(false), 600)
   }
@@ -612,6 +631,30 @@ export default function InviteScreen({ inviteCode }: { inviteCode: string }) {
                   userId={userId}
                   myProfile={myProfile}
                   onRefresh={refreshPools}
+                />
+              </div>
+            </Section>
+          ) : null}
+
+          {/* Antworten brauchen ebenso einen Account, also gilt hier dieselbe Sperre
+              wie bei den Umfragen: ohne Anmeldung gar kein Abschnitt. */}
+          {questionsLoading && userId ? (
+            <Section title='Fragen' open={openSections.questions} onToggle={() => toggleSection('questions')}>
+              <div className='flex flex-col gap-4 pb-7.5'>
+                <div className='h-4 w-2/3 rounded-full skeleton' />
+                {[0, 1].map((i) => (
+                  <div key={i} className='h-12.5 w-full rounded-full skeleton' />
+                ))}
+              </div>
+            </Section>
+          ) : questions.length > 0 && userId ? (
+            <Section title='Fragen' open={openSections.questions} onToggle={() => toggleSection('questions')}>
+              <div className='pb-7.5'>
+                <QuestionsSection
+                  questions={questions}
+                  userId={userId}
+                  myProfile={myProfile}
+                  onRefresh={refreshQuestions}
                 />
               </div>
             </Section>

@@ -124,3 +124,25 @@ export type PoolDraft = {
   options: string[]
   allow_multiple: boolean
 }
+
+// Eine Frage ist eine `pools`-Zeile mit type = 'text_only', ihre Antworten sind
+// `pool_responses` mit option_id = null. Warum das so liegt, steht in
+// features/parties/services/questions.service.ts. Ueber dieser Grenze taucht der
+// Name 'pool' nicht mehr auf: die Oberflaeche kennt nur Fragen und Antworten.
+export type QuestionAnswer = PoolResponse
+
+export type Question = {
+  id: string
+  event_id: string
+  question: string
+  description: string | null
+  created_at: string
+  answers: QuestionAnswer[]
+}
+
+// Ohne Optionen und ohne allow_multiple — eine Frage hat nichts zum Auswaehlen.
+export type QuestionDraft = {
+  id: string
+  question: string
+  description: string | null
+}
