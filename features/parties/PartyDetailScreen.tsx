@@ -2,9 +2,9 @@
 
 import { useState, useEffect, useRef } from 'react'
 import { useRouter } from 'next/navigation'
-import { Check, ChevronLeft, Copy, MoreHorizontal, RotateCcw, SquarePen, Trash2, UsersRound } from 'lucide-react'
+import { Check, ChevronLeft, MoreHorizontal, RotateCcw, Share, SquarePen, Trash2, UsersRound } from 'lucide-react'
 import { supabase } from '@/lib/supabase/client'
-import { alertError, generateInviteCode, getOrigin, isPartyOver } from '@/lib/utils'
+import { alertError, generateInviteCode, getOrigin, isPartyOver, shareInvite } from '@/lib/utils'
 import { getMyProfile, type Profile } from '@/features/profile/services/profile.service'
 import {
   getPartyById,
@@ -38,7 +38,7 @@ import type { PartyDetail, Attendee, PartyHost, RsvpStatus, Pool, Question, Mitb
 
 const BackIcon = <ChevronLeft size={24} strokeWidth={3} className='text-white' />
 
-const CopyIcon = <Copy size={15} strokeWidth={2} className='text-heading' />
+const ShareIcon = <Share size={15} strokeWidth={2} className='text-heading' />
 
 const MoreIcon = <MoreHorizontal size={20} strokeWidth={2.5} className='text-heading' />
 
@@ -80,7 +80,7 @@ export default function PartyDetailScreen({ partyId }: { partyId: string }) {
   const [rsvpStatus, setRsvpStatus] = useState<RsvpStatus | null>(null)
   const [userId, setUserId] = useState<string | null>(null)
   const [counts, setCounts] = useState({ going: 0, maybe: 0, not_going: 0 })
-  const [copied, setCopied] = useState(false)
+  const [shared, setShared] = useState(false)
   // The status being written, not just a flag: the spinner has to sit on the row
   // that was tapped, and every row is disabled while any one of them is running.
   const [pendingRsvp, setPendingRsvp] = useState<RsvpStatus | null>(null)
@@ -219,11 +219,11 @@ export default function PartyDetailScreen({ partyId }: { partyId: string }) {
     setMenuOpen(true)
   }
 
-  const handleCopy = async () => {
+  const handleShare = async () => {
     if (!party) return
-    await navigator.clipboard.writeText(`${getOrigin()}/e/${party.invite_code}`)
-    setCopied(true)
-    setTimeout(() => setCopied(false), 2000)
+    if (!(await shareInvite(party.title, `${getOrigin()}/e/${party.invite_code}`))) return
+    setShared(true)
+    setTimeout(() => setShared(false), 2000)
   }
 
   // Der Code IST das Geheimnis, nicht die Party-ID — ihn zu ersetzen ist das Einzige,
@@ -240,7 +240,7 @@ export default function PartyDetailScreen({ partyId }: { partyId: string }) {
       alertError('Der Link konnte nicht zurückgesetzt werden.', error.message)
       return
     }
-    // Ohne das gibt der Copy-Button im Header weiter den toten Link aus.
+    // Ohne das gibt der Teilen-Button im Header weiter den toten Link aus.
     setParty({ ...party, invite_code: code })
     setResetting(false)
     setConfirmReset(false)
@@ -388,18 +388,18 @@ export default function PartyDetailScreen({ partyId }: { partyId: string }) {
             {/* Role is unknown until the party loads, so hold the spot with a skeleton circle. */}
             {partyLoading && <div className='absolute right-0 top-0 h-11.25 w-11.25 rounded-full skeleton' />}
 
-            {/* The panel expands over this spot, so the copy button steps aside. */}
+            {/* The panel expands over this spot, so the share button steps aside. */}
             {!partyLoading && isHost && (
               <button
-                onClick={handleCopy}
-                aria-label='Link kopieren'
+                onClick={handleShare}
+                aria-label='Teilen'
                 aria-hidden={menuOpen}
                 tabIndex={menuOpen ? -1 : 0}
                 className={`absolute right-13.75 top-0 ${iconButtonClass} transition-opacity duration-150 ${
                   menuOpen ? 'pointer-events-none opacity-0' : 'opacity-100 delay-150'
                 }`}
               >
-                {copied ? <span className='text-label-1 text-heading'>✓</span> : CopyIcon}
+                {shared ? <span className='text-label-1 text-heading'>✓</span> : ShareIcon}
               </button>
             )}
 
@@ -719,7 +719,7 @@ export default function PartyDetailScreen({ partyId }: { partyId: string }) {
 
       {/* Der neue Link, sofort zum Weitergeben — dieselbe Karte wie am Ende von Create
           Party. Das Häkchen über der Überschrift ist die einzige Bestätigung, dass der
-          Reset durch ist; der Copy-Button bringt sein eigenes mit. */}
+          Reset durch ist; der Teilen-Button bringt sein eigenes mit. */}
       {newLink && (
         <div
           role='dialog'
@@ -743,7 +743,7 @@ export default function PartyDetailScreen({ partyId }: { partyId: string }) {
             </div>
 
             <div className='flex flex-col gap-2'>
-              <InviteLinkCard link={newLink} />
+              <InviteLinkCard title={party?.title ?? ''} link={newLink} />
 
               <button type='button' onClick={() => setNewLink(null)} className={primaryButtonClass}>
                 Fertig

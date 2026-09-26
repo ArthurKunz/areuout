@@ -32,6 +32,37 @@ export function getOrigin(): string {
   return typeof window === 'undefined' ? '' : window.location.origin
 }
 
+// Opens the system share sheet with the invite; where the browser has none (mostly
+// older desktop browsers), the same text goes to the clipboard instead. Resolves false
+// only when the host closed the sheet, so the caller shows its tick on true.
+export async function shareInvite(title: string, link: string): Promise<boolean> {
+  const text = `Komm zu ${title}!`
+  if (typeof navigator.share === 'function') {
+    try {
+      await navigator.share({ text, url: link })
+      return true
+    } catch (error) {
+      if (error instanceof DOMException && error.name === 'AbortError') return false
+    }
+  }
+  const full = `${text} ${link}`
+  try {
+    await navigator.clipboard.writeText(full)
+  } catch {
+    // navigator.clipboard ist ein Secure-Context-Feature und fehlt auf der LAN-
+    // Testadresse — derselbe Grund, der hier gegen crypto.randomUUID steht.
+    const el = document.createElement('textarea')
+    el.value = full
+    el.style.position = 'fixed'
+    el.style.opacity = '0'
+    document.body.appendChild(el)
+    el.select()
+    document.execCommand('copy')
+    document.body.removeChild(el)
+  }
+  return true
+}
+
 // Where to land after auth/onboarding. Only same-site paths are accepted, so a
 // crafted ?next=https://evil.example cannot turn the login flow into a redirector.
 //

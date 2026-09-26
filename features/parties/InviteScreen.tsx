@@ -2,9 +2,9 @@
 
 import { useState, useEffect, useRef } from 'react'
 import { useRouter } from 'next/navigation'
-import { Check, ChevronLeft, Copy, MoreHorizontal, SquarePen, Trash2, UsersRound, X } from 'lucide-react'
+import { Check, ChevronLeft, MoreHorizontal, Share, SquarePen, Trash2, UsersRound, X } from 'lucide-react'
 import { supabase } from '@/lib/supabase/client'
-import { alertError, getOrigin, isPartyOver } from '@/lib/utils'
+import { alertError, getOrigin, isPartyOver, shareInvite } from '@/lib/utils'
 import { getMyProfile, type Profile } from '@/features/profile/services/profile.service'
 import {
   getPartyByInviteCode,
@@ -35,7 +35,7 @@ import type { PartyDetail, Attendee, PartyHost, RsvpStatus, Pool, Question, Mitb
 
 const BackIcon = <ChevronLeft size={24} strokeWidth={3} className='text-white' />
 
-const CopyIcon = <Copy size={15} strokeWidth={2} className='text-heading' />
+const ShareIcon = <Share size={15} strokeWidth={2} className='text-heading' />
 
 const MoreIcon = <MoreHorizontal size={20} strokeWidth={2.5} className='text-heading' />
 
@@ -77,7 +77,7 @@ export default function InviteScreen({ inviteCode }: { inviteCode: string }) {
   const [rsvpStatus, setRsvpStatus] = useState<RsvpStatus | null>(null)
   const [userId, setUserId] = useState<string | null>(null)
   const [counts, setCounts] = useState({ going: 0, maybe: 0, not_going: 0 })
-  const [copied, setCopied] = useState(false)
+  const [shared, setShared] = useState(false)
   // The status being written, not just a flag: the spinner has to sit on the
   // button that was tapped, and all of them are disabled while one is running.
   const [pendingRsvp, setPendingRsvp] = useState<RsvpStatus | null>(null)
@@ -250,11 +250,11 @@ export default function InviteScreen({ inviteCode }: { inviteCode: string }) {
     setMenuOpen(true)
   }
 
-  const handleCopy = async () => {
+  const handleShare = async () => {
     if (!party) return
-    await navigator.clipboard.writeText(`${getOrigin()}/e/${party.invite_code}`)
-    setCopied(true)
-    setTimeout(() => setCopied(false), 2000)
+    if (!(await shareInvite(party.title, `${getOrigin()}/e/${party.invite_code}`))) return
+    setShared(true)
+    setTimeout(() => setShared(false), 2000)
   }
 
   const handleDeleteParty = async () => {
@@ -408,19 +408,19 @@ export default function InviteScreen({ inviteCode }: { inviteCode: string }) {
               </button>
             )}
 
-            {/* The host owns this link, so they get the copy button — to the left of the
+            {/* The host owns this link, so they get the share button — to the left of the
                 ••• , and out of the way while the panel expands over that spot. */}
             {showHeaderControls && isHost && (
               <button
-                onClick={handleCopy}
-                aria-label='Link kopieren'
+                onClick={handleShare}
+                aria-label='Teilen'
                 aria-hidden={menuOpen}
                 tabIndex={menuOpen ? -1 : 0}
                 className={`absolute right-13.75 top-0 ${iconButtonClass} transition-opacity duration-150 ${
                   menuOpen ? 'pointer-events-none opacity-0' : 'opacity-100 delay-150'
                 }`}
               >
-                {copied ? <span className='text-label-1 text-heading'>✓</span> : CopyIcon}
+                {shared ? <span className='text-label-1 text-heading'>✓</span> : ShareIcon}
               </button>
             )}
 
