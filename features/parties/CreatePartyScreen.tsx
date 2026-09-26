@@ -946,7 +946,7 @@ export default function CreatePartyScreen() {
       </span>
 
       <div className='mt-auto w-full'>
-        <InviteLinkCard link={shareLink} />
+        <InviteLinkCard title={values.title.trim()} link={shareLink} />
 
         <button
           type='button'
