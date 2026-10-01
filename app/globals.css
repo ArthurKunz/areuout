@@ -13,6 +13,7 @@
     --color-slider: #ffffff33;
     --color-selector: #ffffff1A;
     --color-button-circle: #00000040;
+    --color-button-toggle-off: #ffffff40;
 
     /* TEXT */
     --color-heading: #ffffe6;
@@ -21,8 +22,8 @@
 
     /* COLORS */
     --color-yellow: #FFCC00;
-    --color-red: #34C759;
-    --color-green: #D32F2F;
+    --color-red: #D32F2F;
+    --color-green: #34C759;
     --color-orange: #FF8D28;
     --color-mint: #00C8B3;
     --color-purple: #CB30E0;
