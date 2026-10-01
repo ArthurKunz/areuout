@@ -141,43 +141,66 @@ Read the relevant one before you write. Do not copy its contents back into this 
 ## Second Brain context
 
 Arthur keeps the product side in an Obsidian vault ('Arthur's Second Brain'), registered
-for this project as an additional working directory. The paths below are relative to the
-vault root. The files are readable from here, but nothing in the vault loads
-automatically — not even its own CLAUDE.md. Go and read the file.
+for this project as an additional working directory in `.claude/settings.local.json`.
+The paths below are relative to the vault root. The files are readable from here, but
+nothing in the vault loads automatically — not even its own CLAUDE.md. Go and read the
+file.
 
-- `00 Context/Writing Style.md` — READ BEFORE writing any text a user will see: UI
-  strings, button labels, empty states, error messages, prose in the legal pages, Open
-  Graph text, and anything Arthur asks for as a caption, post or copy. This is the one
-  file to reach for unprompted.
-- `00 Context/ICP.md` — who areuout is for and what they actually struggle with.
-- `00 Context/Offer.md` — the offer and what makes it different.
-- `00 Context/Branding.md` — colours, fonts, logo. Once it is filled in, it decides
-  those, not this file.
+### Start here for any feature or UI work
+
+Read these three, in this order, before planning anything:
+
+1. `02 Projects/areuout/App Redesign.md` — the V2 redesign: navigation, the map behind
+   every screen, list and detail containers, every screen with its texts, states and
+   rules. Mockups are linked in it and live in `07 Attachments/Redesign *.png`. Where
+   it contradicts an older spec, it wins.
+2. `02 Projects/areuout/Feature Index.md` — every feature with its version, status and
+   spec. The only place a status lives.
+3. `02 Projects/areuout/Features/<Feature>.md` — one spec per feature. A shipped spec
+   describes the live app; a 'Planned change' banner at its top says what the redesign
+   changes and links to where.
+
+### Product context
+
+All under `02 Projects/areuout/`:
+
+- `Writing Style.md` — READ BEFORE writing any text a user will see: UI strings, button
+  labels, empty states, error messages, prose in the legal pages, Open Graph text. For
+  the redesign, the texts in `App Redesign.md` (taken from the mockups) come first.
+- `About areuout.md` — what it is and for whom.
+- `Audience.md` — who areuout is for and what they actually struggle with.
+- `Positioning.md` — what makes it different.
+- `Branding.md` — colours, fonts, logo.
+- `Scope.md` — what is permanently out, and why.
+- `Constraints.md` — how it is operated and what that rules out.
+- `User Flows.md` — the chains through the shipped app, screen by screen.
+- `October Plan.md` — the current plan and its order: design, map, agent, native app.
+- `Releases/V1.md`, `Releases/V2.md`, `Releases/V3.md` — the release pages.
+- `Context.md` — index of all of the above.
+
+Elsewhere in the vault:
+
 - `00 Context/About Me.md` — who Arthur is and how he works.
-- `02 Projects/areuout/` — `About areuout.md` (what it is and for whom), `Scope.md`
-  (what shipped, what is permanently out, what a later version might hold),
-  `Constraints.md` (how it is operated and what that rules out), `Status.md`,
-  `Context.md`.
-- `Phase 1.md` and `Plan.md` at the vault root — the roadmap, the stages and every real
-  date. This file carries no dates on purpose.
+- `05 The Plan/Plan.md` and `05 The Plan/Phase 1/Phase 1.md` — the long-term roadmap.
+  This file carries no dates on purpose.
+- Not for areuout: `00 Context/Writing Style.md` is Arthur's personal voice, used for
+  his own posts. Never use it for text inside the app.
+
+### Rules
 
 The vault decides product, audience, tone, scope and dates. This file decides the stack
 and the rules above. The hard rules outrank anything the vault describes as a future
 feature. If the vault contradicts one of them, report it instead of resolving it quietly.
 
-Two rules look like they collide and do not: `Writing Style.md` bans emoji in prose and
-copy, while this app uses Apple emoji as interface flavour and lucide for the interface
-itself. Prose follows the vault, interface chrome follows this file.
+Two rules look like they collide and do not: the areuout `Writing Style.md` keeps emoji
+out of prose and copy, while this app uses Apple emoji as interface flavour and lucide
+for the interface itself. Prose follows the vault, interface chrome follows this file.
 
 Reading the vault is free. Writing to it is not: ask first, exactly as for a commit here,
 and follow the vault's own conventions — read its CLAUDE.md at the vault root. In short:
 YAML frontmatter (`tags`, `status`, `date`), `[[Wikilinks]]` between notes, English
 content, `Descriptive Name.md` file names, daily notes as `YYYY-MM-DD.md` in
 `05 Daily Notes/`, and never move anything into `06 Archive/` unasked.
-
-The previous `CLAUDE.md`, `AGENTS.md`, `SCHEMA.md` and `RECHTLICHES-BESTANDSAUFNAHME.md`
-sit in `04 Resources/Claude Code/areuout Repo Backup 2026-09-01/`. That is a backup, not
-a source. Do not read them unless Arthur asks for them by name.
 
 ---
 
