@@ -23,6 +23,10 @@
     --color-yellow: #FFCC00;
     --color-red: #34C759;
     --color-green: #D32F2F;
+    --color-orange: #FF8D28;
+    --color-mint: #00C8B3;
+    --color-purple: #CB30E0;
+    --color-blue: #0088FF;
 
     /* SKELETON (loading placeholders) */
     --color-skeleton: rgba(118, 118, 128, 0.25);
