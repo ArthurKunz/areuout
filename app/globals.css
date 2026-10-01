@@ -2,63 +2,45 @@
 
 @theme {
     /* BRAND COLORS */
-    --color-brand-pink: #FF0090;
-    --color-brand-lila: #A336FF;
-    --color-brand-blue: #161BFA;
+    --color-brand: #1E5CFF;
 
     /* BASE COLORS */
-    --color-main: #000;
-    --color-secondary: rgba(118, 118, 128, 0.25);
-    --color-tertiary: rgba(255, 255, 255, 0.25);
-    --color-quaternary: rgba(29, 29, 29, 0.9);
+    --color-main: #00000066;
+    --color-main-white: #ffffffe6;
 
     /*COMPONENTS*/
-    --color-arrow: rgba(127, 127, 127, 0.9);
-    /* Hairline dividers. The bright one sits inside the glass ••• panel, where the
-       blurred backdrop swallows anything darker; the subtle one sits on the black
-       page, where it only has to hint at a break. */
-    --color-divider: #3D3D3D;
-    --color-divider-subtle: #161616;
+    --color-divider: #ffffff33;
+    --color-slider: #ffffff33;
+    --color-selector: #ffffff1A;
+    --color-button-circle: #00000040;
 
     /* TEXT */
-    --color-heading: rgba(255, 255, 255, 0.9);
-    --color-subheading: rgba(148, 148, 148, 0.9);
-    --color-label-large: rgba(255, 255, 255, 0.9);
-    --color-label-small: rgba(204, 204, 204, 0.5);
-    --color-body: rgba(111, 111, 111, 0.9);
-    --color-link: #0A84FF;
+    --color-heading: #ffffe6;
+    --color-text: #ffffff80;
+    --color-input: #ffffff40;
 
-    /* RSVP STATUS (Apple dark-mode system colors) */
-    --color-success: #30D158;
-    --color-maybe: #FFD60A;
-    --color-warning: #FF453A;
-    --color-host: #409CFF;
-
-    /* LIGHT SURFACE (the sign-up sheet over the invite page — the only light UI in the app) */
-    --color-sheet: #FFFFFF;
-    --color-sheet-heading: #0A0A0A;
-    --color-sheet-body: #8A8A8E;
-    --color-button-primary: #000000;
-    --color-button-secondary: #E9E9EB;
+    /* COLORS */
+    --color-yellow: #FFCC00;
+    --color-red: #34C759;
+    --color-green: #D32F2F;
 
     /* SKELETON (loading placeholders) */
     --color-skeleton: rgba(118, 118, 128, 0.25);
     --color-skeleton-sheen: rgba(255, 255, 255, 0.08);
 
     /* TEXT SIZES */
-    --text-heading-1: 35px;
-    --text-heading-2: 30px;
-    --text-heading-3: 25px;
+    --text-heading-1: 26px;
+    --text-heading-2: 24px;
+    --text-heading-3: 22px;
     --text-heading-4: 20px;
 
-    --text-subheading-1: 15px;
+    --text-text-1: 18px;
+    --text-text-2: 16px;
+    --text-text-3: 14px;
+    --text-text-4: 12px;
 
-    --text-label-1: 13px;
-    --text-label-2: 12px;
-
-    --text-body-1: 12px;
-
-    --text-button: 16px;
+    --text-hint-1: 10px;
+    --text-hint-2: 8px;
 }
 
 @layer base {
