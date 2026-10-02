@@ -47,9 +47,14 @@ export type Database = {
           dresscode: string | null
           ends_at: string | null
           event_date: string
+          fuzzy_lat: number | null
+          fuzzy_lng: number | null
           host_id: string
           id: string
           invite_code: string
+          is_public: boolean
+          lat: number | null
+          lng: number | null
           location: string
           max_guests: number | null
           motto: string | null
@@ -62,9 +67,14 @@ export type Database = {
           dresscode?: string | null
           ends_at?: string | null
           event_date: string
+          fuzzy_lat?: number | null
+          fuzzy_lng?: number | null
           host_id: string
           id?: string
           invite_code: string
+          is_public?: boolean
+          lat?: number | null
+          lng?: number | null
           location: string
           max_guests?: number | null
           motto?: string | null
@@ -77,9 +87,14 @@ export type Database = {
           dresscode?: string | null
           ends_at?: string | null
           event_date?: string
+          fuzzy_lat?: number | null
+          fuzzy_lng?: number | null
           host_id?: string
           id?: string
           invite_code?: string
+          is_public?: boolean
+          lat?: number | null
+          lng?: number | null
           location?: string
           max_guests?: number | null
           motto?: string | null
@@ -356,6 +371,7 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      can_rsvp_to_event: { Args: { p_event_id: string }; Returns: boolean }
       delete_self: { Args: never; Returns: undefined }
       get_event_attendees: {
         Args: { p_event_id: string }
@@ -409,6 +425,26 @@ export type Database = {
           lastname: string
         }[]
       }
+      get_explore_parties: {
+        Args: never
+        Returns: {
+          background_url: string
+          ends_at: string
+          event_date: string
+          host_avatar_color: string
+          host_avatar_url: string
+          host_firstname: string
+          host_id: string
+          host_lastname: string
+          id: string
+          is_exact: boolean
+          is_public: boolean
+          lat: number
+          lng: number
+          my_status: string
+          title: string
+        }[]
+      }
       get_host_info_for_events: {
         Args: { p_event_ids: string[] }
         Returns: {
@@ -417,6 +453,26 @@ export type Database = {
           event_id: string
           firstname: string
           lastname: string
+        }[]
+      }
+      get_hosting_parties: {
+        Args: never
+        Returns: {
+          background_url: string
+          ends_at: string
+          event_date: string
+          host_avatar_color: string
+          host_avatar_url: string
+          host_firstname: string
+          host_id: string
+          host_lastname: string
+          id: string
+          is_exact: boolean
+          is_public: boolean
+          lat: number
+          lng: number
+          my_status: string
+          title: string
         }[]
       }
       get_mitbring_claims_by_event: {
@@ -428,6 +484,26 @@ export type Database = {
           firstname: string
           item_id: string
           lastname: string
+        }[]
+      }
+      get_my_parties: {
+        Args: never
+        Returns: {
+          background_url: string
+          ends_at: string
+          event_date: string
+          host_avatar_color: string
+          host_avatar_url: string
+          host_firstname: string
+          host_id: string
+          host_lastname: string
+          id: string
+          is_exact: boolean
+          is_public: boolean
+          lat: number
+          lng: number
+          my_status: string
+          title: string
         }[]
       }
       get_party_by_invite_code: {
@@ -447,9 +523,56 @@ export type Database = {
           title: string
         }[]
       }
+      get_party_detail: {
+        Args: { p_event_id: string }
+        Returns: {
+          background_url: string
+          description: string
+          dresscode: string
+          ends_at: string
+          event_date: string
+          host_avatar_color: string
+          host_avatar_url: string
+          host_firstname: string
+          host_id: string
+          host_lastname: string
+          id: string
+          is_exact: boolean
+          is_public: boolean
+          lat: number
+          lng: number
+          location: string
+          max_guests: number
+          motto: string
+          my_status: string
+          title: string
+        }[]
+      }
+      get_party_guests: {
+        Args: { p_event_id: string }
+        Returns: {
+          avatar_color: string
+          avatar_url: string
+          firstname: string
+          lastname: string
+          status: string
+          user_id: string
+        }[]
+      }
       get_party_mitbring_by_invite_code: {
         Args: { p_invite_code: string }
         Returns: Json
+      }
+      get_party_polls: {
+        Args: { p_event_id: string }
+        Returns: {
+          allow_multiple: boolean
+          options: Json
+          pool_id: string
+          question: string
+          text_responses: Json
+          type: string
+        }[]
       }
       get_party_pools_by_invite_code: {
         Args: { p_invite_code: string }
@@ -634,9 +757,6 @@ export type CompositeTypes<
     : never
 
 export const Constants = {
-  graphql_public: {
-    Enums: {},
-  },
   public: {
     Enums: {},
   },

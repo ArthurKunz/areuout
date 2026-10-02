@@ -12,7 +12,7 @@ test:
 What is left is the reasoning: why it is built this way, and the traps that cost a bug
 each. Section 8 has the queries to check the rest.
 
-Verified against the live database on 2026-09-01.
+Verified against the live database on 2026-09-01; section 8 added and verified 2026-10-02.
 
 ## 1. How security works here, in four sentences
 
@@ -123,11 +123,87 @@ That chain is the whole reason account deletion is complete. A new table holding
 anything personal has to join it — an FK without CASCADE makes the erasure silently
 partial, and nothing will fail to tell you.
 
-## 8. Checking this file against the database
+## 8. The map (Step 2 of the redesign)
+
+Every upcoming party, public and private, sits on one map. A visitor without access to
+a private party sees everything about it except its address and exact position — a
+stored, blurred point (200 m) instead. "Access" means host, any RSVP (including
+declined), or having opened the invite link.
+
+**`events.lat`/`lng`** hold the exact position, set when the address is geocoded (not
+yet wired into any screen — `main` never writes them, so its parties stay invisible to
+every function in this section until a later step teaches Create/Edit Party to geocode).
+**`fuzzy_lat`/`fuzzy_lng`** hold a point drawn once, uniformly within 200 m, by the
+`BEFORE INSERT OR UPDATE` trigger `private.set_fuzzy_position()`. It re-rolls only when
+`lat`/`lng` actually change; on any other update it copies the stored point back, so a
+client write to the fuzzy columns directly is silently overwritten, never a client-
+chosen value. When the address changes without new coordinates (the old edit screen's
+path), the trigger clears all four columns to NULL rather than leaving a stale point.
+
+**`events.is_public`** (default `false`) does not change who can read a row —
+`events_select_member` is untouched, still host-or-member-only, on purpose. Every
+stranger-facing read goes through a new `SECURITY DEFINER` function instead, each
+choosing its own columns:
+
+- `get_explore_parties()`, `get_my_parties()`, `get_hosting_parties()` — one per map
+  tab. Return id, title, picture, host (full name only with access, else first name +
+  last-name initial), the position the caller may see, a flag `is_exact`, and the
+  caller's own RSVP status. Filtered to parties with coordinates and still inside
+  `private.party_visible_until(...)`. Never take a position or distance parameter, sort
+  by date only, never added to `supabase_realtime`.
+- `get_party_detail(event_id)` — the full party row minus the address: `location` is
+  only included with access, and `invite_code` is **never** in the result at all, not
+  even blanked. Answers "exists, no access" with the same shape it would for a party
+  that truly doesn't exist, except the non-address fields are visible to any logged-in
+  caller regardless of access.
+- `get_party_guests(event_id)`, `get_party_polls(event_id)` — guest names and poll
+  answers follow the same access rule as the address: truncated or hidden without it,
+  full with it. Unlike the older `get_event_attendees`/`get_pool_responses_by_event`,
+  these two are NOT member-gated — a stranger can call them, just with less in the
+  result — because the redesign puts every private party's guest list and polls on
+  Explore too, not only in front of people who already have access.
+
+All six are reachable only by `authenticated` (`REVOKE ... FROM PUBLIC, anon` on each).
+The exact-vs-blurred decision itself lives once, in `private.has_party_access(event_id)`
+and `private.has_exact_access(event_id, is_public)` — every function above calls these
+rather than repeating the host-or-rsvp-or-invite_opens check, so the privacy rule can't
+drift out of sync between them. Being public grants exact access to everyone; being
+private does not grant it even to a public party's host-adjacent reasoning — access
+still requires host, RSVP, or `invite_opens`.
+
+**`private.invite_opens(event_id, user_id, opened_at)`**, `PRIMARY KEY (event_id,
+user_id)`, records who has opened a party's invite link — the thing "access" needed but
+that was previously stored nowhere. `get_party_by_invite_code` writes to it (one extra
+`INSERT ... ON CONFLICT DO NOTHING`, only when a code matched and the caller is signed
+in) without changing its `RETURNS TABLE` shape or its two call sites' behaviour at all.
+Like `invite_lookup_misses`, this table has RLS switched off and is still unreachable by
+`anon` or `authenticated`, because neither holds `USAGE` on the `private` schema — the
+schema is the boundary, the same trap as section 2, worked correctly this time.
+
+**The RSVP insert policy now checks access, not just capacity.**
+`rsvps_insert_authenticated`'s `WITH CHECK` used to accept any authenticated non-host
+for any event id, gated only by `party_has_room`. It now additionally requires
+`public.can_rsvp_to_event(event_id)` — public, OR already has a row in `rsvps`, OR has a
+row in `invite_opens`. This function exists because the policy expression runs with the
+**caller's** privileges: a direct `EXISTS (... FROM events WHERE is_public)` inside the
+policy would itself be filtered by `events_select_member` (no `is_public` branch), so a
+stranger could never satisfy it even on a public party; and a direct read of
+`private.invite_opens` from inside the policy would error on every single RSVP insert,
+because `authenticated` has no `USAGE` on `private`. The function is `SECURITY DEFINER`,
+bypassing both problems, same pattern as the pre-existing `party_has_room`.
+
+**Two separate "how long" constants, now.** `ASSUMED_PARTY_HOURS`/`c_assumed_hours` (6
+hours) decide when `get_party_by_invite_code` stops handing out the address to a
+non-host. `PARTY_VISIBLE_HOURS`/`private.party_visible_until` (24 hours) decide when a
+party leaves the map and every list. They look similar and are not the same rule — see
+the hard rule in `CLAUDE.md`.
+
+## 9. Checking this file against the database
 
 Do not trust the above. The database answers all of it, and the Supabase MCP is the
-fastest way to ask. `supabase/migrations/` is **not** a substitute: it runs 22
-migrations behind the live database, for the reasons in `supabase/migrations/README.md`.
+fastest way to ask. `supabase/migrations/` is **not** a substitute: it runs roughly 22
+migrations behind the live database (plus the 7 added in Step 2), for the reasons in
+`supabase/migrations/README.md`.
 
 ```sql
 -- Policies: who may do what, per table
@@ -159,7 +235,7 @@ where schemaname in ('public', 'private');
 select id, public, file_size_limit, allowed_mime_types from storage.buckets;
 ```
 
-## 9. Open questions
+## 10. Open questions
 
 Found on 2026-09-01 and deliberately not touched. Changing the database is its own task
 with its own migrations.

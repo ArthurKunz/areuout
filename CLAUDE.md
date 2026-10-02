@@ -117,6 +117,13 @@ actually protects the data.
 - `ASSUMED_PARTY_HOURS` in `lib/utils.ts` and `c_assumed_hours` in the migrations are
   the same six hours written twice. Change one, change the other — together they decide
   when the database stops handing out a finished party's address.
+- `PARTY_VISIBLE_HOURS` in `lib/utils.ts` and `private.party_visible_until` in the
+  migrations are the same 24 hours written twice, and a separate rule from the pair
+  above: they decide when a party leaves every map and list, not when its address is
+  blanked. Change one, change the other. The two pairs stay separate until step 12 of
+  the redesign, when `get_party_by_invite_code` and `isPartyOver` switch to the 24-hour
+  rule and the six-hour pair is deleted — until then, changing one pair must never touch
+  the other.
 - Colours, sizes and spacing come from the variables in `app/globals.css`. If no variable fits, ask before adding one.
 - Icons come from `lucide-react`. Never hand-roll an `<svg>` for an icon.
 - No monetisation. Not ads, not paid tiers, not a payment provider, not an affiliate
