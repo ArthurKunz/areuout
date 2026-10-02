@@ -36,6 +36,12 @@ yarn-error.log*
 # Variablen gesetzt sein muessen und warum.
 !.env.example
 
+# maplibre worker, copied from node_modules before every dev and build run
+/public/maplibre/
+
+# Playwright MCP screenshots and logs from local test runs
+/.playwright-mcp/
+
 # vercel
 .vercel
 

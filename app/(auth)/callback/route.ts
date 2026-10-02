@@ -74,5 +74,5 @@ export async function GET(request: Request) {
         }
     }
 
-    return NextResponse.redirect(`${requestUrl.origin}${next ?? '/parties'}`)
+    return NextResponse.redirect(`${requestUrl.origin}${next ?? '/explore'}`)
 }

@@ -55,6 +55,16 @@
 
     --text-hint-1: 10px;
     --text-hint-2: 8px;
+
+    /* SHELL (map, container, bottom navigation) */
+    --color-nav-selector: #00000040;
+    --blur-nav: 15px;
+    --spacing-nav-width: 350px;
+    --spacing-nav-height: 75px;
+    --spacing-nav-bottom: 24px;
+    --spacing-sheet-height: 50svh;
+    --spacing-sheet-gutter: 10px;
+    --radius-sheet: 35px;
 }
 
 @layer base {
@@ -90,6 +100,13 @@
     display: none;
     width: 0;
     height: 0;
+}
+
+/* The map runs under the status bar (viewport-fit=cover), so its top controls have to
+   start below it. Unlayered and one class more specific than maplibre's own rule, so
+   it wins regardless of which stylesheet loads last. */
+.maplibregl-map .maplibregl-ctrl-top-right {
+    top: env(safe-area-inset-top, 0px);
 }
 
 @keyframes skeleton-shimmer {
