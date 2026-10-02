@@ -14,9 +14,12 @@
     --color-selector: #ffffff1A;
     --color-button-circle: #00000040;
     --color-button-toggle-off: #ffffff40;
+    --color-pin-border: #2A2A2A;
+    --color-progress-track: #ffffff0D;
 
     /* TEXT */
     --color-heading: #ffffe6;
+    --color-heading-black: #000000;
     --color-text: #ffffff80;
     --color-input: #ffffff40;
 
@@ -28,6 +31,12 @@
     --color-mint: #00C8B3;
     --color-purple: #CB30E0;
     --color-blue: #0088FF;
+    --color-rust: #D65A19;
+    --color-pink: #C02D75;
+    --color-sky: #5AC8FA;
+    --color-cobalt: #2878D0;
+    --color-taupe: #A2845E;
+    --color-violet: #7B48C7;
 
     /* SKELETON (loading placeholders) */
     --color-skeleton: rgba(118, 118, 128, 0.25);
