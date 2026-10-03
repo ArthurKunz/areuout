@@ -137,8 +137,10 @@ every function in this section until a later step teaches Create/Edit Party to g
 `BEFORE INSERT OR UPDATE` trigger `private.set_fuzzy_position()`. It re-rolls only when
 `lat`/`lng` actually change; on any other update it copies the stored point back, so a
 client write to the fuzzy columns directly is silently overwritten, never a client-
-chosen value. When the address changes without new coordinates (the old edit screen's
-path), the trigger clears all four columns to NULL rather than leaving a stale point.
+chosen value. When a write leaves `lat` NULL (the old edit screen's path: the address
+changes without new coordinates), the trigger sets `fuzzy_lat`/`fuzzy_lng` to NULL
+rather than leaving a stale point. It does not touch `lat`/`lng` themselves — the writer
+nulls those, and `events_lat_lng_pair_check` keeps the two NULL together.
 
 **`events.is_public`** (default `false`) does not change who can read a row —
 `events_select_member` is untouched, still host-or-member-only, on purpose. Every
@@ -198,7 +200,39 @@ non-host. `PARTY_VISIBLE_HOURS`/`private.party_visible_until` (24 hours) decide 
 party leaves the map and every list. They look similar and are not the same rule — see
 the hard rule in `CLAUDE.md`.
 
-## 9. Checking this file against the database
+## 9. Creating a party (Step 3 of the redesign)
+
+**`create_party(...)`** saves a party, its polls with their options and its questions in
+one call, so the save is atomic: if anything fails, nothing is written, and there is
+never a party without the polls its host just entered. It is `SECURITY INVOKER` — every
+insert still passes the caller's own RLS (`events` only with `host_id = auth.uid()`,
+`pools`/`pool_options` only for the host of the parent event) — and `host_id` is always
+`auth.uid()`, never a parameter. The client generates the party's `id` and `invite_code`.
+`fuzzy_lat`/`fuzzy_lng` are left to the trigger in section 8.
+
+It validates before the first insert and raises `check_violation` (23514) with a
+readable message. The limits mirror the create flow's `LIMITS`: title, motto and
+dresscode 1–20 characters after trimming, description up to 500, `max_guests` 1–500,
+location and coordinates and background picture required, `ends_at` after `event_date`,
+up to 5 polls (question 1–60, 2–10 options of 1–30 each) and up to 5 questions (1–60).
+`p_polls` is a JSON array of `{question, options, allow_multiple}`, `p_questions` a
+JSON array of strings. A poll becomes a `pools` row with `type = 'options'` and its
+options get `position` 0..n in array order; a question becomes `type = 'text_only'`,
+`allow_text_response = true`. Each `pools` row gets `created_at = clock_timestamp()`,
+because `get_party_polls` sorts by `created_at` and `now()` would tie every row of the
+transaction. `authenticated` only (`REVOKE ... FROM PUBLIC, anon`).
+
+**Two caps hold for every insert path**, since a direct insert into `pools` or
+`pool_options` skips the function: `private.cap_pools_per_event()` (trigger
+`pools_cap_per_event`) allows at most 5 pools per party **per type** — 5 polls and 5
+questions side by side — and `private.cap_options_per_pool()` (trigger
+`pool_options_cap_per_pool`) at most 10 options per poll. Both are `BEFORE INSERT`, lock
+the parent row `FOR UPDATE` before counting (section 3), and are `SECURITY DEFINER` so
+the count is not filtered by RLS. The old app's edit path deletes before it inserts, so
+it never hits them. The 2-option minimum lives only in `create_party`: a row trigger
+sees one option at a time and cannot know whether a second follows.
+
+## 10. Checking this file against the database
 
 Do not trust the above. The database answers all of it, and the Supabase MCP is the
 fastest way to ask. `supabase/migrations/` is **not** a substitute: it runs roughly 22
@@ -235,7 +269,7 @@ where schemaname in ('public', 'private');
 select id, public, file_size_limit, allowed_mime_types from storage.buckets;
 ```
 
-## 10. Open questions
+## 11. Open questions
 
 Found on 2026-09-01 and deliberately not touched. Changing the database is its own task
 with its own migrations.

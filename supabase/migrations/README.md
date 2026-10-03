@@ -112,3 +112,13 @@ absichtlich verdoppelt, damit `unique (event_id, claimed_by)` „eine Beanspruch
 pro Person und Party" halten kann. Abgesichert wird diese Verdopplung durch den
 zusammengesetzten Fremdschlüssel auf `(item_id, event_id)` — ohne ihn liesse sich
 die Regel mit einer fremden `event_id` umgehen.
+
+## Die beiden Create-Party-Migrationen
+
+`20261003201436_add_create_party_function.sql` und
+`20261003201448_cap_polls_and_options.sql` (Schritt 3 des Redesigns) legen
+`create_party` an — Party, Umfragen samt Optionen und Fragen in einem atomaren
+Aufruf — und die beiden Trigger, die höchstens 5 Umfragen und 5 Fragen pro Party und
+höchstens 10 Optionen pro Umfrage zulassen. Die Dateinamen tragen die Versionen, unter
+denen sie tatsächlich angewendet wurden — so, wie die Regel oben es verlangt. Warum es
+so gebaut ist, steht in `SCHEMA.md`, Abschnitt 9.
