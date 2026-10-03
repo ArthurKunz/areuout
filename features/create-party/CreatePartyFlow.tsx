@@ -1,11 +1,12 @@
 'use client'
 
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import StepFrame from './StepFrame'
 import NameStep from './steps/NameStep'
 import TimeStep from './steps/TimeStep'
 import LocationStep from './steps/LocationStep'
+import CoverStep from './steps/CoverStep'
 import { emptyDraft, type PartyDraft } from './draft'
 
 type FeatureStep = 'motto' | 'maxGuests' | 'dresscode' | 'description' | 'polls' | 'questions'
@@ -21,6 +22,15 @@ export default function CreatePartyFlow({ from }: { from: string }) {
 
   const close = () => router.push(from)
   const update = (patch: Partial<PartyDraft>) => setDraft((current) => ({ ...current, ...patch }))
+
+  // An uploaded cover's preview URL lives as long as it is the cover: revoked once a
+  // preset or another picture replaces it, or the flow closes. Not on a step change,
+  // since the flow and its draft stay mounted throughout.
+  const previewUrl = draft.cover?.kind === 'upload' ? draft.cover.previewUrl : null
+  useEffect(() => {
+    if (!previewUrl) return
+    return () => URL.revokeObjectURL(previewUrl)
+  }, [previewUrl])
 
   // Placeholders remain for the steps still to come; each is replaced by its step component.
   if (typeof screen === 'object') return null
@@ -42,11 +52,7 @@ export default function CreatePartyFlow({ from }: { from: string }) {
         />
       )
     case 4:
-      return (
-        <StepFrame title='Partycover' onClose={close} onBack={() => setScreen(3)} button={{ label: 'weiter', onClick: () => setScreen(5) }}>
-          {null}
-        </StepFrame>
-      )
+      return <CoverStep draft={draft} update={update} onNext={() => setScreen(5)} onBack={() => setScreen(3)} onClose={close} />
     case 5:
       return (
         <StepFrame title='Features' onClose={close} onBack={() => setScreen(4)} button={{ label: 'Erstellen', onClick: () => {} }}>
