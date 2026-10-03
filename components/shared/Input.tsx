@@ -8,12 +8,16 @@ export function InputRow({
   onChange,
   placeholder,
   type = 'text',
+  maxLength,
+  inputMode,
 }: {
   label: string
   value: string
   onChange: (next: string) => void
   placeholder?: string
   type?: 'text' | 'number'
+  maxLength?: number
+  inputMode?: 'text' | 'numeric'
 }) {
   return (
     <div className='flex h-[50px] items-center gap-3 px-4'>
@@ -23,6 +27,8 @@ export function InputRow({
         value={value}
         onChange={(e) => onChange(e.target.value)}
         placeholder={placeholder}
+        maxLength={maxLength}
+        inputMode={inputMode}
         className='min-w-0 flex-1 bg-transparent text-right text-text-3 text-text outline-none placeholder:text-input'
       />
     </div>

@@ -63,6 +63,7 @@
     --spacing-nav-height: 75px;
     --spacing-nav-bottom: 24px;
     --spacing-sheet-height: 50svh;
+    --spacing-sheet-height-tall: 85svh;
     --spacing-sheet-gutter: 10px;
     --radius-sheet: 35px;
 }

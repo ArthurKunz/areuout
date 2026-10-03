@@ -25,6 +25,7 @@ export default function Sheet({
   open,
   onOpenChange,
   draggable,
+  tall,
   navRef,
   children,
 }: {
@@ -32,6 +33,9 @@ export default function Sheet({
   onOpenChange: (open: boolean) => void
   // False on screens without navigation: no handle, no drag, always open.
   draggable: boolean
+  // The taller container of the create flow. Only ever set on screens without
+  // navigation, so it never changes the drag distance while it matters.
+  tall: boolean
   navRef: RefObject<HTMLElement | null>
   children: ReactNode
 }) {
@@ -105,9 +109,16 @@ export default function Sheet({
       render(progress.current)
     }
     measure()
+    // The height animates between the two sizes, so the first measure after a change
+    // still sees the old top edge; measuring again once it has settled corrects that.
+    const sheet = sheetRef.current
     window.addEventListener('resize', measure)
-    return () => window.removeEventListener('resize', measure)
-  }, [draggable, navRef, render])
+    sheet?.addEventListener('transitionend', measure)
+    return () => {
+      window.removeEventListener('resize', measure)
+      sheet?.removeEventListener('transitionend', measure)
+    }
+  }, [draggable, tall, navRef, render])
 
   // State changes from outside (a tab tap, a screen without navigation). A drag release
   // has already set the target, so this does not restart its spring.
@@ -178,7 +189,9 @@ export default function Sheet({
       <div
         ref={sheetRef}
         {...pointerHandlers}
-        className='fixed inset-x-sheet-gutter bottom-sheet-gutter z-10 h-sheet-height will-change-transform'
+        className={`fixed inset-x-sheet-gutter bottom-sheet-gutter z-10 transition-[height] duration-300 ease-[cubic-bezier(0.32,0.72,0,1)] will-change-transform motion-reduce:transition-none ${
+          tall ? 'h-sheet-height-tall' : 'h-sheet-height'
+        }`}
       >
         <div ref={surfaceRef} className='absolute inset-0 rounded-sheet bg-main backdrop-blur-3xl' />
         <div ref={contentRef} className='relative flex h-full flex-col pt-6'>

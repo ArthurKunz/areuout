@@ -16,17 +16,20 @@ export default function BigButton({
   children,
   onClick,
   type = 'button',
+  disabled,
 }: {
   variant: keyof typeof VARIANT_CLASS
   children: ReactNode
   onClick?: () => void
   type?: 'button' | 'submit'
+  disabled?: boolean
 }) {
   return (
     <button
       type={type}
       onClick={onClick}
-      className={`flex h-[50px] w-[350px] items-center justify-center rounded-full text-text-1 font-semibold backdrop-blur-[100px] ${VARIANT_CLASS[variant]}`}
+      disabled={disabled}
+      className={`flex h-[50px] w-[350px] items-center justify-center rounded-full text-text-1 font-semibold backdrop-blur-[100px] transition-opacity duration-200 disabled:opacity-40 ${VARIANT_CLASS[variant]}`}
     >
       {children}
     </button>
