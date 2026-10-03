@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation'
 import StepFrame from './StepFrame'
 import NameStep from './steps/NameStep'
 import TimeStep from './steps/TimeStep'
+import LocationStep from './steps/LocationStep'
 import { emptyDraft, type PartyDraft } from './draft'
 
 type FeatureStep = 'motto' | 'maxGuests' | 'dresscode' | 'description' | 'polls' | 'questions'
@@ -30,9 +31,15 @@ export default function CreatePartyFlow({ from }: { from: string }) {
       return <TimeStep draft={draft} update={update} onNext={() => setScreen(3)} onBack={() => setScreen(1)} onClose={close} />
     case 3:
       return (
-        <StepFrame title='Location' onClose={close} onBack={() => setScreen(2)} button={{ label: 'Weiter', onClick: () => setScreen(4) }}>
-          {null}
-        </StepFrame>
+        <LocationStep
+          draft={draft}
+          onPick={(location) => {
+            update({ location })
+            setScreen(4)
+          }}
+          onBack={() => setScreen(2)}
+          onClose={close}
+        />
       )
     case 4:
       return (

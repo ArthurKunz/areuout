@@ -20,7 +20,7 @@ import LegalTextScreen, { type LegalSection } from '@/features/profile/LegalText
 //                   DPA, Abschnitt 11.1, zusätzlich Standardvertragsklauseln
 //   Google Maps     features/parties/components/PartyMap.tsx (Static Maps API)
 //   Google Sign-In  features/auth/services/auth.service.ts:15, features/auth/components/AuthSheet.tsx
-//   Photon/komoot   features/parties/components/AddressSearchField.tsx:16
+//   Photon/komoot   features/parties/services/address.service.ts:5
 //
 // Drei Messungen, die im Text auftauchen und deshalb hier festgehalten sind:
 //
