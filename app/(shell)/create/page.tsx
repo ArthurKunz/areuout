@@ -28,5 +28,5 @@ export default async function CreatePage({
   const { from } = await searchParams
   const origin = TABS.find((tab) => tab.href === from)?.href ?? '/explore'
 
-  return <CreatePartyFlow from={origin} />
+  return <CreatePartyFlow from={origin} userId={user.id} />
 }

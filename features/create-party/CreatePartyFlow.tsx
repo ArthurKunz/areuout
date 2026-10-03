@@ -13,16 +13,21 @@ import QuestionsStep from './features/QuestionsStep'
 import PollsStep from './features/PollsStep'
 import type { Feature } from './features/FeatureChip'
 import { emptyDraft, type PartyDraft } from './draft'
+import { saveParty } from './saveParty'
+import { useShellMap } from '@/components/shell/MapContext'
 
 type Screen = 1 | 2 | 3 | 4 | 5 | { sub: Feature }
 
 // The whole create flow on one route: the steps are client state, not routes, so there
 // is no jumping between them and a refresh starts over (App Redesign 7.1). `from` is
-// the tab it was opened from, already checked by the page; ✗ returns there.
-export default function CreatePartyFlow({ from }: { from: string }) {
+// the tab it was opened from, already checked by the page; ✗ returns there. `userId`
+// is the signed-in user the page already verified; the picture's folder is named by it.
+export default function CreatePartyFlow({ from, userId }: { from: string; userId: string }) {
   const router = useRouter()
+  const { flyTo } = useShellMap()
   const [draft, setDraft] = useState<PartyDraft>(emptyDraft)
   const [screen, setScreen] = useState<Screen>(1)
+  const [saving, setSaving] = useState(false)
 
   const close = () => router.push(from)
   const update = (patch: Partial<PartyDraft>) => setDraft((current) => ({ ...current, ...patch }))
@@ -35,6 +40,21 @@ export default function CreatePartyFlow({ from }: { from: string }) {
     if (!previewUrl) return
     return () => URL.revokeObjectURL(previewUrl)
   }, [previewUrl])
+
+  // On success the map flies to the new party and Hosting shows it in its list. On
+  // failure saveParty has already said why; the flow stays on step 5 with the draft
+  // intact, so Erstellen can simply be tapped again.
+  const create = async () => {
+    if (saving || !draft.location) return
+    setSaving(true)
+    const result = await saveParty(draft, userId)
+    if (!result.ok) {
+      setSaving(false)
+      return
+    }
+    flyTo(draft.location.lng, draft.location.lat)
+    router.replace('/hosting')
+  }
 
   // A feature sub-step returns to step 5 either way: back discards its local copy,
   // Hinzufügen writes it first.
@@ -74,9 +94,8 @@ export default function CreatePartyFlow({ from }: { from: string }) {
           draft={draft}
           update={update}
           onOpen={(feature) => setScreen({ sub: feature })}
-          // Saving comes in the next phase; until then Erstellen does nothing.
-          onCreate={() => {}}
-          saving={false}
+          onCreate={create}
+          saving={saving}
           onBack={() => setScreen(4)}
           onClose={close}
         />
