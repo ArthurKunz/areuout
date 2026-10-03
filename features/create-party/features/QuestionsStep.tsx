@@ -5,7 +5,7 @@ import StepFrame from '../StepFrame'
 import Input from '@/components/shared/Input'
 import AddButton from '@/components/shared/AddButton'
 import FeatureChip from './FeatureChip'
-import { LIMITS, cleanQuestions, type PartyDraft } from '../draft'
+import { LIMITS, cleanQuestions, newBlockKey, type PartyDraft } from '../draft'
 
 // The Frage sub-step (mockups Create 10, 12, 14): the add row on top, one Frage row
 // per block beneath it, gone at five. Blocks carry an id for React only; the draft
@@ -19,10 +19,10 @@ export default function QuestionsStep({
   onSave: (patch: Partial<PartyDraft>) => void
   onBack: () => void
 }) {
-  const [blocks, setBlocks] = useState(() => draft.questions.map((text) => ({ id: crypto.randomUUID(), text })))
+  const [blocks, setBlocks] = useState(() => draft.questions.map((text) => ({ id: newBlockKey(), text })))
 
-  const add = () => setBlocks((current) => [...current, { id: crypto.randomUUID(), text: '' }])
-  const edit = (id: string, text: string) =>
+  const add = () => setBlocks((current) => [...current, { id: newBlockKey(), text: '' }])
+  const edit = (id: number, text: string) =>
     setBlocks((current) => current.map((block) => (block.id === id ? { ...block, text } : block)))
   const save = () => onSave({ questions: cleanQuestions(blocks.map((block) => block.text)) })
 

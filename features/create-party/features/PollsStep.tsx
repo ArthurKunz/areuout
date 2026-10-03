@@ -7,7 +7,7 @@ import AddButton from '@/components/shared/AddButton'
 import ToggleInput from '@/components/shared/ToggleInput'
 import { InputRow } from '@/components/shared/Input'
 import FeatureChip from './FeatureChip'
-import { LIMITS, cleanPolls, pollsValid, type PollDraft, type PartyDraft } from '../draft'
+import { LIMITS, cleanPolls, newBlockKey, pollsValid, type PollDraft, type PartyDraft } from '../draft'
 
 const OPTION_PLACEHOLDERS = ['z.B. Ja', 'z.B. Nein']
 
@@ -26,11 +26,11 @@ export default function PollsStep({
   onSave: (patch: Partial<PartyDraft>) => void
   onBack: () => void
 }) {
-  const [polls, setPolls] = useState(() => draft.polls.map((poll) => ({ ...poll, id: crypto.randomUUID() })))
+  const [polls, setPolls] = useState(() => draft.polls.map((poll) => ({ ...poll, id: newBlockKey() })))
 
   const add = () =>
-    setPolls((current) => [...current, { id: crypto.randomUUID(), question: '', options: ['', ''], allowMultiple: false }])
-  const edit = (id: string, patch: Partial<PollDraft>) =>
+    setPolls((current) => [...current, { id: newBlockKey(), question: '', options: ['', ''], allowMultiple: false }])
+  const edit = (id: number, patch: Partial<PollDraft>) =>
     setPolls((current) => current.map((poll) => (poll.id === id ? { ...poll, ...patch } : poll)))
 
   // Strips the ids before cleaning, since the draft's polls have none.

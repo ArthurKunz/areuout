@@ -75,6 +75,11 @@ export const canLeaveName = (d: PartyDraft) => {
 export const canLeaveTime = (d: PartyDraft) => Boolean(d.date && d.start && (!d.endEnabled || d.end))
 export const canLeaveCover = (d: PartyDraft) => d.cover !== null
 
+// React keys for the Umfrage and Frage blocks. A counter, not crypto.randomUUID, which
+// is missing on the http LAN address used for phone testing.
+let nextBlockKey = 0
+export const newBlockKey = () => nextBlockKey++
+
 // What Hinzufügen on the Umfrage sub-step writes: everything trimmed, a block with no
 // question and no filled option dropped, and empty option rows inside a kept poll
 // removed. Nothing else is dropped; pollsValid keeps the button off instead.

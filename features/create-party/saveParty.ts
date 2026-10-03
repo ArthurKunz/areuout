@@ -8,6 +8,17 @@ import { toRpcArgs, type PartyDraft } from './draft'
 
 type RpcArgs = Database['public']['Functions']['create_party']['Args']
 
+// A v4 uuid from getRandomValues. Not crypto.randomUUID: that is a secure-context
+// feature and missing on the http LAN address used for phone testing (see
+// generateInviteCode in lib/utils.ts); getRandomValues works there too.
+function newPartyId(): string {
+  const bytes = crypto.getRandomValues(new Uint8Array(16))
+  bytes[6] = (bytes[6] & 0x0f) | 0x40
+  bytes[8] = (bytes[8] & 0x3f) | 0x80
+  const hex = Array.from(bytes, (byte) => byte.toString(16).padStart(2, '0')).join('')
+  return `${hex.slice(0, 8)}-${hex.slice(8, 12)}-${hex.slice(12, 16)}-${hex.slice(16, 20)}-${hex.slice(20)}`
+}
+
 // Saves the whole draft so that there is never a half-created party. The order:
 // 1. The cover picture is uploaded first, before anything exists in the database. That
 //    is allowed because the bucket policy only checks the first folder (auth.uid()),
@@ -17,7 +28,7 @@ type RpcArgs = Database['public']['Functions']['create_party']['Args']
 // 3. If that call fails, the picture from step 1 would be an orphan, so its folder is
 //    removed again. A retry gets a fresh partyId, and with it a fresh folder.
 export async function saveParty(draft: PartyDraft, userId: string): Promise<{ ok: true; partyId: string } | { ok: false }> {
-  const partyId = crypto.randomUUID()
+  const partyId = newPartyId()
   const inviteCode = generateInviteCode()
   // The flow only reaches the save past the cover step.
   if (!draft.cover) throw new Error('saveParty: cover is required')
