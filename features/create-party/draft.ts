@@ -75,6 +75,28 @@ export const canLeaveName = (d: PartyDraft) => {
 export const canLeaveTime = (d: PartyDraft) => Boolean(d.date && d.start && (!d.endEnabled || d.end))
 export const canLeaveCover = (d: PartyDraft) => d.cover !== null
 
+// What Hinzufügen on the Umfrage sub-step writes: everything trimmed, a block with no
+// question and no filled option dropped, and empty option rows inside a kept poll
+// removed. Nothing else is dropped; pollsValid keeps the button off instead.
+export function cleanPolls(polls: PollDraft[]): PollDraft[] {
+  return polls
+    .map((poll) => ({
+      ...poll,
+      question: poll.question.trim(),
+      options: poll.options.map((option) => option.trim()).filter(Boolean),
+    }))
+    .filter((poll) => poll.question || poll.options.length > 0)
+}
+
+// Every poll that survives cleaning needs a question and at least two filled options:
+// a poll with options but no question, or a question with fewer than two options,
+// keeps Hinzufügen disabled.
+export const pollsValid = (polls: PollDraft[]) =>
+  cleanPolls(polls).every((poll) => poll.question && poll.options.length >= LIMITS.minOptions)
+
+// What Hinzufügen on the Frage sub-step writes: trimmed, empty blocks dropped.
+export const cleanQuestions = (questions: string[]) => questions.map((question) => question.trim()).filter(Boolean)
+
 // Both columns are timestamptz and the database session runs in UTC, so the picked
 // wall-clock time is built as a local Date and sent as an ISO string, which carries the
 // offset. PartyDate's month is 0-based (it is the wheel's index), so it goes into Date
