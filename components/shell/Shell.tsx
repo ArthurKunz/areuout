@@ -6,7 +6,7 @@ import Sheet from '@/components/shell/Sheet'
 import TabNav, { TABS } from '@/components/shell/TabNav'
 
 const HideContext = createContext<Dispatch<SetStateAction<number>> | null>(null)
-const TallContext = createContext<Dispatch<SetStateAction<number>> | null>(null)
+const FitContext = createContext<Dispatch<SetStateAction<number>> | null>(null)
 
 // Hides the navigation and the slider together while it is mounted. For states inside
 // a tab that are not routes of their own (the party detail replaces the list in the
@@ -21,15 +21,17 @@ export function HideShell() {
   return null
 }
 
-// Makes the container taller while it is mounted (the create flow's steps need the
-// room). Same counter as HideShell, so it reverts by itself when the screen goes.
-export function TallSheet() {
-  const setTall = useContext(TallContext)
+// Sizes the container to its content (up to --spacing-sheet-height-max) instead of
+// the lists' fixed height while it is mounted. For the create flow, whose steps range
+// from one row to a full poll form. Same counter as HideShell, so it reverts by itself
+// when the screen goes.
+export function FitSheet() {
+  const setFit = useContext(FitContext)
   useLayoutEffect(() => {
-    if (!setTall) return
-    setTall((count) => count + 1)
-    return () => setTall((count) => count - 1)
-  }, [setTall])
+    if (!setFit) return
+    setFit((count) => count + 1)
+    return () => setFit((count) => count - 1)
+  }, [setFit])
   return null
 }
 
@@ -39,7 +41,7 @@ export function TallSheet() {
 export default function Shell({ children }: { children: ReactNode }) {
   const pathname = usePathname()
   const [hidden, setHidden] = useState(0)
-  const [tall, setTall] = useState(0)
+  const [fit, setFit] = useState(0)
   // Kept here, above the pages, so it survives tab changes.
   const [open, setOpen] = useState(true)
   const navRef = useRef<HTMLElement>(null)
@@ -48,14 +50,14 @@ export default function Shell({ children }: { children: ReactNode }) {
 
   return (
     <HideContext value={setHidden}>
-      <TallContext value={setTall}>
+      <FitContext value={setFit}>
         {/* Before Sheet on purpose: React attaches refs in tree order, and Sheet measures
             the bar in its layout effect. Stacking comes from z-index, not from order. */}
         {showChrome && <TabNav ref={navRef} pathname={pathname} onSelect={() => setOpen(true)} />}
-        <Sheet open={open || !showChrome} onOpenChange={setOpen} draggable={showChrome} tall={tall > 0} navRef={navRef}>
+        <Sheet open={open || !showChrome} onOpenChange={setOpen} draggable={showChrome} fit={fit > 0} navRef={navRef}>
           {children}
         </Sheet>
-      </TallContext>
+      </FitContext>
     </HideContext>
   )
 }

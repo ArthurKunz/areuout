@@ -1,6 +1,7 @@
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import CreatePartyFlow from '@/features/create-party/CreatePartyFlow'
+import { FitSheet } from '@/components/shell/Shell'
 
 // The three tabs whose list has the plus button. Written out here rather than taken
 // from TABS: TabNav.tsx is a 'use client' module, and a server component importing a
@@ -32,5 +33,11 @@ export default async function CreatePage({
   const { from } = await searchParams
   const origin = typeof from === 'string' && PLUS_TABS.includes(from) ? from : '/explore'
 
-  return <CreatePartyFlow from={origin} userId={user.id} />
+  // The flow's container fits each step's content instead of the lists' fixed height.
+  return (
+    <>
+      <FitSheet />
+      <CreatePartyFlow from={origin} userId={user.id} />
+    </>
+  )
 }

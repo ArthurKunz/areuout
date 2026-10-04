@@ -25,7 +25,7 @@ export default function Sheet({
   open,
   onOpenChange,
   draggable,
-  tall,
+  fit,
   navRef,
   children,
 }: {
@@ -33,9 +33,10 @@ export default function Sheet({
   onOpenChange: (open: boolean) => void
   // False on screens without navigation: no handle, no drag, always open.
   draggable: boolean
-  // The taller container of the create flow. Only ever set on screens without
-  // navigation, so it never changes the drag distance while it matters.
-  tall: boolean
+  // The create flow's container: as tall as its content, up to
+  // --spacing-sheet-height-max. Only ever set on screens without navigation, so it
+  // never changes the drag distance while it matters.
+  fit: boolean
   navRef: RefObject<HTMLElement | null>
   children: ReactNode
 }) {
@@ -109,16 +110,9 @@ export default function Sheet({
       render(progress.current)
     }
     measure()
-    // The height animates between the two sizes, so the first measure after a change
-    // still sees the old top edge; measuring again once it has settled corrects that.
-    const sheet = sheetRef.current
     window.addEventListener('resize', measure)
-    sheet?.addEventListener('transitionend', measure)
-    return () => {
-      window.removeEventListener('resize', measure)
-      sheet?.removeEventListener('transitionend', measure)
-    }
-  }, [draggable, tall, navRef, render])
+    return () => window.removeEventListener('resize', measure)
+  }, [draggable, fit, navRef, render])
 
   // State changes from outside (a tab tap, a screen without navigation). A drag release
   // has already set the target, so this does not restart its spring.
@@ -189,12 +183,14 @@ export default function Sheet({
       <div
         ref={sheetRef}
         {...pointerHandlers}
-        className={`fixed inset-x-sheet-gutter bottom-sheet-gutter z-10 transition-[height] duration-300 ease-[cubic-bezier(0.32,0.72,0,1)] will-change-transform motion-reduce:transition-none ${
-          tall ? 'h-sheet-height-tall' : 'h-sheet-height'
+        className={`fixed inset-x-sheet-gutter bottom-sheet-gutter z-10 flex flex-col will-change-transform ${
+          fit ? 'max-h-sheet-height-max' : 'h-sheet-height'
         }`}
       >
         <div ref={surfaceRef} className='absolute inset-0 rounded-sheet bg-main backdrop-blur-3xl' />
-        <div ref={contentRef} className='relative flex h-full flex-col pt-6'>
+        {/* A flex item that may shrink: with a fitted container it is as tall as its
+            content until the maximum, then the screen's own body scrolls inside it. */}
+        <div ref={contentRef} className='relative flex min-h-0 flex-auto flex-col pt-6'>
           {children}
         </div>
       </div>

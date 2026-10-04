@@ -63,7 +63,8 @@
     --spacing-nav-height: 75px;
     --spacing-nav-bottom: 24px;
     --spacing-sheet-height: 50svh;
-    --spacing-sheet-height-tall: 85svh;
+    /* The create flow's container fits its content up to this. */
+    --spacing-sheet-height-max: 80svh;
     --spacing-sheet-gutter: 10px;
     --radius-sheet: 35px;
 }

@@ -4,7 +4,6 @@ import { useEffect, useRef, useState } from 'react'
 import StepFrame from '../StepFrame'
 import SearchInput from '@/components/shared/SearchInput'
 import LocationResultsList from '@/components/shared/LocationResultsList'
-import { TallSheet } from '@/components/shell/Shell'
 import {
   DEBOUNCE_MS,
   MIN_QUERY_LENGTH,
@@ -35,9 +34,6 @@ export default function LocationStep({
   // Coming back to this step prefills the picked address, which would otherwise look
   // like a new search term and fire straight away.
   const skipNextSearch = useRef(draft.location !== null)
-  // The container only grows once the host types, not for the prefilled address on
-  // the way back from step 4, which has no results under it.
-  const [typed, setTyped] = useState(false)
 
   useEffect(() => {
     const term = query.trim()
@@ -69,15 +65,7 @@ export default function LocationStep({
 
   return (
     <StepFrame title='Location' onClose={onClose} onBack={onBack} button={null}>
-      {typed && query && <TallSheet />}
-      <SearchInput
-        value={query}
-        onChange={(next) => {
-          setTyped(true)
-          setQuery(next)
-        }}
-        placeholder='Location'
-      />
+      <SearchInput value={query} onChange={setQuery} placeholder='Location' />
 
       {!tooShort && results !== null &&
         (results.length > 0 ? (
