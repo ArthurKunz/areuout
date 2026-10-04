@@ -99,9 +99,6 @@ export function cleanPolls(polls: PollDraft[]): PollDraft[] {
 export const pollsValid = (polls: PollDraft[]) =>
   cleanPolls(polls).every((poll) => poll.question && poll.options.length >= LIMITS.minOptions)
 
-// What Hinzufügen on the Frage sub-step writes: trimmed, empty blocks dropped.
-export const cleanQuestions = (questions: string[]) => questions.map((question) => question.trim()).filter(Boolean)
-
 // Both columns are timestamptz and the database session runs in UTC, so the picked
 // wall-clock time is built as a local Date and sent as an ISO string, which carries the
 // offset. PartyDate's month is 0-based (it is the wheel's index), so it goes into Date
