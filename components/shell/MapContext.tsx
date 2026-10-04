@@ -14,8 +14,23 @@ const MapContext = createContext<MapRegistry | null>(null)
 
 const ZOOM = 15
 
+// The open container covers the bottom of the map: its height plus the gutter under it.
+// Read from the same variables Sheet uses (resolved through a probe element, since
+// 50svh only becomes pixels in layout), so the party lands in the middle of the map
+// that is still visible above the container.
+function containerInset() {
+  const probe = document.createElement('div')
+  probe.style.cssText = 'position:fixed;visibility:hidden;height:calc(var(--spacing-sheet-height) + var(--spacing-sheet-gutter))'
+  document.body.appendChild(probe)
+  const height = probe.getBoundingClientRect().height
+  probe.remove()
+  return height
+}
+
 function move(map: MapLibreMap, { lng, lat }: Target) {
-  const options = { center: [lng, lat] as [number, number], zoom: ZOOM }
+  // maplibre keeps the padding after the move, so later camera moves also centre on
+  // the visible part above the container.
+  const options = { center: [lng, lat] as [number, number], zoom: ZOOM, padding: { top: 0, right: 0, left: 0, bottom: containerInset() } }
   if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) map.jumpTo(options)
   else map.flyTo(options)
 }

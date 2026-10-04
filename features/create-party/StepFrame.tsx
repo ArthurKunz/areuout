@@ -35,7 +35,9 @@ export default function StepFrame({
         {onClose ? <IconButton icon={X} label='Schließen' onClick={onClose} /> : <span className='size-11.25 shrink-0' />}
       </div>
 
-      <div className='flex min-h-0 flex-1 flex-col items-center gap-4 overflow-y-auto px-5 pt-6 pb-4'>{children}</div>
+      {/* Children never shrink: in a flex column they would otherwise be squeezed to the
+          body's height and spill out under the button instead of scrolling. */}
+      <div className='flex min-h-0 flex-1 flex-col items-center gap-4 overflow-y-auto px-5 pt-6 pb-4 *:shrink-0'>{children}</div>
 
       {button && (
         <div className='flex shrink-0 justify-center px-5 pt-2 pb-6'>
