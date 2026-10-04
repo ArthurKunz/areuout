@@ -5,9 +5,9 @@ import { createPortal } from 'react-dom'
 import type { Map as MapLibreMap, Marker } from 'maplibre-gl'
 import { useShellMap } from '@/components/shell/MapContext'
 import PartyMapPin from '@/features/parties/components/PartyMapPin'
-import PartyRadar from '@/features/party-detail/PartyRadar'
+import PartyRadar, { showsRadar } from '@/features/party-detail/PartyRadar'
 
-export type MarkerParty = { id: string; lat: number; lng: number; background_url: string; title: string }
+export type MarkerParty = { id: string; lat: number; lng: number; background_url: string; title: string; is_public: boolean }
 
 // The dot under the pin marks the exact spot; its centre sits on the coordinates.
 const DOT = 6
@@ -86,7 +86,7 @@ function PartyMarker({
   return createPortal(
     selected ? (
       <div className='relative isolate flex flex-col items-center gap-0.5'>
-        <PartyRadar map={map} lat={party.lat} bottom={DOT / 2} />
+        {showsRadar(party) && <PartyRadar map={map} lat={party.lat} bottom={DOT / 2} />}
         <PartyMapPin imageUrl={party.background_url} alt={party.title} active />
         <span className='rounded-full bg-pin-border' style={{ width: DOT, height: DOT }} />
       </div>

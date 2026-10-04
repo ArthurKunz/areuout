@@ -3,14 +3,19 @@
 import { useLayoutEffect, useRef } from 'react'
 import type { Map as MapLibreMap } from 'maplibre-gl'
 
-// The same 200 m as the blurred point in private.set_fuzzy_position: the radius the
-// party is in (App Redesign 3.2, Party Map 7).
+// The same 200 m the database blurs a private party's point by (the trigger on events):
+// the radius the party is in (App Redesign 3.2, Party Map 7).
 const RADAR_METRES = 200
 
 // maplibre's metres per pixel at a latitude: the earth's circumference over a world
 // that is 512 px wide at zoom 0 and doubles with every zoom step.
 const metresPerPixel = (lat: number, zoom: number) =>
   (40075016.686 * Math.cos((lat * Math.PI) / 180)) / 2 ** (zoom + 9)
+
+// The one rule for when a selected party gets the radar: only a private party, whose
+// exact spot stays private — the circle says "somewhere in here". A public party gets
+// the pin and its dot alone. Every map that shows a selected party asks this.
+export const showsRadar = (party: { is_public: boolean }) => !party.is_public
 
 // The pulsing circle around a selected party, centred `bottom` px above the bottom edge
 // of the marker element it sits in (the pin's dot). Its size is in metres, so it is
