@@ -35,10 +35,10 @@ export function InputRow({
   )
 }
 
-// The 350x50 pill used for a single text field in the redesign.
+// The 50px-tall (at most 350px wide) pill used for a single text field in the redesign.
 export default function Input(props: Parameters<typeof InputRow>[0]) {
   return (
-    <div className='w-[350px] rounded-full bg-main backdrop-blur-[100px]'>
+    <div className='w-full max-w-[350px] rounded-full bg-main backdrop-blur-[100px]'>
       <InputRow {...props} />
     </div>
   )

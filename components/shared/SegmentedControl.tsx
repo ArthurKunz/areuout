@@ -1,6 +1,6 @@
 'use client'
 
-// A 350px pill with equal segments, one of them selected (öffentlich · privat on the
+// A pill (at most 350px wide) with equal segments, one of them selected (öffentlich · privat on the
 // first create step). Same track as Input; the thumb slides between segments with the
 // easing of the navigation's selector instead of jumping.
 export default function SegmentedControl<T extends string>({
@@ -15,7 +15,7 @@ export default function SegmentedControl<T extends string>({
   const activeIndex = options.findIndex((option) => option.value === value)
 
   return (
-    <div role='radiogroup' className='relative flex h-[50px] w-[350px] rounded-full bg-main p-1 backdrop-blur-[100px]'>
+    <div role='radiogroup' className='relative flex h-[50px] w-full max-w-[350px] rounded-full bg-main p-1 backdrop-blur-[100px]'>
       {activeIndex >= 0 && (
         <span
           aria-hidden

@@ -43,7 +43,7 @@ function PickerRow({ label, value, onClick }: { label: string; value: string; on
   )
 }
 
-const cardClass = 'w-[350px] rounded-[25px] bg-main backdrop-blur-[100px]'
+const cardClass = 'w-full max-w-[350px] rounded-[25px] bg-main backdrop-blur-[100px]'
 
 // Step 2: date, start and an optional end. The end joins the start's card when the
 // switch below is on (mockups Create 02 and 03).

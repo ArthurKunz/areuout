@@ -25,7 +25,7 @@ export default function DescriptionStep({
       onBack={onBack}
       button={{ label: 'Hinzufügen', onClick: () => onSave({ description: trimmed }), disabled: !trimmed }}
     >
-      <div className='flex w-[350px] flex-col gap-1.5'>
+      <div className='flex w-full max-w-[350px] flex-col gap-1.5'>
         <div className='rounded-[25px] bg-main backdrop-blur-[100px]'>
           <textarea
             value={value}

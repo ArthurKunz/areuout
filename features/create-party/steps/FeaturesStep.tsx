@@ -49,7 +49,7 @@ export default function FeaturesStep({
       onBack={onBack}
       button={{ label: 'Erstellen', onClick: onCreate, disabled: saving }}
     >
-      <div className='flex w-[350px] flex-wrap justify-center gap-2.5'>
+      <div className='flex w-full max-w-[350px] flex-wrap justify-center gap-2.5'>
         {FEATURES.map(({ key, variant, label }) => (
           <Chip
             key={key}

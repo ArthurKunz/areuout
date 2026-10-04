@@ -1,6 +1,6 @@
 'use client'
 
-// The 350px-wide location search results list: one 50px row per address,
+// The (at most 350px wide) location search results list: one 50px row per address,
 // divided the same way as InputGroup. Plain nav rows — no chevron, no
 // value, just the address.
 export default function LocationResultsList({
@@ -9,7 +9,7 @@ export default function LocationResultsList({
   results: { id: string; label: string; onClick?: () => void }[]
 }) {
   return (
-    <div className='flex w-[350px] flex-col rounded-[25px] bg-main backdrop-blur-[100px]'>
+    <div className='flex w-full max-w-[350px] flex-col rounded-[25px] bg-main backdrop-blur-[100px]'>
       {results.map((result, i) => (
         <div key={result.id}>
           {i > 0 && <div className='mx-4 h-px rounded-full bg-divider' />}

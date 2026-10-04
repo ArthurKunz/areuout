@@ -9,7 +9,7 @@ const VARIANT_CLASS = {
   main: 'bg-main text-heading',
 } as const
 
-// The 350x50 full-width action button (Anfragen, Log out, Account löschen),
+// The 50px-tall (at most 350px wide) full-width action button (Anfragen, Log out, Account löschen),
 // in one of four fixed colour variants.
 export default function BigButton({
   variant,
@@ -29,7 +29,7 @@ export default function BigButton({
       type={type}
       onClick={onClick}
       disabled={disabled}
-      className={`flex h-[50px] w-[350px] items-center justify-center rounded-full text-text-1 font-semibold backdrop-blur-[100px] transition-opacity duration-200 disabled:opacity-40 ${VARIANT_CLASS[variant]}`}
+      className={`flex h-[50px] w-full max-w-[350px] items-center justify-center rounded-full text-text-1 font-semibold backdrop-blur-[100px] transition-opacity duration-200 disabled:opacity-40 ${VARIANT_CLASS[variant]}`}
     >
       {children}
     </button>
