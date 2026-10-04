@@ -27,7 +27,7 @@ const DEFAULT_END: PartyTime = { hour: 2, minute: 0 }
 // A row that opens a wheel instead of taking text. Same shape as InputRow; the value
 // sits in a read-only input so it renders exactly like a typed one, placeholder colour
 // included.
-function PickerRow({ label, value, onClick }: { label: string; value: string; onClick: () => void }) {
+export function PickerRow({ label, value, onClick }: { label: string; value: string; onClick: () => void }) {
   return (
     <button type='button' onClick={onClick} className='flex h-[50px] w-full items-center gap-3 px-4'>
       <span className='shrink-0 text-text-3 font-semibold text-heading'>{label}</span>
@@ -43,23 +43,12 @@ function PickerRow({ label, value, onClick }: { label: string; value: string; on
   )
 }
 
-const cardClass = 'w-full max-w-[350px] rounded-[25px] bg-main backdrop-blur-[100px]'
+export const cardClass = 'w-full max-w-[350px] rounded-[25px] bg-main backdrop-blur-[100px]'
 
-// Step 2: date, start and an optional end. The end joins the start's card when the
-// switch below is on (mockups Create 02 and 03).
-export default function TimeStep({
-  draft,
-  update,
-  onNext,
-  onBack,
-  onClose,
-}: {
-  draft: PartyDraft
-  update: (patch: Partial<PartyDraft>) => void
-  onNext: () => void
-  onBack: () => void
-  onClose: () => void
-}) {
+// Datum, Startzeit and an optional Endzeit with their wheels. The end joins the start's
+// card when the switch below is on (mockups Create 02 and 03). Step 2 of Create Party
+// and the Edit Party form both show it.
+export function TimeFields({ draft, update }: { draft: PartyDraft; update: (patch: Partial<PartyDraft>) => void }) {
   const [open, setOpen] = useState<Open>(null)
   const close = () => setOpen(null)
 
@@ -85,12 +74,7 @@ export default function TimeStep({
     ) : null
 
   return (
-    <StepFrame
-      title='Time'
-      onClose={onClose}
-      onBack={onBack}
-      button={{ label: 'Weiter', onClick: onNext, disabled: !canLeaveTime(draft) }}
-    >
+    <>
       <div className={cardClass}>
         <PickerRow label='Datum' value={draft.date ? formatDate(draft.date) : ''} onClick={() => openSheet('date')} />
       </div>
@@ -106,6 +90,32 @@ export default function TimeStep({
       <ToggleInput label='Endzeit' checked={draft.endEnabled} onChange={(endEnabled) => update({ endEnabled })} />
 
       {sheet && createPortal(sheet, document.body)}
+    </>
+  )
+}
+
+// Step 2: date, start and an optional end.
+export default function TimeStep({
+  draft,
+  update,
+  onNext,
+  onBack,
+  onClose,
+}: {
+  draft: PartyDraft
+  update: (patch: Partial<PartyDraft>) => void
+  onNext: () => void
+  onBack: () => void
+  onClose: () => void
+}) {
+  return (
+    <StepFrame
+      title='Time'
+      onClose={onClose}
+      onBack={onBack}
+      button={{ label: 'Weiter', onClick: onNext, disabled: !canLeaveTime(draft) }}
+    >
+      <TimeFields draft={draft} update={update} />
     </StepFrame>
   )
 }

@@ -1,6 +1,6 @@
 'use client'
 
-import { createContext, useContext, useMemo, useRef, type ReactNode } from 'react'
+import { createContext, useContext, useMemo, useRef, useState, type ReactNode } from 'react'
 import type { Map as MapLibreMap } from 'maplibre-gl'
 
 type Target = { lng: number; lat: number }
@@ -8,6 +8,7 @@ type Target = { lng: number; lat: number }
 type MapRegistry = {
   register: (map: MapLibreMap | null) => void
   flyTo: (lng: number, lat: number) => void
+  map: MapLibreMap | null
 }
 
 const MapContext = createContext<MapRegistry | null>(null)
@@ -36,20 +37,25 @@ function move(map: MapLibreMap, { lng, lat }: Target) {
 }
 
 // Lets any screen in app/(shell) move the one map behind the container. The map itself
-// stays in ShellMap; this only holds a reference to it. Refs, not state: registering
-// the map or moving it never needs a render.
+// stays in ShellMap; this only holds a reference to it. flyTo works from a ref, so moving
+// never needs a render; the instance is also kept in state for screens that put markers
+// on it, which have to render once it exists.
 export function MapProvider({ children }: { children: ReactNode }) {
   const mapRef = useRef<MapLibreMap | null>(null)
+  const [map, setMap] = useState<MapLibreMap | null>(null)
   // A flyTo that arrived before the map existed (the map loads asynchronously, so after
   // a refresh a screen can be faster than it). Applied once the map registers.
   const pending = useRef<Target | null>(null)
 
-  const value = useMemo<MapRegistry>(
+  // register and flyTo keep one identity for the provider's lifetime: ShellMap's effect
+  // depends on register, and a new one would tear the map down and build it again.
+  const actions = useMemo<Omit<MapRegistry, 'map'>>(
     () => ({
-      register(map) {
-        mapRef.current = map
-        if (map && pending.current) {
-          move(map, pending.current)
+      register(instance) {
+        mapRef.current = instance
+        setMap(instance)
+        if (instance && pending.current) {
+          move(instance, pending.current)
           pending.current = null
         }
       },
@@ -60,6 +66,7 @@ export function MapProvider({ children }: { children: ReactNode }) {
     }),
     []
   )
+  const value = useMemo<MapRegistry>(() => ({ ...actions, map }), [actions, map])
 
   return <MapContext value={value}>{children}</MapContext>
 }
@@ -71,8 +78,8 @@ export function useRegisterShellMap() {
   return registry.register
 }
 
-export function useShellMap(): { flyTo: (lng: number, lat: number) => void } {
+export function useShellMap(): { flyTo: (lng: number, lat: number) => void; map: MapLibreMap | null } {
   const registry = useContext(MapContext)
   if (!registry) throw new Error('useShellMap must be used inside MapProvider')
-  return { flyTo: registry.flyTo }
+  return { flyTo: registry.flyTo, map: registry.map }
 }

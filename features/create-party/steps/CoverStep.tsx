@@ -8,19 +8,23 @@ import { BG_MAX_BYTES, COVER_PRESETS } from '@/features/parties/constants/backgr
 import { canLeaveCover, type PartyDraft } from '../draft'
 
 // Step 4: an own picture or one of six presets, never both (mockup Create 05). Choosing
-// only selects; weiter leads on. The flow revokes a replaced upload's preview URL.
+// only selects; weiter leads on. The flow revokes a replaced upload's preview URL. Edit
+// Party opens it as a sub-screen: back only, its own button label, and the party's
+// current own picture in the circle.
 export default function CoverStep({
   draft,
   update,
   onNext,
   onBack,
   onClose,
+  buttonLabel = 'weiter',
 }: {
   draft: PartyDraft
   update: (patch: Partial<PartyDraft>) => void
   onNext: () => void
   onBack: () => void
-  onClose: () => void
+  onClose?: () => void
+  buttonLabel?: string
 }) {
   const inputRef = useRef<HTMLInputElement>(null)
   const [error, setError] = useState<string | null>(null)
@@ -46,10 +50,10 @@ export default function CoverStep({
       title='Partycover'
       onClose={onClose}
       onBack={onBack}
-      button={{ label: 'weiter', onClick: onNext, disabled: !canLeaveCover(draft) }}
+      button={{ label: buttonLabel, onClick: onNext, disabled: !canLeaveCover(draft) }}
     >
       <ImageUploadCircle
-        imageUrl={cover?.kind === 'upload' ? cover.previewUrl : null}
+        imageUrl={cover?.kind === 'upload' ? cover.previewUrl : cover?.kind === 'current' ? cover.url : null}
         onClick={() => inputRef.current?.click()}
         label='Eigenes Bild auswählen'
       />

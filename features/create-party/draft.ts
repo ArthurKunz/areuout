@@ -12,6 +12,8 @@ export type Cover =
   | { kind: 'preset'; url: string }
   // previewUrl comes from URL.createObjectURL and is revoked on replace and unmount.
   | { kind: 'upload'; file: File; previewUrl: string }
+  // Edit Party only: the party's own picture already in Storage, kept as it is.
+  | { kind: 'current'; url: string }
 
 export type PartyDraft = {
   isPublic: boolean
@@ -127,7 +129,7 @@ type NullableArg = 'p_ends_at' | 'p_description' | 'p_motto' | 'p_dresscode' | '
 // widened here.
 export type CreatePartyArgs = Omit<RpcArgs, NullableArg> & { [K in NullableArg]: RpcArgs[K] | null }
 
-const orNull = (text: string | null) => text?.trim() || null
+export const orNull = (text: string | null) => text?.trim() || null
 
 export function toRpcArgs(draft: PartyDraft, partyId: string, backgroundUrl: string, inviteCode: string): CreatePartyArgs {
   // The flow only reaches the save with a picked address.

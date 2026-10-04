@@ -139,6 +139,18 @@
     to   { opacity: 1; transform: none; }
 }
 
+/* The selected party's radar: grows from the spot to the full radius while it fades
+   out, like Find My's approximate location. Two keyframes so growth and fade can run
+   on different curves. */
+@keyframes radar-grow {
+    from { transform: scale(0.05); }
+    to   { transform: scale(1); }
+}
+@keyframes radar-fade {
+    from { opacity: 1; }
+    to   { opacity: 0; }
+}
+
 @layer utilities {
     .border-border { border-width: 0.75px; }
     .border-border-input { border-width: 0.75px; }
@@ -203,6 +215,19 @@
     }
     @media (prefers-reduced-motion: reduce) {
         .animate-fade-in-up { animation: none; }
+    }
+
+    /* Growth eases out; the fade eases in, so the circle stays visible while it grows
+       and is gone exactly when the loop restarts at the centre — no visible pause, no
+       jump back. */
+    .radar-pulse {
+        animation:
+            radar-grow 2s cubic-bezier(0.215, 0.61, 0.355, 1) infinite,
+            radar-fade 2s cubic-bezier(0.4, 0, 1, 1) infinite;
+    }
+    @media (prefers-reduced-motion: reduce) {
+        /* A still, faint circle at the full radius instead. */
+        .radar-pulse { animation: none; transform: none; opacity: 0.5; }
     }
 
     .scrollbar-none {
