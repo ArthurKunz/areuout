@@ -232,6 +232,24 @@ the count is not filtered by RLS. The old app's edit path deletes before it inse
 it never hits them. The 2-option minimum lives only in `create_party`: a row trigger
 sees one option at a time and cannot know whether a second follows.
 
+**`update_party(...)`** (Step 4) is the edit counterpart, for the redesigned Edit Party
+form: the same parameters minus `p_invite_code`, the same validation and messages, and
+`SECURITY INVOKER` for the same reason. It updates only a row with `host_id = auth.uid()`
+and raises 42501 otherwise. `invite_code` is left alone (Link-reset writes it directly),
+`is_public` is a plain column — `rsvps` and `invite_opens` stay, so switching to private
+removes no guest — and the blurred point is the trigger's business as on create: same
+`lat`/`lng` keeps it, moved coordinates roll a new one.
+
+Polls and questions are **matched by text**: an incoming poll keeps the first not yet
+kept existing poll with the same question, and inside it an option keeps the row with
+the same label, so their votes and answers stay; changed text counts as new. Unmatched
+rows are deleted **before** anything is inserted, because both caps above are
+`BEFORE INSERT`. Kept rows get a fresh `created_at` (and options their new `position`),
+so the order follows the host's list. A deleted option's votes keep their
+`pool_responses` row with `option_id` null (`ON DELETE SET NULL`), as on the old edit
+path — under RLS the host cannot delete other users' responses. The old
+`EditPartyScreen` still saves in separate requests and does not use this function.
+
 ## 10. Checking this file against the database
 
 Do not trust the above. The database answers all of it, and the Supabase MCP is the

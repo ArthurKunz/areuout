@@ -650,6 +650,26 @@ export type Database = {
         }
         Returns: undefined
       }
+      update_party: {
+        Args: {
+          p_background_url: string
+          p_description: string
+          p_dresscode: string
+          p_ends_at: string
+          p_event_date: string
+          p_id: string
+          p_is_public: boolean
+          p_lat: number
+          p_lng: number
+          p_location: string
+          p_max_guests: number
+          p_motto: string
+          p_polls: Json
+          p_questions: Json
+          p_title: string
+        }
+        Returns: undefined
+      }
     }
     Enums: {
       [_ in never]: never

@@ -25,7 +25,8 @@ export default function LocationStep({
   draft: PartyDraft
   onPick: (location: Location) => void
   onBack: () => void
-  onClose: () => void
+  // Edit Party opens this as a sub-screen, which has back only.
+  onClose?: () => void
 }) {
   const [query, setQuery] = useState(draft.location?.label ?? '')
   // null until a search has come back, so 'Keine Adresse gefunden' only shows for a

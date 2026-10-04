@@ -23,8 +23,36 @@ const CLEARED: Record<Feature, Partial<PartyDraft>> = {
   description: { description: null },
 }
 
-// Step 5: the optional features as chips (mockups Create 06). A plain chip opens its
-// sub-step; an added one shows ✗, its label edits and the ✗ removes it.
+// The optional features as chips (mockups Create 06). A plain chip opens its sub-step;
+// an added one shows ✗, its label edits and the ✗ removes it. Step 5 of Create Party and
+// the Edit Party form both show it.
+export function FeatureChips({
+  draft,
+  update,
+  onOpen,
+}: {
+  draft: PartyDraft
+  update: (patch: Partial<PartyDraft>) => void
+  onOpen: (feature: Feature) => void
+}) {
+  return (
+    <div className='flex w-full max-w-[350px] flex-wrap justify-center gap-2.5'>
+      {FEATURES.map(({ key, variant, label }) => (
+        <Chip
+          key={key}
+          variant={variant}
+          selected={ADDED[key](draft)}
+          onClick={() => onOpen(key)}
+          onRemove={() => update(CLEARED[key])}
+        >
+          {label}
+        </Chip>
+      ))}
+    </div>
+  )
+}
+
+// Step 5: the features, then Erstellen.
 export default function FeaturesStep({
   draft,
   update,
@@ -49,19 +77,7 @@ export default function FeaturesStep({
       onBack={onBack}
       button={{ label: 'Erstellen', onClick: onCreate, disabled: saving }}
     >
-      <div className='flex w-full max-w-[350px] flex-wrap justify-center gap-2.5'>
-        {FEATURES.map(({ key, variant, label }) => (
-          <Chip
-            key={key}
-            variant={variant}
-            selected={ADDED[key](draft)}
-            onClick={() => onOpen(key)}
-            onRemove={() => update(CLEARED[key])}
-          >
-            {label}
-          </Chip>
-        ))}
-      </div>
+      <FeatureChips draft={draft} update={update} onOpen={onOpen} />
     </StepFrame>
   )
 }

@@ -122,3 +122,17 @@ Aufruf — und die beiden Trigger, die höchstens 5 Umfragen und 5 Fragen pro Pa
 höchstens 10 Optionen pro Umfrage zulassen. Die Dateinamen tragen die Versionen, unter
 denen sie tatsächlich angewendet wurden — so, wie die Regel oben es verlangt. Warum es
 so gebaut ist, steht in `SCHEMA.md`, Abschnitt 9.
+
+## Die Edit-Party-Migration
+
+`20261004164021_add_update_party_function.sql` (Schritt 4 des Redesigns) legt
+`update_party` an — das Gegenstück zu `create_party` für das neue Bearbeiten-Formular:
+Party, Umfragen samt Optionen und Fragen in einem atomaren Aufruf. Warum es so gebaut
+ist, steht in `SCHEMA.md`, Abschnitt 9.
+
+Die Ausnahme von der Regel oben: Diese Migration wurde am 04.10.2026 im SQL-Editor von
+Supabase ausgeführt, nicht über `apply_migration`. Der SQL-Editor trägt nichts in die
+Migrationshistorie ein, deshalb steht sie **nicht** in `list_migrations` und hat keine
+Version, die der Dateiname tragen könnte. Der Dateiname trägt die Uhrzeit der Datenbank
+kurz nach dem Ausführen. Geprüft am selben Tag: der Funktionskörper auf der Datenbank
+ist Zeichen für Zeichen derselbe wie in der Datei (gleicher md5 über `prosrc`).
