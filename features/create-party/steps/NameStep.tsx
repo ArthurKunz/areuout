@@ -1,16 +1,12 @@
 'use client'
 
 import StepFrame from '../StepFrame'
-import SegmentedControl from '@/components/shared/SegmentedControl'
+import ToggleInput from '@/components/shared/ToggleInput'
 import Input from '@/components/shared/Input'
 import { LIMITS, canLeaveName, type PartyDraft } from '../draft'
 
-const VISIBILITY = [
-  { value: 'public', label: 'öffentlich' },
-  { value: 'private', label: 'privat' },
-] as const
-
-// Step 1: who can find the party, and what it is called. The first step has no back.
+// Step 1: who can find the party, and what it is called. Öffentlich off means privat,
+// the default. The first step has no back.
 export default function NameStep({
   draft,
   update,
@@ -28,11 +24,7 @@ export default function NameStep({
       onClose={onClose}
       button={{ label: 'Weiter', onClick: onNext, disabled: !canLeaveName(draft) }}
     >
-      <SegmentedControl
-        options={[...VISIBILITY]}
-        value={draft.isPublic ? 'public' : 'private'}
-        onChange={(value) => update({ isPublic: value === 'public' })}
-      />
+      <ToggleInput label='Öffentlich' checked={draft.isPublic} onChange={(isPublic) => update({ isPublic })} />
       <Input
         label='Name'
         value={draft.title}

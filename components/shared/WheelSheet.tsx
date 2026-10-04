@@ -199,7 +199,7 @@ export default function WheelSheet({
           <div className='rounded-t-3xl bg-main px-4 pb-safe-rsvp pt-6 backdrop-blur-3xl'>
             <div className='relative flex w-full'>
               {/* Selection band sits behind the columns, dead centre, in the same fill as
-                  SegmentedControl's thumb. */}
+                  the shared selection fill (bg-selector). */}
               <div
                 aria-hidden='true'
                 className='pointer-events-none absolute inset-x-0 rounded-xl bg-selector'
