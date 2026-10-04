@@ -17,9 +17,9 @@ const VARIANT_CLASS = {
 
 // The 36px-tall pill used to pick which optional info a host adds to a
 // party (Motto, max. Teilnehmer, Umfrage, Dresscode, Frage, Beschreibung).
-// Once selected it swaps to a 20x20 remove circle instead of being
-// clickable itself — picking and removing are two different actions, so
-// these are two distinct shapes rather than one button changing state.
+// Once selected it gains a 20x20 remove circle: tapping the label opens the
+// info again to edit it (App Redesign 7.3), tapping the circle removes it —
+// two different actions, so two separate buttons.
 export default function Chip({
   variant,
   children,
@@ -38,7 +38,9 @@ export default function Chip({
       <div
         className={`flex h-[36px] shrink-0 items-center gap-2 rounded-full py-0 pl-4 pr-1.5 text-text-2 font-semibold text-heading ${VARIANT_CLASS[variant]}`}
       >
-        <span>{children}</span>
+        <button type='button' onClick={onClick}>
+          {children}
+        </button>
         <button
           type='button'
           onClick={onRemove}

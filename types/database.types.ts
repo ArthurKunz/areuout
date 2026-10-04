@@ -372,6 +372,27 @@ export type Database = {
     }
     Functions: {
       can_rsvp_to_event: { Args: { p_event_id: string }; Returns: boolean }
+      create_party: {
+        Args: {
+          p_background_url: string
+          p_description: string
+          p_dresscode: string
+          p_ends_at: string
+          p_event_date: string
+          p_id: string
+          p_invite_code: string
+          p_is_public: boolean
+          p_lat: number
+          p_lng: number
+          p_location: string
+          p_max_guests: number
+          p_motto: string
+          p_polls: Json
+          p_questions: Json
+          p_title: string
+        }
+        Returns: string
+      }
       delete_self: { Args: never; Returns: undefined }
       get_event_attendees: {
         Args: { p_event_id: string }

@@ -11,7 +11,8 @@ const VISIBLE_ITEMS = 7
 const LIST_HEIGHT = ITEM_HEIGHT * VISIBLE_ITEMS
 const EDGE_PADDING = (LIST_HEIGHT - ITEM_HEIGHT) / 2
 
-// Fades the rows out towards the top and bottom edges, like the native wheel.
+// Fades the rows out towards the top and bottom edges, like the native wheel. A mask
+// works on alpha only, so it fades into whatever surface sits behind, dark glass included.
 const EDGE_FADE = 'linear-gradient(to bottom, transparent 0%, #000 28%, #000 72%, transparent 100%)'
 
 export type WheelColumn = {
@@ -89,7 +90,7 @@ function Column({ labels, index, onChange }: WheelColumn) {
           onClick={() => handleTap(i)}
           style={{ height: ITEM_HEIGHT }}
           className={`flex w-full snap-center items-center justify-center text-heading-4 transition-colors duration-150 ${
-            i === index ? 'text-sheet-heading' : 'text-sheet-body'
+            i === index ? 'text-heading' : 'text-text'
           }`}
         >
           {label}
@@ -106,9 +107,10 @@ const CLOSE_MS = 300
 // Both controls belong to the PAGE, not to the sheet: the same 45px circle in the
 // same top corners as every other back button in the app. They sit ABOVE the scrim,
 // unlike SheetLayout's chevron, which deliberately hides under it — while the wheel
-// is open the top corners are its two answers, not the page's way back.
+// is open the top corners are its two answers, not the page's way back. Styled as
+// IconButton, but not rendered through it: these need `fixed` and the fade-in.
 const cornerButtonClass =
-  'fixed top-0 z-50 mt-7.5 flex h-11.25 w-11.25 items-center justify-center rounded-full bg-secondary backdrop-blur-xl transition-[transform,opacity] duration-300 ease-[cubic-bezier(0.32,0.72,0,1)] active:scale-95'
+  'fixed top-0 z-50 mt-7.5 flex h-11.25 w-11.25 items-center justify-center rounded-full bg-button-circle backdrop-blur-xl transition-[transform,opacity] duration-300 ease-[cubic-bezier(0.32,0.72,0,1)] active:scale-95'
 
 export default function WheelSheet({
   columns,
@@ -172,7 +174,7 @@ export default function WheelSheet({
         aria-label='Abbrechen'
         className={`left-4 ${cornerButtonClass} ${shown ? 'opacity-100' : 'opacity-0'}`}
       >
-        <X size={24} strokeWidth={3} className='text-white' />
+        <X size={24} strokeWidth={3} className='text-main-white' />
       </button>
 
       <button
@@ -181,24 +183,26 @@ export default function WheelSheet({
         aria-label='Übernehmen'
         className={`right-4 ${cornerButtonClass} ${shown ? 'opacity-100' : 'opacity-0'}`}
       >
-        <Check size={24} strokeWidth={3} className='text-white' />
+        <Check size={24} strokeWidth={3} className='text-main-white' />
       </button>
 
       {/* Grown by height rather than slid in with a transform: a transform on this
           element would put its backdrop-blur in its own compositing group, and the
-          sheet would sit there flat and grey until the animation finished. */}
+          sheet would sit there flat and grey until the animation finished. The surface is
+          the shell container's dark glass: translucent bg-main over the dimmed scrim. */}
       <div
         className={`fixed inset-x-0 bottom-0 z-50 grid transition-[grid-template-rows] duration-300 ease-[cubic-bezier(0.32,0.72,0,1)] ${
           shown ? 'grid-rows-[1fr]' : 'grid-rows-[0fr]'
         }`}
       >
         <div className='overflow-hidden'>
-          <div className='rounded-t-3xl bg-sheet px-4 pb-safe-rsvp pt-6 backdrop-blur-2xl'>
+          <div className='rounded-t-3xl bg-main px-4 pb-safe-rsvp pt-6 backdrop-blur-3xl'>
             <div className='relative flex w-full'>
-              {/* Selection band sits behind the columns, dead centre. */}
+              {/* Selection band sits behind the columns, dead centre, in the same fill as
+                  the shared selection fill (bg-selector). */}
               <div
                 aria-hidden='true'
-                className='pointer-events-none absolute inset-x-0 rounded-xl bg-button-secondary/80'
+                className='pointer-events-none absolute inset-x-0 rounded-xl bg-selector'
                 style={{ height: ITEM_HEIGHT, top: EDGE_PADDING }}
               />
               {columns.map((column, i) => (

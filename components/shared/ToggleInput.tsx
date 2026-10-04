@@ -21,11 +21,11 @@ export function ToggleInputRow({
   )
 }
 
-// The 350x50 pill used for a single toggle field in the redesign (e.g.
+// The 50px-tall (at most 350px wide) pill used for a single toggle field in the redesign (e.g.
 // Endzeit).
 export default function ToggleInput(props: Parameters<typeof ToggleInputRow>[0]) {
   return (
-    <div className='w-[350px] rounded-full bg-main backdrop-blur-[100px]'>
+    <div className='w-full max-w-[350px] rounded-full bg-main backdrop-blur-[100px]'>
       <ToggleInputRow {...props} />
     </div>
   )

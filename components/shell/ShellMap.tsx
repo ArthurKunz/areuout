@@ -5,6 +5,7 @@ import { useEffect, useRef } from 'react'
 import type { Map as MapLibreMap, MapOptions } from 'maplibre-gl'
 import baseStyle from '@/lib/map/style.json'
 import { GLYPHS_URL, LEIPZIG_BOUNDS, SPRITE_URL, TILE_SOURCE_URL } from '@/lib/map/config'
+import { useRegisterShellMap } from '@/components/shell/MapContext'
 
 type Style = Exclude<MapOptions['style'], string | undefined>
 
@@ -22,6 +23,7 @@ const style = {
 // its position while the tabs swap above it.
 export default function ShellMap() {
   const container = useRef<HTMLDivElement>(null)
+  const register = useRegisterShellMap()
 
   useEffect(() => {
     let map: MapLibreMap | undefined
@@ -46,6 +48,9 @@ export default function ShellMap() {
         attributionControl: false,
       })
       map.touchZoomRotate.disableRotation()
+      // Screens move the map through MapContext's flyTo; a target that arrived before
+      // this point is applied here.
+      register(map)
       // The OSM licence requires the attribution; top-right keeps it clear of the container.
       map.addControl(new AttributionControl({ compact: true }), 'top-right')
       // Compact still opens itself once the style arrives and only folds on the first
@@ -58,9 +63,10 @@ export default function ShellMap() {
 
     return () => {
       cancelled = true
+      if (map) register(null)
       map?.remove()
     }
-  }, [])
+  }, [register])
 
   return (
     // 100lvh, not dvh: the map runs under Safari's bars instead of stopping at them.
