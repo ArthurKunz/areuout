@@ -13,6 +13,7 @@ import DetailCards, { type DetailPage, type PartyDetailRow } from './DetailCards
 import DetailHeader from './DetailHeader'
 import GuestsPage from './GuestsPage'
 import HostActions from './HostActions'
+import JoinRequestsCard, { type JoinRequest } from './JoinRequestsCard'
 import PageHeader from './PageHeader'
 import PollPage from './PollPage'
 import QuestionPage from './QuestionPage'
@@ -35,6 +36,10 @@ type Loaded = {
   userId: string | null
   // A join request is pending (my_status 'requested'): no answer yet, the bar waits.
   requested: boolean
+  // A private party without room for the viewer: `Anfragen` is disabled.
+  full: boolean
+  // Host only: the open join requests for the card `Anfragen`.
+  requests: JoinRequest[]
 }
 
 // The party detail container (App Redesign 3.5), built once for every place that opens
@@ -47,6 +52,7 @@ export default function PartyDetail({
   onClose,
   onDeleted,
   onStatusChange,
+  onLoaded,
 }: {
   partyId: string
   viewer: Viewer
@@ -56,11 +62,15 @@ export default function PartyDetail({
   onDeleted?: () => void
   // Guest only: the answer changed (or was rolled back); the caller updates its list.
   onStatusChange?: (status: RsvpStatus) => void
+  // The party as just loaded: the caller takes over its position, is_exact and my_status,
+  // so an accepted request turns the blurred pin exact without reloading the page.
+  onLoaded?: (party: PartyDetailRow) => void
 }) {
   const [loaded, setLoaded] = useState<Loaded | null>(null)
   // The viewer's answer, shared by the RSVP buttons in the header and on the guest list.
   const [myStatus, setMyStatus] = useState<RsvpStatus | null>(null)
   const [joining, setJoining] = useState(false)
+  const [requesting, setRequesting] = useState(false)
   const [page, setPage] = useState<DetailPage | null>(null)
   // Bumped by every vote and answer: a re-read that started before the latest one would
   // otherwise overwrite what the viewer just tapped.
@@ -75,30 +85,46 @@ export default function PartyDetail({
       viewer === 'host'
         ? supabase.from('events').select('invite_code').eq('id', partyId).single()
         : Promise.resolve({ data: null, error: null }),
+      viewer === 'host'
+        ? supabase.rpc('get_party_join_requests', { p_event_id: partyId })
+        : Promise.resolve({ data: null, error: null }),
       supabase.auth.getSession(),
-    ]).then(([detail, polls, invite, session]) => {
+    ]).then(async ([detail, polls, invite, requests, session]) => {
       if (cancelled) return
-      const error = detail.error ?? polls.error ?? invite.error
+      const error = detail.error ?? polls.error ?? invite.error ?? requests.error
       if (error || !detail.data) {
         alertError('Die Party konnte nicht geladen werden.', error?.message)
         onClose()
         return
       }
-      setMyStatus(isRsvpStatus(detail.data.my_status) ? detail.data.my_status : null)
+      const party = detail.data
+      const userId = session.data.session?.user.id ?? null
+      // Only someone who could still ask needs to know whether the party is full; the
+      // database's own rule, asked for the viewer's own id (it answers no other).
+      let full = false
+      if (viewer !== 'host' && !party.is_public && party.max_guests !== null && party.my_status === null && userId) {
+        const room = await supabase.rpc('party_has_room', { p_event_id: partyId, p_user_id: userId })
+        if (cancelled) return
+        full = room.data === false
+      }
+      setMyStatus(isRsvpStatus(party.my_status) ? party.my_status : null)
       setLoaded({
-        party: detail.data,
+        party,
         polls: polls.data?.polls ?? [],
         questions: polls.data?.questions ?? [],
         inviteCode: invite.data?.invite_code ?? null,
-        userId: session.data.session?.user.id ?? null,
-        requested: detail.data.my_status === 'requested',
+        userId,
+        requested: party.my_status === 'requested',
+        full,
+        requests: requests.data ?? [],
       })
+      onLoaded?.(party)
     })
     return () => {
       cancelled = true
     }
-    // onClose changes identity on every render of the caller; the load depends on the
-    // party and the viewer only.
+    // onClose and onLoaded change identity on every render of the caller; the load
+    // depends on the party and the viewer only.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [partyId, viewer])
 
@@ -121,7 +147,7 @@ export default function PartyDetail({
     )
   }
 
-  const { party, polls, questions, inviteCode, userId, requested } = loaded
+  const { party, polls, questions, inviteCode, userId, requested, full, requests } = loaded
   const hostName = `${party.host_firstname} ${party.host_lastname}`
   // The host votes and answers in their own party (Polls.md, Question.md); everyone
   // else needs an answer to the party first.
@@ -171,8 +197,22 @@ export default function PartyDetail({
     changeStatus('going')
   }
 
+  // `Anfragen` on a private party (Join Request): request_to_join, then the bar waits.
+  // Every refusal comes back as a German sentence from the database.
+  const request = async () => {
+    if (requesting) return
+    setRequesting(true)
+    const { error } = await supabase.rpc('request_to_join', { p_event_id: party.id })
+    setRequesting(false)
+    if (error) {
+      alertError('Deine Anfrage konnte nicht gesendet werden.', error.message)
+      return
+    }
+    setLoaded({ ...loaded, requested: true })
+  }
+
   // The bar at the bottom (App Redesign 3.5), only for someone without an answer while
-  // the party is not over. `Anfragen` does nothing yet (step 8).
+  // the party is not over.
   const bar =
     viewer === 'host' || myStatus || over ? null : party.is_public ? (
       <BigButton variant='green' onClick={join} disabled={joining}>
@@ -182,8 +222,12 @@ export default function PartyDetail({
       <BigButton variant='green' disabled>
         Warten auf Bestätigung
       </BigButton>
+    ) : full ? (
+      <BigButton variant='green' disabled>
+        Diese Party ist voll
+      </BigButton>
     ) : (
-      <BigButton variant='green'>
+      <BigButton variant='green' onClick={request} disabled={requesting}>
         <span className='flex items-center gap-2'>
           <UserPlus size={20} />
           Anfragen
@@ -247,6 +291,7 @@ export default function PartyDetail({
           questions={questions}
           userId={userId}
           canAnswer={canAnswer}
+          requests={viewer === 'host' && requests.length > 0 ? <JoinRequestsCard partyId={party.id} initial={requests} /> : undefined}
           onPollChange={changePoll}
           onPollSaved={reloadPolls}
           onOpen={setPage}

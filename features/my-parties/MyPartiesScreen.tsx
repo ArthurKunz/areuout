@@ -11,7 +11,9 @@ import { supabase } from '@/lib/supabase/client'
 import { alertError } from '@/lib/utils'
 
 // The My Parties tab (App Redesign 5): every party the user answered, whatever the
-// answer, as circles on the map and rows in the list with the answer on the right.
+// answer, plus every party they asked to join, as circles on the map and rows in the
+// list with the answer (or the clock) on the right. A pending request keeps the blurred
+// point, so its pin gets the radar like everywhere else (App Redesign 5.2).
 // Works like Hosting: a tap on either flies to the party and swaps the list for the
 // detail, where the RSVP button changes the answer and this list follows it.
 // get_my_parties already applies the 24-hour rule, sorts, and never returns own parties.
@@ -40,7 +42,7 @@ export default function MyPartiesScreen() {
 
   return (
     <>
-      {parties && <PartyMarkers parties={parties} selectedId={selected?.id ?? null} radar={false} onSelect={select} />}
+      {parties && <PartyMarkers parties={parties} selectedId={selected?.id ?? null} onSelect={select} />}
       {selected ? (
         <>
           <HideShell />
@@ -49,6 +51,18 @@ export default function MyPartiesScreen() {
             partyId={selected.id}
             viewer='guest'
             onClose={() => setSelectedId(null)}
+            onLoaded={(row) => {
+              // An accepted request: the exact point and the answer replace the blurred
+              // point and the clock.
+              setParties((current) =>
+                current?.map((party) =>
+                  party.id === row.id
+                    ? { ...party, lat: row.lat, lng: row.lng, is_exact: row.is_exact, my_status: row.my_status }
+                    : party
+                ) ?? null
+              )
+              if (row.lat !== selected.lat || row.lng !== selected.lng) flyTo(row.lng, row.lat)
+            }}
             onStatusChange={(status) =>
               setParties((current) =>
                 current?.map((party) => (party.id === selected.id ? { ...party, my_status: status } : party)) ?? null

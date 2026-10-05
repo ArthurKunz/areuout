@@ -1,7 +1,7 @@
 'use client'
 
 import type { ReactNode } from 'react'
-import { Check, X } from 'lucide-react'
+import { Check, Clock, X } from 'lucide-react'
 import type { Database } from '@/types/database.types'
 
 export type HostedParty = Database['public']['Functions']['get_hosting_parties']['Returns'][number]
@@ -12,12 +12,14 @@ const formatDate = (iso: string) =>
 
 const divider = <div className='ml-13 h-px rounded-full bg-divider' />
 
-// The guest's answer on the right of a row (App Redesign 5.1). Hosting never shows one:
-// the host has no RSVP, the database refuses the row.
+// The guest's answer on the right of a row (App Redesign 5.1), or the clock while a join
+// request waits for the host. Hosting never shows one: the host has no RSVP, the
+// database refuses the row.
 const STATUS_ICON: Record<string, ReactNode> = {
   going: <Check size={22} />,
   maybe: <span className='text-[22px] font-bold leading-none'>?</span>,
   not_going: <X size={22} />,
+  requested: <Clock size={22} />,
 }
 
 // A tab's parties, soonest first (App Redesign 3.4): the ones the signed-in user hosts

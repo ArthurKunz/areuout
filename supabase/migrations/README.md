@@ -196,3 +196,12 @@ erneutes Abspielen in Namensreihenfolge geht also. Warum es so gebaut ist, steht
 Gleiche Rückgabeform, CREATE OR REPLACE, Rechte bleiben. Position, Adresse, `is_exact`
 und `my_status` sind unverändert. `private.visible_lastname` bleibt, `get_party_guests`
 kürzt weiter. Warum, steht in `SCHEMA.md`, Abschnitt 8.
+
+## Die Migration zu Schritt 8, Phase 2b (Anfragen in der App)
+
+| Datei | Was sie ändert | Wie angewendet |
+|---|---|---|
+| `20261005175531_answer_party_has_room_only_for_yourself.sql` | `party_has_room` antwortet nur noch für die eigene ID, eine fremde bekommt immer `false` | `apply_migration` |
+
+Gleiche Signatur, Sprache und `search_path`, Rechte und Policies bleiben. Alle Aufrufer
+übergeben schon die eigene ID. Warum, steht in `SCHEMA.md`, Abschnitt 9b.
