@@ -21,15 +21,18 @@ const STATUS_ICON: Record<string, ReactNode> = {
 }
 
 // A tab's parties, soonest first (App Redesign 3.4): the ones the signed-in user hosts
-// on Hosting, the ones they answered on My Parties. The screen fetches them; null while
-// loading. A tap on a row does what a tap on its circle does.
+// on Hosting, the ones they answered on My Parties, every party on Explore. The screen
+// fetches them; null while loading. A tap on a row does what a tap on its circle does.
+// Only My Parties shows the answer on the right; Explore turns it off.
 export default function HostingList({
   parties,
   emptyText,
+  showStatus = true,
   onSelect,
 }: {
   parties: HostedParty[] | null
   emptyText: string
+  showStatus?: boolean
   onSelect: (party: HostedParty) => void
 }) {
   if (!parties) {
@@ -68,7 +71,7 @@ export default function HostingList({
               <span className='truncate text-text-2 font-bold text-heading'>{party.title}</span>
               <span className='text-text-3 text-text'>{formatDate(party.event_date)}</span>
             </div>
-            {party.my_status && <span className='shrink-0 text-main-white'>{STATUS_ICON[party.my_status]}</span>}
+            {showStatus && party.my_status && <span className='shrink-0 text-main-white'>{STATUS_ICON[party.my_status]}</span>}
           </button>
         </li>
       ))}

@@ -148,8 +148,9 @@ stranger-facing read goes through a new `SECURITY DEFINER` function instead, eac
 choosing its own columns:
 
 - `get_explore_parties()`, `get_my_parties()`, `get_hosting_parties()` — one per map
-  tab. Return id, title, picture, host (full name only with access, else first name +
-  last-name initial), the position the caller may see, a flag `is_exact`, and the
+  tab. Return id, title, picture, host (full name for every caller since step 5 —
+  App Redesign 3.6; only the older `get_party_guests` still shortens last names through
+  `private.visible_lastname`), the position the caller may see, a flag `is_exact`, and the
   caller's own RSVP status. Filtered to parties with coordinates and still inside
   `private.party_visible_until(...)`. Never take a position or distance parameter, sort
   by date only, never added to `supabase_realtime`.

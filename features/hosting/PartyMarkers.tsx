@@ -7,7 +7,7 @@ import { useShellMap } from '@/components/shell/MapContext'
 import PartyMapPin from '@/features/parties/components/PartyMapPin'
 import PartyRadar, { showsRadar } from '@/features/party-detail/PartyRadar'
 
-export type MarkerParty = { id: string; lat: number; lng: number; background_url: string; title: string; is_public: boolean }
+export type MarkerParty = { id: string; lat: number; lng: number; background_url: string; title: string; is_exact: boolean }
 
 // The dot under the pin marks the exact spot; its centre sits on the coordinates.
 const DOT = 6

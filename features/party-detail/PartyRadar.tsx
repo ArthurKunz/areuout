@@ -12,10 +12,11 @@ const RADAR_METRES = 200
 const metresPerPixel = (lat: number, zoom: number) =>
   (40075016.686 * Math.cos((lat * Math.PI) / 180)) / 2 ** (zoom + 9)
 
-// The one rule for when a selected party gets the radar: only a private party, whose
-// exact spot stays private — the circle says "somewhere in here". A public party gets
-// the pin and its dot alone. Every map that shows a selected party asks this.
-export const showsRadar = (party: { is_public: boolean }) => !party.is_public
+// The one rule for when a selected party gets the radar: only where the database handed
+// out the blurred point instead of the exact one (is_exact false: a private party the
+// viewer has no access to) — the circle says "somewhere in here". Everyone who may see
+// the address gets the pin and its dot alone. Every map that shows a selected party asks this.
+export const showsRadar = (party: { is_exact: boolean }) => !party.is_exact
 
 // The pulsing circle around a selected party, centred `bottom` px above the bottom edge
 // of the marker element it sits in (the pin's dot). Its size is in metres, so it is
