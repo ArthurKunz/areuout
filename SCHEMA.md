@@ -196,6 +196,18 @@ stranger could never satisfy it even on a public party; and a direct read of
 because `authenticated` has no `USAGE` on `private`. The function is `SECURITY DEFINER`,
 bypassing both problems, same pattern as the pre-existing `party_has_room`.
 
+**An RSVP stays on its party.** The insert policy above was only half the gate:
+`rsvps_update_own` checks that the row is yours, and `authenticated` holds UPDATE on
+every column, `event_id` included. So an RSVP on any reachable party could be moved
+onto a private one — and a row in `rsvps` is membership, which `events_select_member`
+answers with the full row, address and exact position. The `BEFORE UPDATE` trigger
+`rsvps_keep_party_and_owner` (`private.keep_rsvp_party_and_owner()`) refuses any change
+of `event_id` or `user_id` with 42501. It is a trigger and not a column REVOKE because
+the client's upsert on `(event_id, user_id)` writes both columns back with the same
+values, which the trigger lets through and a REVOKE would not. Checked 2026-10-05 for
+every other table: no other UPDATE path can move a row into a party the writer is not
+already a member or host of.
+
 **Two separate "how long" constants, now.** `ASSUMED_PARTY_HOURS`/`c_assumed_hours` (6
 hours) decide when `get_party_by_invite_code` stops handing out the address to a
 non-host. `PARTY_VISIBLE_HOURS`/`private.party_visible_until` (24 hours) decide when a

@@ -151,3 +151,13 @@ Betrachter; `get_party_guests` bleibt unverändert.
 Optionen und Stimmenzahlen einer privaten Party heraus; `main` rief sie nie auf. Alle
 vier über `apply_migration`, die Dateinamen tragen
 die Versionen der Datenbank. Warum es so gebaut ist, steht in `SCHEMA.md`, Abschnitt 9a.
+
+## Die Migration vor Schritt 8
+
+`20261005162836_stop_moving_an_rsvp_to_another_party.sql` legt den Trigger
+`rsvps_keep_party_and_owner` an: Bei einem UPDATE auf `rsvps` dürfen sich `event_id` und
+`user_id` nicht mehr ändern (42501). Vorher ließ `rsvps_update_own` zu, die eigene
+Antwort auf eine fremde private Party umzuhängen — damit war man Mitglied und konnte die
+Adresse lesen. Der Upsert der App schreibt dieselben Werte zurück und funktioniert
+weiter. Über `apply_migration`, der Dateiname trägt die Version der Datenbank. Warum es
+so gebaut ist, steht in `SCHEMA.md`, Abschnitt 8.
