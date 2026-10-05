@@ -110,6 +110,42 @@ export type Database = {
           },
         ]
       }
+      join_requests: {
+        Row: {
+          created_at: string
+          event_id: string
+          id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          event_id: string
+          id?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          event_id?: string
+          id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "join_requests_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "events"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "join_requests_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       mitbring_claims: {
         Row: {
           claimed_by: string
@@ -371,6 +407,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      accept_join_request: {
+        Args: { p_event_id: string; p_user_id: string }
+        Returns: undefined
+      }
       can_rsvp_to_event: { Args: { p_event_id: string }; Returns: boolean }
       create_party: {
         Args: {
@@ -591,6 +631,17 @@ export type Database = {
           user_id: string
         }[]
       }
+      get_party_join_requests: {
+        Args: { p_event_id: string }
+        Returns: {
+          avatar_color: string
+          avatar_url: string
+          created_at: string
+          firstname: string
+          lastname: string
+          user_id: string
+        }[]
+      }
       get_party_mitbring_by_invite_code: {
         Args: { p_invite_code: string }
         Returns: Json
@@ -664,6 +715,7 @@ export type Database = {
         Args: { p_event_id: string; p_user_id: string }
         Returns: boolean
       }
+      request_to_join: { Args: { p_event_id: string }; Returns: undefined }
       set_single_pool_response: {
         Args: {
           p_option_id: string
