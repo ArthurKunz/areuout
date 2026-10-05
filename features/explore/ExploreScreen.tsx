@@ -58,6 +58,19 @@ export default function ExploreScreen() {
             partyId={open.id}
             viewer={open.viewer}
             onClose={() => setSelected(null)}
+            onLoaded={(row) => {
+              // An accepted request since the list loaded: the exact point replaces the
+              // blurred one.
+              const before = parties?.find((party) => party.id === row.id)
+              setParties((current) =>
+                current?.map((party) =>
+                  party.id === row.id
+                    ? { ...party, lat: row.lat, lng: row.lng, is_exact: row.is_exact, my_status: row.my_status }
+                    : party
+                ) ?? null
+              )
+              if (before && (row.lat !== before.lat || row.lng !== before.lng)) flyTo(row.lng, row.lat)
+            }}
             onDeleted={() => {
               setParties((current) => current?.filter((party) => party.id !== open.id) ?? null)
               setSelected(null)

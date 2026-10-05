@@ -15,16 +15,13 @@ const DOT = 6
 // Every party as a picture circle on the shell map, and the selected one as the pin
 // (App Redesign 3.2). DOM markers, so circles that overlap simply stack and spread
 // apart as the user zooms in; there is no clustering. Leaving the screen removes them.
-// My Parties turns the radar off: a guest sees the exact spot (App Redesign 5.2).
 export default function PartyMarkers({
   parties,
   selectedId,
-  radar = true,
   onSelect,
 }: {
   parties: MarkerParty[]
   selectedId: string | null
-  radar?: boolean
   onSelect: (party: MarkerParty) => void
 }) {
   const { map } = useShellMap()
@@ -48,7 +45,6 @@ export default function PartyMarkers({
         MarkerClass={MarkerClass}
         party={party}
         selected={selected}
-        radar={radar}
         onSelect={onSelect}
       />
     )
@@ -60,14 +56,12 @@ function PartyMarker({
   MarkerClass,
   party,
   selected,
-  radar,
   onSelect,
 }: {
   map: MapLibreMap
   MarkerClass: typeof Marker
   party: MarkerParty
   selected: boolean
-  radar: boolean
   onSelect: (party: MarkerParty) => void
 }) {
   const [element] = useState(() => document.createElement('div'))
@@ -92,7 +86,7 @@ function PartyMarker({
   return createPortal(
     selected ? (
       <div className='relative isolate flex flex-col items-center gap-0.5'>
-        {radar && showsRadar(party) && <PartyRadar map={map} lat={party.lat} bottom={DOT / 2} />}
+        {showsRadar(party) && <PartyRadar map={map} lat={party.lat} bottom={DOT / 2} />}
         <PartyMapPin imageUrl={party.background_url} alt={party.title} active />
         <span className='rounded-full bg-pin-border' style={{ width: DOT, height: DOT }} />
       </div>

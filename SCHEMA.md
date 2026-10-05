@@ -336,6 +336,12 @@ either hour constant), a second request to the same party, a full party
 (`party_has_room`), and an 11th open request (D2; requests to parties past their cutoff
 do not count).
 
+**Full parties on the button.** The app asks `party_has_room(event_id, own id)` to show a
+disabled `Diese Party ist voll` instead of `Anfragen`. That function used to answer for
+any user id, which let a signed-in user probe whether someone holds a place on a full
+party; since `answer_party_has_room_only_for_yourself` a foreign id always gets false.
+Every caller passes its own id anyway (the two RSVP policies, `request_to_join`).
+
 **Accepting** is `accept_join_request(event_id, user_id)`: the caller must be the
 party's host (42501 otherwise, checked inside), the party's lock, the cutoff, then the
 request is deleted (refused if it is gone) and an RSVP `going` inserted, in one

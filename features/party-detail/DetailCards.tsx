@@ -104,13 +104,15 @@ const PageLink = ({ label, onClick }: { label: string; onClick: () => void }) =>
 // The cards of the detail in the vault's order, each only when its content exists. Half
 // cards (Datum, Uhrzeit, Dresscode, Motto) share a row; a lone one keeps half width.
 // Polls and questions come only for viewers get_party_poll_data hands them to; without
-// an RSVP they show greyed out and only their links work.
+// an RSVP they show greyed out and only their links work. The host's card `Anfragen`
+// comes in from outside and sits right after `Teilnehmer` (App Redesign 6.3).
 export default function DetailCards({
   party,
   polls,
   questions,
   userId,
   canAnswer,
+  requests,
   onPollChange,
   onPollSaved,
   onOpen,
@@ -120,6 +122,7 @@ export default function DetailCards({
   questions: DetailPoll[]
   userId: string | null
   canAnswer: boolean
+  requests?: ReactNode
   onPollChange: (poll: DetailPoll) => void
   onPollSaved: () => void
   onOpen: (page: DetailPage) => void
@@ -157,6 +160,7 @@ export default function DetailCards({
         wide
         link={<PageLink label='Gästeliste anzeigen' onClick={() => onOpen({ kind: 'guests' })} />}
       />
+      {requests}
       {party.description && <InfoCard icon={Info} color='taupe' title='Infos' value={party.description} wide />}
       {polls.map((poll) => (
         <InfoCard
