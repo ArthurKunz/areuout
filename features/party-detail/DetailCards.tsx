@@ -14,11 +14,15 @@ import {
   Users,
   type LucideIcon,
 } from 'lucide-react'
+import type { DetailPoll } from '@/features/parties/services/pools.service'
 import type { Database } from '@/types/database.types'
+import AnswerRow from './AnswerRow'
+import PollOptions from './PollOptions'
 
 export type PartyDetailRow = Database['public']['Functions']['get_party_detail']['Returns'][number]
-export type PartyPollRow = Database['public']['Functions']['get_party_polls']['Returns'][number]
-type PollOption = { option_id: string; label: string }
+
+// The pages inside the detail (App Redesign 3.6), opened from the card links.
+export type DetailPage = { kind: 'guests' } | { kind: 'poll'; id: string } | { kind: 'question'; id: string }
 
 const pad = (n: number) => String(n).padStart(2, '0')
 const formatTime = (iso: string) => {
@@ -55,7 +59,7 @@ const linkRow = 'flex h-11 w-full items-center justify-between text-text-2 text-
 
 // One dark rounded card: a round coloured icon, the bold title, the grey value under
 // it, and below a hairline an optional link row (App Redesign 3.5).
-function InfoCard({
+export function InfoCard({
   icon: Icon,
   color,
   title,
@@ -90,18 +94,36 @@ function InfoCard({
   )
 }
 
-// A link that only looks like one: its page comes in step 7.
-const LaterLink = ({ label }: { label: string }) => (
-  <span className={linkRow}>
+const PageLink = ({ label, onClick }: { label: string; onClick: () => void }) => (
+  <button type='button' onClick={onClick} className={linkRow}>
     {label}
     <ChevronRight size={20} />
-  </span>
+  </button>
 )
 
 // The cards of the detail in the vault's order, each only when its content exists. Half
 // cards (Datum, Uhrzeit, Dresscode, Motto) share a row; a lone one keeps half width.
-// Polls and questions are display only in this step; voting and answering come in step 7.
-export default function DetailCards({ party, polls }: { party: PartyDetailRow; polls: PartyPollRow[] }) {
+// Polls and questions come only for viewers get_party_poll_data hands them to; without
+// an RSVP they show greyed out and only their links work.
+export default function DetailCards({
+  party,
+  polls,
+  questions,
+  userId,
+  canAnswer,
+  onPollChange,
+  onPollSaved,
+  onOpen,
+}: {
+  party: PartyDetailRow
+  polls: DetailPoll[]
+  questions: DetailPoll[]
+  userId: string | null
+  canAnswer: boolean
+  onPollChange: (poll: DetailPoll) => void
+  onPollSaved: () => void
+  onOpen: (page: DetailPage) => void
+}) {
   const time = party.ends_at
     ? `${formatTime(party.event_date)} - ${formatTime(party.ends_at)} Uhr`
     : `${formatTime(party.event_date)} Uhr`
@@ -133,38 +155,33 @@ export default function DetailCards({ party, polls }: { party: PartyDetailRow; p
         title='Teilnehmer'
         value={party.max_guests ? `max. ${party.max_guests}` : undefined}
         wide
-        link={<LaterLink label='Gästeliste anzeigen' />}
+        link={<PageLink label='Gästeliste anzeigen' onClick={() => onOpen({ kind: 'guests' })} />}
       />
       {party.description && <InfoCard icon={Info} color='taupe' title='Infos' value={party.description} wide />}
-      {polls.map((poll) =>
-        poll.type === 'options' ? (
-          <InfoCard
-            key={poll.pool_id}
-            icon={ChartBar}
-            color='purple'
-            title={poll.question}
-            wide
-            link={<LaterLink label='Votes anzeigen' />}
-          >
-            <ul className='mt-1 flex flex-col gap-1'>
-              {(poll.options as unknown as PollOption[]).map((option) => (
-                <li key={option.option_id} className='text-text-3 break-words text-text'>
-                  {option.label}
-                </li>
-              ))}
-            </ul>
-          </InfoCard>
-        ) : (
-          <InfoCard
-            key={poll.pool_id}
-            icon={MessageCircleQuestion}
-            color='yellow'
-            title={poll.question}
-            wide
-            link={<LaterLink label='Antworten anzeigen' />}
-          />
-        )
-      )}
+      {polls.map((poll) => (
+        <InfoCard
+          key={poll.pool_id}
+          icon={ChartBar}
+          color='purple'
+          title={poll.question}
+          wide
+          link={<PageLink label='Votes anzeigen' onClick={() => onOpen({ kind: 'poll', id: poll.pool_id })} />}
+        >
+          <PollOptions poll={poll} userId={userId} disabled={!canAnswer} onChange={onPollChange} onSaved={onPollSaved} />
+        </InfoCard>
+      ))}
+      {questions.map((question) => (
+        <InfoCard
+          key={question.pool_id}
+          icon={MessageCircleQuestion}
+          color='yellow'
+          title={question.question}
+          wide
+          link={<PageLink label='Antworten anzeigen' onClick={() => onOpen({ kind: 'question', id: question.pool_id })} />}
+        >
+          <AnswerRow question={question} userId={userId} disabled={!canAnswer} onChange={onPollChange} onSaved={onPollSaved} />
+        </InfoCard>
+      ))}
     </div>
   )
 }

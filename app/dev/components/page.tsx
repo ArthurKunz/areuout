@@ -17,6 +17,8 @@ import ParticipantsCard from '@/components/shared/ParticipantsCard'
 import DescriptionCard from '@/components/shared/DescriptionCard'
 import QuestionCard from '@/components/shared/QuestionCard'
 import PollCard from '@/components/shared/PollCard'
+import PollOptions from '@/features/party-detail/PollOptions'
+import type { DetailPoll } from '@/features/parties/services/pools.service'
 import RsvpGoingCard from '@/components/shared/RsvpGoingCard'
 import MaxParticipantsCard from '@/components/shared/MaxParticipantsCard'
 import RsvpMaybeCard from '@/components/shared/RsvpMaybeCard'
@@ -41,6 +43,42 @@ import { Menu, Pencil } from 'lucide-react'
 // Dev-only gallery of the redesign's shared components, rendered live against
 // a real background so the glass effects are visible. Not linked from
 // anywhere in the app; open it directly at /dev/components.
+// The detail's poll options with one and with several answers allowed, both round.
+// The ids exist nowhere, so a tap here is refused by the database and goes back.
+const devVote = (option_id: string) => ({
+  option_id,
+  user_id: 'dev',
+  firstname: null,
+  lastname: null,
+  avatar_url: null,
+  avatar_color: null,
+  text_response: null,
+})
+const DEV_POLLS: DetailPoll[] = [
+  {
+    pool_id: 'dev-single',
+    question: 'Bringst du was mit?',
+    allow_multiple: false,
+    options: [
+      { option_id: 'ja', label: 'Ja' },
+      { option_id: 'nein', label: 'Nein' },
+      { option_id: 'vielleicht', label: 'Vielleicht' },
+    ],
+    responses: [devVote('ja'), { ...devVote('nein'), user_id: 'other' }, { ...devVote('nein'), user_id: 'other-2' }],
+  },
+  {
+    pool_id: 'dev-multi',
+    question: 'Welche Musik? (mehrere Antworten)',
+    allow_multiple: true,
+    options: [
+      { option_id: 'techno', label: 'Techno' },
+      { option_id: 'hiphop', label: 'Hip-Hop' },
+      { option_id: 'pop', label: 'Pop' },
+    ],
+    responses: [devVote('techno'), devVote('pop'), { ...devVote('pop'), user_id: 'other' }],
+  },
+]
+
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
   return (
     <section className='flex flex-col gap-4'>
@@ -192,16 +230,16 @@ export default function ComponentGalleryPage() {
               label='Ja'
               votes={2}
               voters={[
-                { id: '1', avatarUrl: '/images/noProfilPicture.jpg', name: 'Arthur Kunz' },
-                { id: '2', avatarUrl: '/images/noProfilPicture.jpg', name: 'Arthur Kunz' },
+                { id: '1', firstname: 'Arthur', lastname: 'Kunz', avatarUrl: '/images/noProfilPicture.jpg', avatarColor: null },
+                { id: '2', firstname: 'Arthur', lastname: 'Kunz', avatarUrl: '/images/noProfilPicture.jpg', avatarColor: null },
               ]}
             />
             <PollOptionResults
               label='Nein'
               votes={2}
               voters={[
-                { id: '3', avatarUrl: '/images/noProfilPicture.jpg', name: 'Arthur Kunz' },
-                { id: '4', avatarUrl: '/images/noProfilPicture.jpg', name: 'Arthur Kunz' },
+                { id: '3', firstname: 'Arthur', lastname: 'Kunz', avatarUrl: '/images/noProfilPicture.jpg', avatarColor: null },
+                { id: '4', firstname: 'Arthur', lastname: 'Kunz', avatarUrl: '/images/noProfilPicture.jpg', avatarColor: null },
               ]}
             />
             <PollOptionResults label='Vielleicht' votes={0} voters={[]} />
@@ -228,6 +266,17 @@ export default function ComponentGalleryPage() {
             selectedIndex={pollSelected}
             onSelect={setPollSelected}
           />
+        </Section>
+
+        <Section title='PollOptions (eine Antwort, mehrere Antworten)'>
+          <div className='flex w-[350px] gap-2.5'>
+            {DEV_POLLS.map((poll) => (
+              <div key={poll.pool_id} className='min-w-0 flex-1 rounded-[25px] bg-main p-4'>
+                <span className='text-text-3 font-bold text-heading'>{poll.question}</span>
+                <PollOptions poll={poll} userId='dev' disabled={false} onChange={() => {}} onSaved={() => {}} />
+              </div>
+            ))}
+          </div>
         </Section>
 
         <Section title='AddButton'>

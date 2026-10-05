@@ -136,3 +136,14 @@ Migrationshistorie ein, deshalb steht sie **nicht** in `list_migrations` und hat
 Version, die der Dateiname tragen könnte. Der Dateiname trägt die Uhrzeit der Datenbank
 kurz nach dem Ausführen. Geprüft am selben Tag: der Funktionskörper auf der Datenbank
 ist Zeichen für Zeichen derselbe wie in der Datei (gleicher md5 über `prosrc`).
+
+## Die Migrationen zu Schritt 7
+
+`20261005130113_cap_answers_at_25_characters.sql` legt den CHECK
+`pool_responses_text_max_25` an — eine Antwort auf eine Frage hat höchstens 25 Zeichen,
+bisher hielt das nur die Oberfläche. `20261005130127_add_get_party_poll_data.sql` legt
+`get_party_poll_data` an: Umfragen und Fragen samt Stimmen und Antworten, auf einer
+privaten Party nur für Mitglieder. `20261005133109_add_get_party_guest_list.sql` legt
+`get_party_guest_list` an: die Gästeliste mit vollen Namen für jeden angemeldeten
+Betrachter; `get_party_guests` bleibt unverändert. Alle drei über `apply_migration`, die Dateinamen tragen
+die Versionen der Datenbank. Warum es so gebaut ist, steht in `SCHEMA.md`, Abschnitt 9a.

@@ -569,6 +569,17 @@ export type Database = {
           title: string
         }[]
       }
+      get_party_guest_list: {
+        Args: { p_event_id: string }
+        Returns: {
+          avatar_color: string
+          avatar_url: string
+          firstname: string
+          lastname: string
+          status: string
+          user_id: string
+        }[]
+      }
       get_party_guests: {
         Args: { p_event_id: string }
         Returns: {
@@ -583,6 +594,17 @@ export type Database = {
       get_party_mitbring_by_invite_code: {
         Args: { p_invite_code: string }
         Returns: Json
+      }
+      get_party_poll_data: {
+        Args: { p_event_id: string }
+        Returns: {
+          allow_multiple: boolean
+          options: Json
+          pool_id: string
+          question: string
+          responses: Json
+          type: string
+        }[]
       }
       get_party_polls: {
         Args: { p_event_id: string }

@@ -1,13 +1,15 @@
 import { BG_BUCKET } from '@/features/parties/constants/background.constants'
 import { orNull, toTimestamps, type PartyDraft } from '@/features/create-party/draft'
-import type { PartyDetailRow, PartyPollRow } from '@/features/party-detail/DetailCards'
+import type { PartyDetailRow } from '@/features/party-detail/DetailCards'
+import type { DetailPoll } from '@/features/parties/services/pools.service'
 import type { Database } from '@/types/database.types'
-
-type PollOption = { label: string }
 
 // A saved party as the draft the Create Party pieces work on, in the viewer's time
 // zone, so the same rows, wheels and sub-screens edit it.
-export function toEditDraft(party: PartyDetailRow, polls: PartyPollRow[]): PartyDraft {
+export function toEditDraft(
+  party: PartyDetailRow,
+  { polls, questions }: { polls: DetailPoll[]; questions: DetailPoll[] }
+): PartyDraft {
   const start = new Date(party.event_date)
   const end = party.ends_at ? new Date(party.ends_at) : null
   return {
@@ -27,14 +29,12 @@ export function toEditDraft(party: PartyDetailRow, polls: PartyPollRow[]): Party
     maxGuests: party.max_guests,
     dresscode: party.dresscode,
     description: party.description,
-    polls: polls
-      .filter((poll) => poll.type === 'options')
-      .map((poll) => ({
-        question: poll.question,
-        options: (poll.options as unknown as PollOption[]).map((option) => option.label),
-        allowMultiple: poll.allow_multiple,
-      })),
-    questions: polls.filter((poll) => poll.type === 'text_only').map((poll) => poll.question),
+    polls: polls.map((poll) => ({
+      question: poll.question,
+      options: poll.options.map((option) => option.label),
+      allowMultiple: poll.allow_multiple,
+    })),
+    questions: questions.map((question) => question.question),
   }
 }
 

@@ -15,6 +15,7 @@ import type { Feature } from '@/features/create-party/features/FeatureChip'
 import { LIMITS, canLeaveName, canLeaveTime, type PartyDraft } from '@/features/create-party/draft'
 import ToggleInput from '@/components/shared/ToggleInput'
 import Input from '@/components/shared/Input'
+import { getDetailPolls } from '@/features/parties/services/pools.service'
 import { supabase } from '@/lib/supabase/client'
 import { alertError } from '@/lib/utils'
 import { toEditDraft } from './editDraft'
@@ -44,7 +45,7 @@ export default function EditPartyFlow({ partyId, userId }: { partyId: string; us
     let cancelled = false
     Promise.all([
       supabase.rpc('get_party_detail', { p_event_id: partyId }).maybeSingle(),
-      supabase.rpc('get_party_polls', { p_event_id: partyId }),
+      getDetailPolls(partyId),
     ]).then(([detail, polls]) => {
       if (cancelled) return
       const error = detail.error ?? polls.error
@@ -59,7 +60,7 @@ export default function EditPartyFlow({ partyId, userId }: { partyId: string; us
         return
       }
       setOldBackgroundUrl(detail.data.background_url)
-      setDraft(toEditDraft(detail.data, polls.data ?? []))
+      setDraft(toEditDraft(detail.data, polls.data ?? { polls: [], questions: [] }))
     })
     return () => {
       cancelled = true

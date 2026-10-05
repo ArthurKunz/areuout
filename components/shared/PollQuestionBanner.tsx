@@ -5,8 +5,8 @@
 // cards.
 export default function PollQuestionBanner({ question }: { question: string }) {
   return (
-    <div className='flex h-[50px] w-[350px] items-center rounded-full bg-main px-4 backdrop-blur-[100px]'>
-      <span className='text-text-2 font-bold text-heading'>{question}</span>
+    <div className='flex min-h-[50px] w-full items-center rounded-[25px] bg-main px-4 py-3 backdrop-blur-[100px]'>
+      <span className='min-w-0 break-words text-text-2 font-bold text-heading'>{question}</span>
     </div>
   )
 }

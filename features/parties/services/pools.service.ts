@@ -80,6 +80,48 @@ export async function getPartyPoolsByInviteCode(inviteCode: string, partyId: str
   return pools.map((pool) => ({ ...pool, responses: responses.filter((r) => r.pool_id === pool.id) }))
 }
 
+export type DetailOption = { option_id: string; label: string }
+export type DetailResponse = {
+  option_id: string | null
+  user_id: string
+  firstname: string | null
+  lastname: string | null
+  avatar_url: string | null
+  avatar_color: string | null
+  text_response: string | null
+}
+export type DetailPoll = {
+  pool_id: string
+  question: string
+  allow_multiple: boolean
+  options: DetailOption[]
+  responses: DetailResponse[]
+}
+
+// The redesign's detail: polls and questions with every vote and answer, from
+// get_party_poll_data. On a private party a stranger gets no rows at all; the function
+// decides that, not the screen. Polls and questions share the table and are told apart
+// here, by type, as above and in questions.service.ts.
+export async function getDetailPolls(partyId: string) {
+  const { data, error } = await supabase.rpc('get_party_poll_data', { p_event_id: partyId })
+  if (error) return { data: null, error }
+  const rows = data.map((row) => ({
+    type: row.type,
+    pool_id: row.pool_id,
+    question: row.question,
+    allow_multiple: row.allow_multiple,
+    options: row.options as unknown as DetailOption[],
+    responses: row.responses as unknown as DetailResponse[],
+  }))
+  return {
+    data: {
+      polls: rows.filter((row) => row.type === 'options'),
+      questions: rows.filter((row) => row.type === 'text_only'),
+    },
+    error: null,
+  }
+}
+
 export async function createPool(payload: {
   event_id: string
   question: string

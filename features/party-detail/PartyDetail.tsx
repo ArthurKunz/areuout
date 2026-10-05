@@ -1,22 +1,33 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { X } from 'lucide-react'
 import IconButton from '@/components/shared/IconButton'
+import { getDetailPolls, type DetailPoll } from '@/features/parties/services/pools.service'
 import { supabase } from '@/lib/supabase/client'
 import type { RsvpStatus } from '@/features/parties/types/parties.types'
 import { alertError, isPartyOver } from '@/lib/utils'
-import DetailCards, { type PartyDetailRow, type PartyPollRow } from './DetailCards'
+import DetailCards, { type DetailPage, type PartyDetailRow } from './DetailCards'
 import DetailHeader from './DetailHeader'
+import GuestsPage from './GuestsPage'
 import HostActions from './HostActions'
+import PageHeader from './PageHeader'
+import PollPage from './PollPage'
+import QuestionPage from './QuestionPage'
 import RsvpControl from './RsvpControl'
 
-// Who is looking. Decides the header's buttons; get_party_detail and get_party_polls
+// Who is looking. Decides the header's buttons; get_party_detail and get_party_poll_data
 // already decide what each viewer may see. The host gets ⋯ and share, the guest the RSVP
 // button, the stranger ✗ alone.
 export type Viewer = 'host' | 'guest' | 'stranger'
 
-type Loaded = { party: PartyDetailRow; polls: PartyPollRow[]; inviteCode: string | null }
+type Loaded = {
+  party: PartyDetailRow
+  polls: DetailPoll[]
+  questions: DetailPoll[]
+  inviteCode: string | null
+  userId: string | null
+}
 
 // The party detail container (App Redesign 3.5), built once for every place that opens
 // a party: Hosting and My Parties now; Explore and the invite page later. It replaces the
@@ -39,17 +50,24 @@ export default function PartyDetail({
   onStatusChange?: (status: RsvpStatus) => void
 }) {
   const [loaded, setLoaded] = useState<Loaded | null>(null)
+  // The viewer's answer, shared by the RSVP buttons in the header and on the guest list.
+  const [myStatus, setMyStatus] = useState<RsvpStatus | null>(null)
+  const [page, setPage] = useState<DetailPage | null>(null)
+  // Bumped by every vote and answer: a re-read that started before the latest one would
+  // otherwise overwrite what the viewer just tapped.
+  const pollVersion = useRef(0)
 
   useEffect(() => {
     let cancelled = false
     Promise.all([
       supabase.rpc('get_party_detail', { p_event_id: partyId }).maybeSingle(),
-      supabase.rpc('get_party_polls', { p_event_id: partyId }),
+      getDetailPolls(partyId),
       // No function returns the invite code: only the host reads it, from the row.
       viewer === 'host'
         ? supabase.from('events').select('invite_code').eq('id', partyId).single()
         : Promise.resolve({ data: null, error: null }),
-    ]).then(([detail, polls, invite]) => {
+      supabase.auth.getSession(),
+    ]).then(([detail, polls, invite, session]) => {
       if (cancelled) return
       const error = detail.error ?? polls.error ?? invite.error
       if (error || !detail.data) {
@@ -57,7 +75,14 @@ export default function PartyDetail({
         onClose()
         return
       }
-      setLoaded({ party: detail.data, polls: polls.data ?? [], inviteCode: invite.data?.invite_code ?? null })
+      setMyStatus(detail.data.my_status as RsvpStatus | null)
+      setLoaded({
+        party: detail.data,
+        polls: polls.data?.polls ?? [],
+        questions: polls.data?.questions ?? [],
+        inviteCode: invite.data?.invite_code ?? null,
+        userId: session.data.session?.user.id ?? null,
+      })
     })
     return () => {
       cancelled = true
@@ -86,13 +111,75 @@ export default function PartyDetail({
     )
   }
 
-  const { party, polls, inviteCode } = loaded
+  const { party, polls, questions, inviteCode, userId } = loaded
+  const hostName = `${party.host_firstname} ${party.host_lastname}`
+  // The host votes and answers in their own party (Polls.md, Question.md); everyone
+  // else needs an answer to the party first.
+  const canAnswer = viewer === 'host' || myStatus !== null
+
+  const changeStatus = (status: RsvpStatus) => {
+    setMyStatus(status)
+    onStatusChange?.(status)
+  }
+
+  // The vote or answer shows at once; PollOptions and AnswerRow put the old poll back
+  // here if their write fails.
+  const changePoll = (next: DetailPoll) => {
+    pollVersion.current += 1
+    const swap = (list: DetailPoll[]) => list.map((poll) => (poll.pool_id === next.pool_id ? next : poll))
+    setLoaded((current) => current && { ...current, polls: swap(current.polls), questions: swap(current.questions) })
+  }
+
+  // After a write: everyone's votes and answers again, with the names and pictures the
+  // optimistic entry could not know. A failed re-read leaves what is shown.
+  const reloadPolls = async () => {
+    const version = pollVersion.current
+    const { data } = await getDetailPolls(party.id)
+    if (!data || version !== pollVersion.current) return
+    setLoaded((current) => current && { ...current, polls: data.polls, questions: data.questions })
+  }
+
+  const rsvp = viewer === 'guest' && myStatus && (
+    <RsvpControl
+      partyId={party.id}
+      initialStatus={myStatus}
+      over={isPartyOver(party.event_date, party.ends_at)}
+      onStatusChange={changeStatus}
+    />
+  )
+
+  if (page) {
+    const poll = page.kind === 'poll' ? polls.find((item) => item.pool_id === page.id) : undefined
+    const question = page.kind === 'question' ? questions.find((item) => item.pool_id === page.id) : undefined
+    return (
+      <div className='flex min-h-0 flex-1 flex-col'>
+        <PageHeader
+          title={page.kind === 'guests' ? 'Teilnehmer' : page.kind === 'poll' ? 'Umfrage' : 'Frage'}
+          actions={page.kind === 'guests' ? rsvp : undefined}
+          onBack={() => setPage(null)}
+        />
+        <div className='min-h-0 flex-1 overflow-y-auto px-5 pt-4 pb-5'>
+          {page.kind === 'guests' && (
+            <GuestsPage
+              partyId={party.id}
+              maxGuests={party.max_guests}
+              userId={userId}
+              myStatus={myStatus}
+              canRemove={viewer === 'host'}
+            />
+          )}
+          {poll && <PollPage poll={poll} />}
+          {question && <QuestionPage question={question} hostName={hostName} userId={userId} />}
+        </div>
+      </div>
+    )
+  }
 
   return (
     <div className='flex min-h-0 flex-1 flex-col'>
       <DetailHeader
         title={party.title}
-        hostName={`${party.host_firstname} ${party.host_lastname}`}
+        hostName={hostName}
         isPublic={party.is_public}
         onClose={onClose}
         actions={
@@ -105,18 +192,22 @@ export default function PartyDetail({
               onInviteCode={(code) => setLoaded({ ...loaded, inviteCode: code })}
               onDeleted={() => onDeleted?.()}
             />
-          ) : viewer === 'guest' && party.my_status ? (
-            <RsvpControl
-              partyId={party.id}
-              initialStatus={party.my_status as RsvpStatus}
-              over={isPartyOver(party.event_date, party.ends_at)}
-              onStatusChange={onStatusChange}
-            />
-          ) : undefined
+          ) : (
+            rsvp || undefined
+          )
         }
       />
       <div className='min-h-0 flex-1 overflow-y-auto px-5 pt-4 pb-5'>
-        <DetailCards party={party} polls={polls} />
+        <DetailCards
+          party={party}
+          polls={polls}
+          questions={questions}
+          userId={userId}
+          canAnswer={canAnswer}
+          onPollChange={changePoll}
+          onPollSaved={reloadPolls}
+          onOpen={setPage}
+        />
       </div>
     </div>
   )
