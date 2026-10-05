@@ -1,5 +1,7 @@
 'use client'
 
+import type { ReactNode } from 'react'
+import { Check, X } from 'lucide-react'
 import type { Database } from '@/types/database.types'
 
 export type HostedParty = Database['public']['Functions']['get_hosting_parties']['Returns'][number]
@@ -10,13 +12,24 @@ const formatDate = (iso: string) =>
 
 const divider = <div className='ml-13 h-px rounded-full bg-divider' />
 
-// The parties the signed-in user hosts, soonest first (App Redesign 3.4). HostingScreen
-// fetches them; null while loading. A tap on a row does what a tap on its circle does.
+// The guest's answer on the right of a row (App Redesign 5.1). Hosting never shows one:
+// the host has no RSVP, the database refuses the row.
+const STATUS_ICON: Record<string, ReactNode> = {
+  going: <Check size={22} />,
+  maybe: <span className='text-[22px] font-bold leading-none'>?</span>,
+  not_going: <X size={22} />,
+}
+
+// A tab's parties, soonest first (App Redesign 3.4): the ones the signed-in user hosts
+// on Hosting, the ones they answered on My Parties. The screen fetches them; null while
+// loading. A tap on a row does what a tap on its circle does.
 export default function HostingList({
   parties,
+  emptyText,
   onSelect,
 }: {
   parties: HostedParty[] | null
+  emptyText: string
   onSelect: (party: HostedParty) => void
 }) {
   if (!parties) {
@@ -39,7 +52,7 @@ export default function HostingList({
   }
 
   if (parties.length === 0) {
-    return <p className='text-text-2 text-text'>Du hostest gerade keine Party</p>
+    return <p className='text-text-2 text-text'>{emptyText}</p>
   }
 
   return (
@@ -51,10 +64,11 @@ export default function HostingList({
             {/* Uploaded covers are absolute Storage URLs, presets relative paths into
                 /public; both work as src. */}
             <img src={party.background_url} alt='' className='size-10 shrink-0 rounded-full object-cover' />
-            <div className='flex min-w-0 flex-col'>
+            <div className='flex min-w-0 flex-1 flex-col'>
               <span className='truncate text-text-2 font-bold text-heading'>{party.title}</span>
               <span className='text-text-3 text-text'>{formatDate(party.event_date)}</span>
             </div>
+            {party.my_status && <span className='shrink-0 text-main-white'>{STATUS_ICON[party.my_status]}</span>}
           </button>
         </li>
       ))}

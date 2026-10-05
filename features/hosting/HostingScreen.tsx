@@ -81,7 +81,7 @@ export default function HostingScreen({ initialParty }: { initialParty: string |
           <ListHeader title='Hosting' />
           {/* The bottom padding lets the list scroll out from under the navigation. */}
           <div className='min-h-0 flex-1 overflow-y-auto px-5 pt-4 pb-25'>
-            <HostingList parties={parties} onSelect={select} />
+            <HostingList parties={parties} emptyText='Du hostest gerade keine Party' onSelect={select} />
           </div>
         </>
       )}
