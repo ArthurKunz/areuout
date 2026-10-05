@@ -164,8 +164,8 @@ choosing its own columns:
   these two are NOT member-gated — a stranger can call them, just with less in the
   result — because the redesign puts every private party's guest list and polls on
   Explore too, not only in front of people who already have access.
-  Step 7 narrowed the polls side: the screens read `get_party_poll_data` instead
-  (section 9a).
+  Step 7 narrowed the polls side: the screens read `get_party_poll_data` instead, and
+  `get_party_polls` is no longer callable (section 9a).
 
 All six are reachable only by `authenticated` (`REVOKE ... FROM PUBLIC, anon` on each).
 The exact-vs-blurred decision itself lives once, in `private.has_party_access(event_id)`
@@ -272,9 +272,10 @@ request. Members (host, any RSVP) read everything.
   `is_party_member`; it reads nothing else from `events`, so no address, coordinates,
   invite code or email can appear. `SECURITY DEFINER`, `authenticated` only.
   Why not `get_party_polls`: it hands a stranger the questions, options and vote counts
-  of a private party. The redesign no longer calls it (Edit Party switched too); its
-  `EXECUTE` is revoked from `authenticated` before step 7 is merged. The production app
-  on `main` never called it.
+  of a private party. The redesign no longer calls it (Edit Party switched too), so
+  `20261005161226_revoke_get_party_polls.sql` took its `EXECUTE` from `authenticated`
+  right after step 7 was merged; the function itself stays. The production app on
+  `main` never called it.
 
 **Writes** are unchanged and ride on RLS: `pool_responses_insert_member` (host or RSVP)
 for votes and answers, `set_single_pool_response` for a single vote or an answer,

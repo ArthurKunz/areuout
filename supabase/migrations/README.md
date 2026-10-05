@@ -145,5 +145,9 @@ bisher hielt das nur die Oberfläche. `20261005130127_add_get_party_poll_data.sq
 `get_party_poll_data` an: Umfragen und Fragen samt Stimmen und Antworten, auf einer
 privaten Party nur für Mitglieder. `20261005133109_add_get_party_guest_list.sql` legt
 `get_party_guest_list` an: die Gästeliste mit vollen Namen für jeden angemeldeten
-Betrachter; `get_party_guests` bleibt unverändert. Alle drei über `apply_migration`, die Dateinamen tragen
+Betrachter; `get_party_guests` bleibt unverändert.
+`20261005161226_revoke_get_party_polls.sql` nimmt `get_party_polls` das `EXECUTE` für
+`authenticated`, nachdem Schritt 7 gemergt war — die Funktion gab einem Fremden Fragen,
+Optionen und Stimmenzahlen einer privaten Party heraus; `main` rief sie nie auf. Alle
+vier über `apply_migration`, die Dateinamen tragen
 die Versionen der Datenbank. Warum es so gebaut ist, steht in `SCHEMA.md`, Abschnitt 9a.
