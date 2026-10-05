@@ -164,6 +164,8 @@ choosing its own columns:
   these two are NOT member-gated — a stranger can call them, just with less in the
   result — because the redesign puts every private party's guest list and polls on
   Explore too, not only in front of people who already have access.
+  Step 7 narrowed the polls side: the screens read `get_party_poll_data` instead
+  (section 9a).
 
 All six are reachable only by `authenticated` (`REVOKE ... FROM PUBLIC, anon` on each).
 The exact-vs-blurred decision itself lives once, in `private.has_party_access(event_id)`
@@ -249,6 +251,46 @@ so the order follows the host's list. A deleted option's votes keep their
 `pool_responses` row with `option_id` null (`ON DELETE SET NULL`), as on the old edit
 path — under RLS the host cannot delete other users' responses. The old
 `EditPartyScreen` still saves in separate requests and does not use this function.
+
+## 9a. Votes, answers and the guest list (Step 7 of the redesign)
+
+**Who reads what.** A stranger is anyone without an RSVP row who is not the host — a
+user who only opened the invite link counts as one here, and so will a pending join
+request. Members (host, any RSVP) read everything.
+
+- **Guest list**: `get_party_guest_list(event_id)` for every viewer: full names,
+  pictures and answers, nothing else — a stranger on a private party included (App
+  Redesign 3.6). Same rows as `get_party_guests` (section 8), which stays unchanged and
+  still shortens last names without access; the host name in `get_party_detail` and the
+  map functions is still shortened that way too, until the Explore step decides it.
+  `SECURITY DEFINER`, `authenticated` only.
+- **Polls and questions**: `get_party_poll_data(event_id)` returns every poll and
+  question with its options and all responses (option, user, name, picture, answer
+  text) — full data on a public party for every signed-in user, and on a private party
+  for members only. **Anyone else on a private party gets no rows at all.** The
+  visibility is decided inside the function, from `events.is_public` and
+  `is_party_member`; it reads nothing else from `events`, so no address, coordinates,
+  invite code or email can appear. `SECURITY DEFINER`, `authenticated` only.
+  Why not `get_party_polls`: it hands a stranger the questions, options and vote counts
+  of a private party. The redesign no longer calls it (Edit Party switched too); its
+  `EXECUTE` is revoked from `authenticated` before step 7 is merged. The production app
+  on `main` never called it.
+
+**Writes** are unchanged and ride on RLS: `pool_responses_insert_member` (host or RSVP)
+for votes and answers, `set_single_pool_response` for a single vote or an answer,
+`pool_responses_delete_own` for taking a vote back. The host may vote and answer in
+their own party. Answers are capped at 25 characters by `pool_responses_text_max_25`
+(the older 5000 CHECK stays).
+
+**Removing a guest** is `rsvps_delete_host`: the party's host may delete any RSVP row of
+that party. The host never has a row of their own (`rsvps_insert_authenticated` and
+`rsvps_update_own` refuse one), so there is nothing of theirs to delete.
+`rsvps_delete_own` lets a guest delete their own row; the old app uses it. Removing is
+not a ban: the invite link keeps working.
+
+**Step 8 must not break the gate.** If join requests are ever stored in `rsvps`,
+`is_party_member` would count a pending request as a member and hand it the polls of a
+private party. Requests must live outside `rsvps`, or the gate must exclude them.
 
 ## 10. Checking this file against the database
 
