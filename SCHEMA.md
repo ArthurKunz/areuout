@@ -301,9 +301,68 @@ that party. The host never has a row of their own (`rsvps_insert_authenticated` 
 `rsvps_delete_own` lets a guest delete their own row; the old app uses it. Removing is
 not a ban: the invite link keeps working.
 
-**Step 8 must not break the gate.** If join requests are ever stored in `rsvps`,
-`is_party_member` would count a pending request as a member and hand it the polls of a
-private party. Requests must live outside `rsvps`, or the gate must exclude them.
+**Step 8 kept the gate.** A join request lives in its own table (section 9b), never in
+`rsvps`, so `is_party_member` does not count a pending request as a member and
+`get_party_poll_data` returns nothing to it.
+
+## 9b. Join requests (Step 8 of the redesign)
+
+A signed-in stranger asks the host of a private party to let them in; the host accepts
+or declines. Decided in the vault's *Join Request Database Review* (D1 to D4).
+
+**Why a table of its own.** `public.join_requests` (`event_id`, `user_id`, UNIQUE on the
+pair, both FKs `on delete cascade`, so a deleted party or account takes its requests
+along) sits outside `rsvps` and `private.invite_opens`. That keeps `has_party_access`,
+`has_exact_access` and `is_party_member` false for a pending requester, and with them
+everything section 8 hands out only with access: no address, no exact point, no polls.
+Verified 2026-10-05 as a requester: `get_party_detail`, `get_my_parties` and
+`get_explore_parties` return `location` NULL, the blurred point and `is_exact` false;
+`get_party_poll_data` 0 rows; `events` 0 rows. Not in `supabase_realtime`.
+
+**Who reads what.** `join_requests_select_own` (the requester's own rows) and
+`join_requests_select_host` (every row of a party one hosts), both `authenticated`. anon
+holds no privilege at all. The host learns who asked through
+`get_party_join_requests(event_id)`: full name, picture, `created_at`, oldest first,
+rows only for the party's host. `profiles` stays own-row-only.
+
+**Writing.** `authenticated` has no INSERT or UPDATE on the table; there is no insert
+policy. Rows come in only through `request_to_join(event_id)` (SECURITY DEFINER), which
+takes the capacity trigger's lock on the party plus a per-person lock and refuses, each
+with a German sentence the app can show: a public party, one's own party, anyone with
+access already (RSVP or opened invite link), a party past
+`private.party_visible_until` (D1: the moment it leaves the map, no third copy of
+either hour constant), a second request to the same party, a full party
+(`party_has_room`), and an 11th open request (D2; requests to parties past their cutoff
+do not count).
+
+**Accepting** is `accept_join_request(event_id, user_id)`: the caller must be the
+party's host (42501 otherwise, checked inside), the party's lock, the cutoff, then the
+request is deleted (refused if it is gone) and an RSVP `going` inserted, in one
+transaction. A full party is refused by `rsvps_enforce_capacity` with `Diese Party ist
+voll.`; the call rolls back and the request stays. The new RSVP is what releases the
+address and the exact point. This is the only RSVP the database writes on someone
+else's behalf; every other RSVP still goes through the RLS path of section 9a.
+
+**Declining** is `join_requests_delete_host`, a DELETE policy shaped like
+`rsvps_delete_host`. The person may ask again. **Withdrawing does not exist:** there is
+no DELETE policy or function for the requester (Join Request section 8).
+
+**Cleanup** runs in two triggers in `private`, both SECURITY DEFINER and out of reach of
+the API roles: `rsvps_drop_join_request` (AFTER INSERT on `rsvps`) removes the request
+of someone who got in through the invite link, and
+`events_drop_join_requests_when_public` (AFTER UPDATE OF `is_public`) removes every
+request when a party turns public. Requests to finished parties are left in place; the
+24-hour filter keeps them out of every list and out of the limit of 10.
+
+**On the requester's screens** `get_my_parties`, `get_explore_parties` and
+`get_party_detail` return `my_status = 'requested'` when there is a request and no RSVP,
+and `get_my_parties` lists such a party (it used to join `rsvps` with an INNER JOIN).
+Same return shapes; position logic untouched.
+
+**Applied through the SQL editor.** The MCP tool declines statements containing DELETE,
+so `accept_join_request` and the cleanup triggers were run by Arthur in the SQL editor,
+with their versions recorded by hand in `supabase_migrations.schema_migrations`
+(`supabase/migrations/README.md`).
 
 ## 10. Checking this file against the database
 

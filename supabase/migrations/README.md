@@ -161,3 +161,28 @@ Antwort auf eine fremde private Party umzuhängen — damit war man Mitglied und
 Adresse lesen. Der Upsert der App schreibt dieselben Werte zurück und funktioniert
 weiter. Über `apply_migration`, der Dateiname trägt die Version der Datenbank. Warum es
 so gebaut ist, steht in `SCHEMA.md`, Abschnitt 8.
+
+## Die Migrationen zu Schritt 8 (Beitrittsanfragen)
+
+Sieben Dateien, in der Reihenfolge, in der sie angewendet wurden:
+
+| Datei | Was sie anlegt | Wie angewendet |
+|---|---|---|
+| `20261005164300_create_join_requests.sql` | Tabelle `join_requests`, RLS, drei Policies, keine Rechte für `anon`, kein INSERT/UPDATE für `authenticated` | `apply_migration` |
+| `20261005164336_add_request_to_join_function.sql` | `request_to_join` | `apply_migration` |
+| `20261005170000_add_accept_join_request_function.sql` | `accept_join_request` | SQL-Editor |
+| `20261005165140_add_get_party_join_requests.sql` | `get_party_join_requests` | `apply_migration` |
+| `20261005171000_clean_up_join_requests.sql` | die Trigger `rsvps_drop_join_request` und `events_drop_join_requests_when_public` | SQL-Editor |
+| `20261005165800_show_pending_requests_in_map_functions.sql` | `my_status = 'requested'` in `get_my_parties`, `get_explore_parties`, `get_party_detail` | `apply_migration` |
+| `20261005165822_say_teilnehmen_when_requesting_a_public_party.sql` | neuer Wortlaut einer Fehlermeldung in `request_to_join` | `apply_migration` |
+
+Das MCP-Werkzeug lehnt Anweisungen mit DELETE ab, deshalb hat Arthur die beiden
+Editor-Migrationen selbst im SQL-Editor ausgeführt. Anders als bei der
+Edit-Party-Migration oben haben beide ihre Version per INSERT in
+`supabase_migrations.schema_migrations` eingetragen bekommen, sie stehen also in
+`list_migrations`. Ihre Versionen sind von Hand gewählt und liegen deshalb **nach**
+Migrationen, die eigentlich später kamen: Nach Dateinamen sortiert läuft
+`accept_join_request` erst nach `get_party_join_requests` und nach der Änderung der
+Kartenfunktionen. Keine der drei hängt von einer anderen ab außer von der Tabelle, ein
+erneutes Abspielen in Namensreihenfolge geht also. Warum es so gebaut ist, steht in
+`SCHEMA.md`, Abschnitt 9b.
