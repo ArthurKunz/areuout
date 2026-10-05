@@ -4,20 +4,22 @@ import { useEffect, useState } from 'react'
 import { X } from 'lucide-react'
 import IconButton from '@/components/shared/IconButton'
 import { supabase } from '@/lib/supabase/client'
-import { alertError } from '@/lib/utils'
+import type { RsvpStatus } from '@/features/parties/types/parties.types'
+import { alertError, isPartyOver } from '@/lib/utils'
 import DetailCards, { type PartyDetailRow, type PartyPollRow } from './DetailCards'
 import DetailHeader from './DetailHeader'
 import HostActions from './HostActions'
+import RsvpControl from './RsvpControl'
 
 // Who is looking. Decides the header's buttons; get_party_detail and get_party_polls
-// already decide what each viewer may see. Only the host's header exists so far: the
-// guest's RSVP button comes in step 6, the stranger has ✗ alone.
+// already decide what each viewer may see. The host gets ⋯ and share, the guest the RSVP
+// button, the stranger ✗ alone.
 export type Viewer = 'host' | 'guest' | 'stranger'
 
 type Loaded = { party: PartyDetailRow; polls: PartyPollRow[]; inviteCode: string | null }
 
 // The party detail container (App Redesign 3.5), built once for every place that opens
-// a party: Hosting now; Explore, My Parties and the invite page later. It replaces the
+// a party: Hosting and My Parties now; Explore and the invite page later. It replaces the
 // list inside the same container, which keeps its height; the header stays and the
 // cards scroll. The caller hides the navigation while it is open.
 export default function PartyDetail({
@@ -25,6 +27,7 @@ export default function PartyDetail({
   viewer,
   onClose,
   onDeleted,
+  onStatusChange,
 }: {
   partyId: string
   viewer: Viewer
@@ -32,6 +35,8 @@ export default function PartyDetail({
   onClose: () => void
   // Host only: the party is gone; the caller drops it from its list and map.
   onDeleted?: () => void
+  // Guest only: the answer changed (or was rolled back); the caller updates its list.
+  onStatusChange?: (status: RsvpStatus) => void
 }) {
   const [loaded, setLoaded] = useState<Loaded | null>(null)
 
@@ -99,6 +104,13 @@ export default function PartyDetail({
               inviteCode={inviteCode}
               onInviteCode={(code) => setLoaded({ ...loaded, inviteCode: code })}
               onDeleted={() => onDeleted?.()}
+            />
+          ) : viewer === 'guest' && party.my_status ? (
+            <RsvpControl
+              partyId={party.id}
+              initialStatus={party.my_status as RsvpStatus}
+              over={isPartyOver(party.event_date, party.ends_at)}
+              onStatusChange={onStatusChange}
             />
           ) : undefined
         }
