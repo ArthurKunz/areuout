@@ -186,3 +186,13 @@ Migrationen, die eigentlich später kamen: Nach Dateinamen sortiert läuft
 Kartenfunktionen. Keine der drei hängt von einer anderen ab außer von der Tabelle, ein
 erneutes Abspielen in Namensreihenfolge geht also. Warum es so gebaut ist, steht in
 `SCHEMA.md`, Abschnitt 9b.
+
+## Die Migration zu Schritt 5 (Explore)
+
+| Datei | Was sie ändert | Wie angewendet |
+|---|---|---|
+| `20261005172101_show_the_full_host_name.sql` | `get_my_parties`, `get_explore_parties`, `get_party_detail` geben den vollen Nachnamen des Hosts zurück, auch ohne Zugang (vorher nur den Anfangsbuchstaben) | `apply_migration` |
+
+Gleiche Rückgabeform, CREATE OR REPLACE, Rechte bleiben. Position, Adresse, `is_exact`
+und `my_status` sind unverändert. `private.visible_lastname` bleibt, `get_party_guests`
+kürzt weiter. Warum, steht in `SCHEMA.md`, Abschnitt 8.

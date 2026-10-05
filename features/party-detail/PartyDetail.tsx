@@ -1,8 +1,10 @@
 'use client'
 
 import { useEffect, useRef, useState } from 'react'
-import { X } from 'lucide-react'
+import { UserPlus, X } from 'lucide-react'
+import BigButton from '@/components/shared/BigButton'
 import IconButton from '@/components/shared/IconButton'
+import { setRsvp } from '@/features/parties/services/parties.service'
 import { getDetailPolls, type DetailPoll } from '@/features/parties/services/pools.service'
 import { supabase } from '@/lib/supabase/client'
 import type { RsvpStatus } from '@/features/parties/types/parties.types'
@@ -16,10 +18,14 @@ import PollPage from './PollPage'
 import QuestionPage from './QuestionPage'
 import RsvpControl from './RsvpControl'
 
-// Who is looking. Decides the header's buttons; get_party_detail and get_party_poll_data
-// already decide what each viewer may see. The host gets ⋯ and share, the guest the RSVP
-// button, the stranger ✗ alone.
+// Who is looking. 'host' gets ⋯ and share; get_party_detail and get_party_poll_data
+// already decide what each viewer may see. Everyone else gets the RSVP button once
+// my_status holds an answer, and ✗ alone with the bar at the bottom until then.
 export type Viewer = 'host' | 'guest' | 'stranger'
+
+const RSVP_STATUSES: readonly string[] = ['going', 'maybe', 'not_going'] satisfies RsvpStatus[]
+export const isRsvpStatus = (status: string | null): status is RsvpStatus =>
+  status !== null && RSVP_STATUSES.includes(status)
 
 type Loaded = {
   party: PartyDetailRow
@@ -27,10 +33,12 @@ type Loaded = {
   questions: DetailPoll[]
   inviteCode: string | null
   userId: string | null
+  // A join request is pending (my_status 'requested'): no answer yet, the bar waits.
+  requested: boolean
 }
 
 // The party detail container (App Redesign 3.5), built once for every place that opens
-// a party: Hosting and My Parties now; Explore and the invite page later. It replaces the
+// a party: Hosting, My Parties and Explore now; the invite page later. It replaces the
 // list inside the same container, which keeps its height; the header stays and the
 // cards scroll. The caller hides the navigation while it is open.
 export default function PartyDetail({
@@ -52,6 +60,7 @@ export default function PartyDetail({
   const [loaded, setLoaded] = useState<Loaded | null>(null)
   // The viewer's answer, shared by the RSVP buttons in the header and on the guest list.
   const [myStatus, setMyStatus] = useState<RsvpStatus | null>(null)
+  const [joining, setJoining] = useState(false)
   const [page, setPage] = useState<DetailPage | null>(null)
   // Bumped by every vote and answer: a re-read that started before the latest one would
   // otherwise overwrite what the viewer just tapped.
@@ -75,13 +84,14 @@ export default function PartyDetail({
         onClose()
         return
       }
-      setMyStatus(detail.data.my_status as RsvpStatus | null)
+      setMyStatus(isRsvpStatus(detail.data.my_status) ? detail.data.my_status : null)
       setLoaded({
         party: detail.data,
         polls: polls.data?.polls ?? [],
         questions: polls.data?.questions ?? [],
         inviteCode: invite.data?.invite_code ?? null,
         userId: session.data.session?.user.id ?? null,
+        requested: detail.data.my_status === 'requested',
       })
     })
     return () => {
@@ -111,7 +121,7 @@ export default function PartyDetail({
     )
   }
 
-  const { party, polls, questions, inviteCode, userId } = loaded
+  const { party, polls, questions, inviteCode, userId, requested } = loaded
   const hostName = `${party.host_firstname} ${party.host_lastname}`
   // The host votes and answers in their own party (Polls.md, Question.md); everyone
   // else needs an answer to the party first.
@@ -139,14 +149,47 @@ export default function PartyDetail({
     setLoaded((current) => current && { ...current, polls: data.polls, questions: data.questions })
   }
 
-  const rsvp = viewer === 'guest' && myStatus && (
-    <RsvpControl
-      partyId={party.id}
-      initialStatus={myStatus}
-      over={isPartyOver(party.event_date, party.ends_at)}
-      onStatusChange={changeStatus}
-    />
+  const over = isPartyOver(party.event_date, party.ends_at)
+
+  // From the data, not the caller: whoever has an answer gets the RSVP button, so a
+  // stranger who just tapped Teilnehmen turns into a guest in place.
+  const rsvp = viewer !== 'host' && myStatus && (
+    <RsvpControl partyId={party.id} initialStatus={myStatus} over={over} onStatusChange={changeStatus} />
   )
+
+  // `Teilnehmen` on a public party: one tap is `zugesagt`, through the same upsert as the
+  // RSVP button. A full party refuses it in the database (`Diese Party ist voll.`).
+  const join = async () => {
+    if (joining) return
+    setJoining(true)
+    const { error } = await setRsvp(party.id, userId ?? '', 'going')
+    setJoining(false)
+    if (error) {
+      alertError('Deine Antwort konnte nicht gespeichert werden.', error.message)
+      return
+    }
+    changeStatus('going')
+  }
+
+  // The bar at the bottom (App Redesign 3.5), only for someone without an answer while
+  // the party is not over. `Anfragen` does nothing yet (step 8).
+  const bar =
+    viewer === 'host' || myStatus || over ? null : party.is_public ? (
+      <BigButton variant='green' onClick={join} disabled={joining}>
+        Teilnehmen
+      </BigButton>
+    ) : requested ? (
+      <BigButton variant='green' disabled>
+        Warten auf Bestätigung
+      </BigButton>
+    ) : (
+      <BigButton variant='green'>
+        <span className='flex items-center gap-2'>
+          <UserPlus size={20} />
+          Anfragen
+        </span>
+      </BigButton>
+    )
 
   if (page) {
     const poll = page.kind === 'poll' ? polls.find((item) => item.pool_id === page.id) : undefined
@@ -209,6 +252,7 @@ export default function PartyDetail({
           onOpen={setPage}
         />
       </div>
+      {bar && <div className='flex shrink-0 justify-center px-5 pt-3 pb-5'>{bar}</div>}
     </div>
   )
 }
