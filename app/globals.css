@@ -68,6 +68,13 @@
     --spacing-sheet-height-max: 80svh;
     --spacing-sheet-gutter: 10px;
     --radius-sheet: 35px;
+    /* Scroll runway: how far the map reaches above and below the screen. At least
+       Safari's status bar and its bottom toolbar, with room to spare. */
+    --spacing-runway-top: 100px;
+    --spacing-runway-bottom: 200px;
+    /* The map style's background layer (lib/map/style.json, "background"). Written
+       twice: change one, change the other. */
+    --color-map: #426a5a;
 }
 
 @layer base {
@@ -105,11 +112,25 @@
     height: 0;
 }
 
-/* The map runs under the status bar (viewport-fit=cover), so its top controls have to
-   start below it. Unlayered and one class more specific than maplibre's own rule, so
-   it wins regardless of which stylesheet loads last. */
+/* The scroll runway, while the shell's map is on the page. iOS 26 Safari draws page
+   pixels under its status bar and toolbar only once the page is scrolled, and only
+   where the page reaches; at scroll 0 or past the page's end it shows a colour of its
+   own. So the map reaches past the screen at both ends (ShellMap), the page sits
+   scrolled to the runway's top (ShellMap puts it back if anything moves it), and
+   nobody can scroll or rubber-band it away from there. The map colour behind it is
+   for the first frame before that scroll. */
+html:has([data-runway]) {
+    overflow: hidden;
+    overscroll-behavior: none;
+    background-color: var(--color-map);
+}
+
+/* The map runs under the status bar (viewport-fit=cover) and starts the runway above
+   the screen, so its top controls have to start below both. Unlayered and one class
+   more specific than maplibre's own rule, so it wins regardless of which stylesheet
+   loads last. */
 .maplibregl-map .maplibregl-ctrl-top-right {
-    top: env(safe-area-inset-top, 0px);
+    top: calc(var(--spacing-runway-top) + env(safe-area-inset-top, 0px));
 }
 
 @keyframes skeleton-shimmer {

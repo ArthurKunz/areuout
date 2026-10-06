@@ -28,10 +28,26 @@ function containerInset() {
   return height
 }
 
+// How far the map reaches past the screen at the top and the bottom (the scroll
+// runway, see globals.css). The camera leaves both out, as if the map ended at the
+// screen's edges.
+export function runwayInset() {
+  const style = getComputedStyle(document.documentElement)
+  return {
+    top: parseFloat(style.getPropertyValue('--spacing-runway-top')) || 0,
+    bottom: parseFloat(style.getPropertyValue('--spacing-runway-bottom')) || 0,
+  }
+}
+
 function move(map: MapLibreMap, { lng, lat }: Target) {
   // maplibre keeps the padding after the move, so later camera moves also centre on
   // the visible part above the container.
-  const options = { center: [lng, lat] as [number, number], zoom: ZOOM, padding: { top: 0, right: 0, left: 0, bottom: containerInset() } }
+  const runway = runwayInset()
+  const options = {
+    center: [lng, lat] as [number, number],
+    zoom: ZOOM,
+    padding: { top: runway.top, right: 0, left: 0, bottom: runway.bottom + containerInset() },
+  }
   if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) map.jumpTo(options)
   else map.flyTo(options)
 }

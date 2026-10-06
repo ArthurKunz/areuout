@@ -1,11 +1,11 @@
 'use client'
 
 import 'maplibre-gl/dist/maplibre-gl.css'
-import { useEffect, useRef } from 'react'
+import { useEffect, useLayoutEffect, useRef } from 'react'
 import type { Map as MapLibreMap, MapOptions } from 'maplibre-gl'
 import baseStyle from '@/lib/map/style.json'
 import { GLYPHS_URL, LEIPZIG_BOUNDS, SPRITE_URL, TILE_SOURCE_URL } from '@/lib/map/config'
-import { useRegisterShellMap } from '@/components/shell/MapContext'
+import { runwayInset, useRegisterShellMap } from '@/components/shell/MapContext'
 
 type Style = Exclude<MapOptions['style'], string | undefined>
 
@@ -35,13 +35,15 @@ export default function ShellMap() {
       if (cancelled || !container.current) return
       // Copied there by scripts/copy-maplibre-worker.mjs; see that file for why.
       setWorkerUrl('/maplibre/maplibre-gl-worker.mjs')
+      const runway = runwayInset()
       map = new Map({
         container: container.current,
         style,
         bounds: LEIPZIG_BOUNDS,
         // Fitted to the whole screen, as in the mockups: collapsed shows Brehna to Lucka,
         // open puts Leipzig at the container's top edge. Collapsing does not re-zoom.
-        fitBoundsOptions: { padding: 16 },
+        // The runway past the screen's edges is left out.
+        fitBoundsOptions: { padding: { top: runway.top + 16, bottom: runway.bottom + 16, left: 16, right: 16 } },
         dragRotate: false,
         pitchWithRotate: false,
         touchPitch: false,
@@ -68,13 +70,35 @@ export default function ShellMap() {
     }
   }, [register])
 
+  // Keeps the page scrolled to the runway's top (globals.css): nobody can scroll it, but
+  // a navigation or the keyboard can. Typing is left alone, since iOS scrolls the page
+  // to the focused field; the page goes back once the field loses focus.
+  useLayoutEffect(() => {
+    const settle = () => {
+      if (document.activeElement?.matches('input, textarea, select')) return
+      const top = runwayInset().top
+      if (window.scrollY !== top) window.scrollTo(0, top)
+    }
+    // focusout fires while the field still holds focus.
+    const settleAfterBlur = () => requestAnimationFrame(settle)
+    settle()
+    window.addEventListener('scroll', settle, { passive: true })
+    window.addEventListener('resize', settle)
+    document.addEventListener('focusout', settleAfterBlur)
+    return () => {
+      window.removeEventListener('scroll', settle)
+      window.removeEventListener('resize', settle)
+      document.removeEventListener('focusout', settleAfterBlur)
+    }
+  }, [])
+
   return (
-    // 100lvh, not dvh: the map runs under Safari's bars instead of stopping at them.
-    // Absolute, not fixed: iOS 26 Safari draws only page content under its bars and
-    // fills them with a flat colour wherever a fixed layer reaches an edge. The wrapper
-    // carries the positioning because maplibre's own CSS sets the container to
-    // position: relative.
-    <div className='absolute inset-x-0 top-0 z-0 h-lvh'>
+    // The runway above the screen, the screen at 100lvh (not dvh, so it also covers
+    // the space Safari's bars take), and the runway below it. Absolute, not fixed: iOS
+    // 26 Safari draws only page content under its bars and fills them with a flat
+    // colour wherever a fixed layer reaches an edge. The wrapper carries the
+    // positioning because maplibre's own CSS sets the container to position: relative.
+    <div data-runway className='absolute inset-x-0 top-0 z-0 h-[calc(var(--spacing-runway-top)+100lvh+var(--spacing-runway-bottom))]'>
       <div ref={container} className='h-full w-full' />
     </div>
   )
