@@ -1,5 +1,5 @@
 import type { Metadata } from 'next'
-import InviteScreen from '@/features/parties/InviteScreen'
+import InviteScreen from '@/features/explore/InviteScreen'
 import { createClient } from '@/lib/supabase/server'
 import { isPartyOver } from '@/lib/utils'
 

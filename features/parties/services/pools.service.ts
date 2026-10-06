@@ -61,24 +61,6 @@ export async function getPartyPools(partyId: string): Promise<Pool[]> {
   }))
 }
 
-// The invite page's version of the call above. Same result, but the questions and
-// options come from an RPC keyed on the invite code instead of from the two tables,
-// which are members-only — a visitor without an account has no membership to check.
-// The answers still come from get_pool_responses_by_event, which returns nothing to
-// a non-member, so the polls appear empty behind the sign-up sheet exactly as before.
-export async function getPartyPoolsByInviteCode(inviteCode: string, partyId: string): Promise<Pool[]> {
-  const [{ data: poolJson }, { data: responseRows }] = await Promise.all([
-    supabase.rpc('get_party_pools_by_invite_code', { p_invite_code: inviteCode }),
-    supabase.rpc('get_pool_responses_by_event', { p_event_id: partyId }),
-  ])
-
-  // Der RPC kennt den Unterschied nicht und gibt beides heraus, Umfragen wie Fragen —
-  // derselbe Filter wie oben, nur hier im Client, weil die Funktion fest steht.
-  const pools = ((poolJson ?? []) as Omit<Pool, 'responses'>[]).filter((p) => p.type === 'options')
-  const responses = (responseRows ?? []) as PoolResponse[]
-
-  return pools.map((pool) => ({ ...pool, responses: responses.filter((r) => r.pool_id === pool.id) }))
-}
 
 export type DetailOption = { option_id: string; label: string }
 export type DetailResponse = {

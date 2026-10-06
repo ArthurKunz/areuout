@@ -57,25 +57,6 @@ export async function getPartyQuestions(partyId: string): Promise<Question[]> {
   return (questionRows as RawQuestionRow[]).map((row) => toQuestion(row, answers))
 }
 
-// Die Invite-Seite kommt nicht an die Tabelle: sie ist auf Mitglieder beschraenkt,
-// und wer die Party noch nicht beantwortet hat, ist keines. Dieselbe Loesung wie bei
-// den Umfragen — die Fragen ueber den Invite-Code-RPC, die Antworten weiterhin ueber
-// get_pool_responses_by_event, das einem Nicht-Mitglied nichts zurueckgibt.
-export async function getPartyQuestionsByInviteCode(
-  inviteCode: string,
-  partyId: string
-): Promise<Question[]> {
-  const [{ data: poolJson }, { data: answerRows }] = await Promise.all([
-    supabase.rpc('get_party_pools_by_invite_code', { p_invite_code: inviteCode }),
-    supabase.rpc('get_pool_responses_by_event', { p_event_id: partyId }),
-  ])
-
-  const rows = (poolJson ?? []) as (RawQuestionRow & { type: string })[]
-  const answers = (answerRows ?? []) as QuestionAnswer[]
-
-  return rows.filter((row) => row.type === QUESTION_TYPE).map((row) => toQuestion(row, answers))
-}
-
 export async function createQuestion(payload: {
   event_id: string
   question: string

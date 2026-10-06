@@ -4,6 +4,8 @@ import { useEffect, useRef, useState } from 'react'
 import { UserPlus, X } from 'lucide-react'
 import BigButton from '@/components/shared/BigButton'
 import IconButton from '@/components/shared/IconButton'
+import Spinner from '@/components/shared/Spinner'
+import WarningBanner from '@/components/shared/WarningBanner'
 import { setRsvp } from '@/features/parties/services/parties.service'
 import { getDetailPolls, type DetailPoll } from '@/features/parties/services/pools.service'
 import { supabase } from '@/lib/supabase/client'
@@ -43,7 +45,7 @@ type Loaded = {
 }
 
 // The party detail container (App Redesign 3.5), built once for every place that opens
-// a party: Hosting, My Parties and Explore now; the invite page later. It replaces the
+// a party: Hosting, My Parties, Explore and the invite page. It replaces the
 // list inside the same container, which keeps its height; the header stays and the
 // cards scroll. The caller hides the navigation while it is open.
 export default function PartyDetail({
@@ -53,9 +55,14 @@ export default function PartyDetail({
   onDeleted,
   onStatusChange,
   onLoaded,
+  invite = false,
 }: {
   partyId: string
   viewer: Viewer
+  // Opened from the invite link (App Redesign 4.3): the link is the invitation, so the
+  // bar offers all three answers, also on a private party, instead of Teilnehmen or
+  // Anfragen.
+  invite?: boolean
   // ✗: the caller shows its list again.
   onClose: () => void
   // Host only: the party is gone; the caller drops it from its list and map.
@@ -71,6 +78,8 @@ export default function PartyDetail({
   const [myStatus, setMyStatus] = useState<RsvpStatus | null>(null)
   const [joining, setJoining] = useState(false)
   const [requesting, setRequesting] = useState(false)
+  // The answer being written from the invite bar: the spinner sits on that button.
+  const [answering, setAnswering] = useState<RsvpStatus | null>(null)
   const [page, setPage] = useState<DetailPage | null>(null)
   // Bumped by every vote and answer: a re-read that started before the latest one would
   // otherwise overwrite what the viewer just tapped.
@@ -100,9 +109,11 @@ export default function PartyDetail({
       const party = detail.data
       const userId = session.data.session?.user.id ?? null
       // Only someone who could still ask needs to know whether the party is full; the
-      // database's own rule, asked for the viewer's own id (it answers no other).
+      // database's own rule, asked for the viewer's own id (it answers no other). On the
+      // invite page that is anyone without an answer, a pending request included.
       let full = false
-      if (viewer !== 'host' && !party.is_public && party.max_guests !== null && party.my_status === null && userId) {
+      const couldAsk = invite ? !isRsvpStatus(party.my_status) : !party.is_public && party.my_status === null
+      if (viewer !== 'host' && couldAsk && party.max_guests !== null && userId) {
         const room = await supabase.rpc('party_has_room', { p_event_id: partyId, p_user_id: userId })
         if (cancelled) return
         full = room.data === false
@@ -211,10 +222,44 @@ export default function PartyDetail({
     setLoaded({ ...loaded, requested: true })
   }
 
+  // The invite bar's three answers, through the same upsert as the RSVP button. The first
+  // answer makes the viewer a member, so the polls and questions of a private party,
+  // empty until now, are read again.
+  const answer = async (status: RsvpStatus) => {
+    if (answering) return
+    setAnswering(status)
+    const { error } = await setRsvp(party.id, userId ?? '', status)
+    setAnswering(null)
+    if (error) {
+      alertError('Deine Antwort konnte nicht gespeichert werden.', error.message)
+      return
+    }
+    changeStatus(status)
+    void reloadPolls()
+  }
+
+  // The round ✗ and ? either side of the invite bar: as tall as the green button.
+  const round = 'flex h-[50px] w-[50px] shrink-0 items-center justify-center rounded-full text-main-white backdrop-blur-[100px] transition-opacity duration-200 disabled:opacity-40'
+
   // The bar at the bottom (App Redesign 3.5), only for someone without an answer while
   // the party is not over.
   const bar =
-    viewer === 'host' || myStatus || over ? null : party.is_public ? (
+    viewer === 'host' || myStatus || over ? null : invite ? (
+      <div className='flex w-full items-center gap-2'>
+        <button type='button' onClick={() => answer('not_going')} disabled={answering !== null} aria-label='Absagen' className={`${round} bg-red`}>
+          {answering === 'not_going' ? <Spinner /> : <X size={30} strokeWidth={2.5} />}
+        </button>
+        {/* A full party keeps no seat to take, but maybe and no stay open. */}
+        <div className='flex min-w-0 flex-1 [&>button]:max-w-none'>
+          <BigButton variant='green' onClick={() => answer('going')} disabled={answering !== null || full}>
+            {answering === 'going' ? <Spinner /> : full ? 'Diese Party ist voll' : 'Teilnehmen'}
+          </BigButton>
+        </div>
+        <button type='button' onClick={() => answer('maybe')} disabled={answering !== null} aria-label='Vielleicht' className={`${round} bg-yellow`}>
+          {answering === 'maybe' ? <Spinner /> : <span className='text-[30px] font-bold leading-none'>?</span>}
+        </button>
+      </div>
+    ) : party.is_public ? (
       <BigButton variant='green' onClick={join} disabled={joining}>
         Teilnehmen
       </BigButton>
@@ -285,8 +330,15 @@ export default function PartyDetail({
         }
       />
       <div className='min-h-0 flex-1 overflow-y-auto px-5 pt-4 pb-5'>
+        {invite && over && (
+          <div className='pb-2.5'>
+            <WarningBanner message='Diese Party ist vorbei.' />
+          </div>
+        )}
         <DetailCards
-          party={party}
+          // Someone's home address: the invite page stops showing it to guests once the
+          // party is over, as the old invite page did.
+          party={invite && over && viewer !== 'host' ? { ...party, location: '' } : party}
           polls={polls}
           questions={questions}
           userId={userId}
