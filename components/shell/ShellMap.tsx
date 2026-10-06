@@ -6,6 +6,7 @@ import type { Map as MapLibreMap, MapOptions } from 'maplibre-gl'
 import baseStyle from '@/lib/map/style.json'
 import { GLYPHS_URL, LEIPZIG_BOUNDS, SPRITE_URL, TILE_SOURCE_URL } from '@/lib/map/config'
 import { runwayInset, useRegisterShellMap } from '@/components/shell/MapContext'
+import { noteRunwayCorrection } from '@/components/shell/MapDebug'
 
 type Style = Exclude<MapOptions['style'], string | undefined>
 
@@ -77,7 +78,10 @@ export default function ShellMap() {
     const settle = () => {
       if (document.activeElement?.matches('input, textarea, select')) return
       const top = runwayInset().top
-      if (window.scrollY !== top) window.scrollTo(0, top)
+      if (window.scrollY !== top) {
+        noteRunwayCorrection() // TEMPORARY, see MapDebug.tsx
+        window.scrollTo(0, top)
+      }
     }
     // focusout fires while the field still holds focus.
     const settleAfterBlur = () => requestAnimationFrame(settle)

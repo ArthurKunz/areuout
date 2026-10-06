@@ -1,4 +1,5 @@
 import ShellMap from '@/components/shell/ShellMap'
+import MapDebug from '@/components/shell/MapDebug'
 import Shell from '@/components/shell/Shell'
 import { MapProvider } from '@/components/shell/MapContext'
 
@@ -10,6 +11,8 @@ export default function ShellLayout({ children }: { children: React.ReactNode })
     <MapProvider>
       <ShellMap />
       <Shell>{children}</Shell>
+      {/* TEMPORARY, see MapDebug.tsx */}
+      <MapDebug />
     </MapProvider>
   )
 }
