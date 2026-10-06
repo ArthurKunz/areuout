@@ -1,17 +1,11 @@
 'use client'
 
 import Link from 'next/link'
-import { useRef, useState, type KeyboardEvent } from 'react'
-import SheetLayout, {
-  sheetButtonClass,
-  sheetCardClass,
-  sheetRowClass,
-  sheetRowInputClass,
-  sheetRowLabelClass,
-  SheetRowDivider,
-} from '@/components/shared/SheetLayout'
-import WarningBanner from '@/components/shared/WarningBanner'
+import { useState } from 'react'
+import StepFrame from '@/features/create-party/StepFrame'
+import InputGroup from '@/components/shared/InputGroup'
 import Spinner from '@/components/shared/Spinner'
+import WarningBanner from '@/components/shared/WarningBanner'
 import { alertError } from '@/lib/utils'
 import type { SignUpProps } from '../types/auth.types'
 import { usePasswordValidation } from '../hooks/usePasswordValidation'
@@ -28,7 +22,6 @@ export default function SignUpForm({ onSuccess, onClose, onSignIn, initialEmail 
   // one the user cannot type their way out of — it needs a door, not just a message.
   const [emailTaken, setEmailTaken] = useState(false)
   const { passwordWarning, isPasswordValid } = usePasswordValidation(password)
-  const passwordRef = useRef<HTMLInputElement>(null)
 
   // The banner only appears once there is something to complain about. An address that
   // is already taken outranks the password rules: it is the one the user cannot fix by
@@ -36,12 +29,6 @@ export default function SignUpForm({ onSuccess, onClose, onSignIn, initialEmail 
   const showPasswordWarning = password.length > 0 && !isPasswordValid
   const warning = serverWarning ?? (showPasswordWarning ? passwordWarning : null)
   const canContinue = email.trim().length > 0 && isPasswordValid
-
-  const handleEmailKeyDown = (e: KeyboardEvent<HTMLInputElement>) => {
-    if (e.key !== 'Enter') return
-    e.preventDefault()
-    if (email.trim()) passwordRef.current?.focus()
-  }
 
   const handleSignUp = async () => {
     if (!canContinue || saving) return
@@ -83,53 +70,48 @@ export default function SignUpForm({ onSuccess, onClose, onSignIn, initialEmail 
   }
 
   return (
-    <SheetLayout title='Sign Up' onClose={onClose}>
-      <div className={sheetCardClass}>
-        <label className={sheetRowClass}>
-          <span className={sheetRowLabelClass}>Email</span>
-          <input
-            type='email'
-            autoComplete='email'
-            placeholder='max.mustermann@gmail.com'
-            className={sheetRowInputClass}
-            value={email}
-            onChange={(e) => {
-              setEmail(e.target.value)
+    <StepFrame
+      title='Sign up'
+      onBack={onClose}
+      button={{ label: saving ? <Spinner /> : 'weiter', onClick: handleSignUp, disabled: !canContinue || saving }}
+    >
+      <InputGroup
+        rows={[
+          {
+            label: 'Email',
+            value: email,
+            onChange: (value) => {
+              setEmail(value)
               setServerWarning(null)
               setEmailTaken(false)
-            }}
-            onKeyDown={handleEmailKeyDown}
-          />
-        </label>
-
-        <SheetRowDivider />
-
-        <label className={sheetRowClass}>
-          <span className={sheetRowLabelClass}>Password</span>
-          <input
-            ref={passwordRef}
-            type='password'
-            autoComplete='new-password'
-            placeholder='••••••••'
-            className={sheetRowInputClass}
-            value={password}
-            onChange={(e) => {
-              setPassword(e.target.value)
+            },
+            type: 'email',
+            autoComplete: 'email',
+            placeholder: 'z.B. max@gmail.com',
+          },
+          {
+            label: 'Password',
+            value: password,
+            onChange: (value) => {
+              setPassword(value)
               setServerWarning(null)
               setEmailTaken(false)
-            }}
-            onKeyDown={(e) => e.key === 'Enter' && handleSignUp()}
-          />
-        </label>
-      </div>
+            },
+            type: 'password',
+            autoComplete: 'new-password',
+            placeholder: '••••••••',
+            onEnter: handleSignUp,
+          },
+        ]}
+      />
 
       {warning && <WarningBanner message={warning} />}
 
       {/* The address is taken — possibly by this very user, coming back around from a
           half-finished sign-up. Either way the only move left is to sign in, so the
-          sheet offers it instead of leaving them on a wall. */}
+          screen offers it instead of leaving them on a wall. */}
       {emailTaken && (
-        <button type='button' onClick={onSignIn} className='self-center px-1 text-subheading-1 text-sheet-body'>
+        <button type='button' onClick={onSignIn} className='px-1 text-text-3 text-text'>
           Stattdessen anmelden
         </button>
       )}
@@ -140,22 +122,18 @@ export default function SignUpForm({ onSuccess, onClose, onSignIn, initialEmail 
           gegen das Geburtsdatum nichts.
 
           target='_blank', damit ein Blick in die Texte das halb ausgefüllte Formular
-          nicht wegwirft — der Sheet-Schritt lebt im lokalen State, nicht in der URL. */}
-      <p className='px-1 text-center text-label-2 text-sheet-body'>
+          nicht wegwirft — der Schritt lebt im lokalen State, nicht in der URL. */}
+      <p className='max-w-[350px] px-1 text-center text-text-4 text-text'>
         Mit „weiter“ bestätigst du, dass du mindestens 16 Jahre alt bist, und stimmst den{' '}
-        <Link href='/nutzungsbedingungen' target='_blank' rel='noopener noreferrer' className='underline text-sheet-heading'>
+        <Link href='/nutzungsbedingungen' target='_blank' rel='noopener noreferrer' className='underline text-heading'>
           Nutzungsbedingungen
         </Link>{' '}
         und der{' '}
-        <Link href='/datenschutz' target='_blank' rel='noopener noreferrer' className='underline text-sheet-heading'>
+        <Link href='/datenschutz' target='_blank' rel='noopener noreferrer' className='underline text-heading'>
           Datenschutzerklärung
         </Link>{' '}
         zu.
       </p>
-
-      <button type='button' onClick={handleSignUp} disabled={!canContinue || saving} className={sheetButtonClass}>
-        {saving ? <Spinner /> : 'weiter'}
-      </button>
-    </SheetLayout>
+    </StepFrame>
   )
 }

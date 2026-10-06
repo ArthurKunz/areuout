@@ -1,14 +1,9 @@
 'use client'
 
-import { useRef, useState, type KeyboardEvent } from 'react'
-import SheetLayout, {
-  sheetButtonClass,
-  sheetCardClass,
-  sheetRowClass,
-  sheetRowInputClass,
-  sheetRowLabelClass,
-  SheetRowDivider,
-} from '@/components/shared/SheetLayout'
+import { useState } from 'react'
+import StepFrame from '@/features/create-party/StepFrame'
+import Input from '@/components/shared/Input'
+import InputGroup from '@/components/shared/InputGroup'
 import Spinner from '@/components/shared/Spinner'
 import WarningBanner from '@/components/shared/WarningBanner'
 import { alertError } from '@/lib/utils'
@@ -26,7 +21,6 @@ export default function SignInForm({ onSuccess, onClose }: SignInProps) {
   const [saving, setSaving] = useState(false)
   // What the server said last time, held until the user changes something.
   const [warning, setWarning] = useState<string | null>(null)
-  const passwordRef = useRef<HTMLInputElement>(null)
 
   const handleSignIn = async () => {
     if (!email.trim() || !password || saving) return
@@ -43,12 +37,6 @@ export default function SignInForm({ onSuccess, onClose }: SignInProps) {
       return
     }
     onSuccess()
-  }
-
-  const handleEmailKeyDown = (e: KeyboardEvent<HTMLInputElement>) => {
-    if (e.key !== 'Enter') return
-    e.preventDefault()
-    if (email.trim()) passwordRef.current?.focus()
   }
 
   const handleForgotPassword = async () => {
@@ -70,113 +58,91 @@ export default function SignInForm({ onSuccess, onClose }: SignInProps) {
 
   if (step === 'forgot') {
     return (
-      <SheetLayout title='Passwort' onClose={() => setStep('signin')}>
-        <div className={sheetCardClass}>
-          <label className={sheetRowClass}>
-            <span className={sheetRowLabelClass}>Email</span>
-            <input
-              type='email'
-              autoComplete='email'
-              placeholder='max.mustermann@gmail.com'
-              className={sheetRowInputClass}
-              value={resetEmail}
-              onChange={(e) => {
-                setResetEmail(e.target.value)
-                setWarning(null)
-              }}
-              onKeyDown={(e) => e.key === 'Enter' && handleForgotPassword()}
-            />
-          </label>
-        </div>
+      <StepFrame
+        title='Passwort'
+        onBack={() => setStep('signin')}
+        button={{
+          label: saving ? <Spinner /> : 'weiter',
+          onClick: handleForgotPassword,
+          disabled: !resetEmail.trim() || saving,
+        }}
+      >
+        <Input
+          label='Email'
+          value={resetEmail}
+          onChange={(value) => {
+            setResetEmail(value)
+            setWarning(null)
+          }}
+          type='email'
+          autoComplete='email'
+          placeholder='z.B. max@gmail.com'
+          onEnter={handleForgotPassword}
+        />
 
         {warning && <WarningBanner message={warning} />}
-
-        <button
-          type='button'
-          onClick={handleForgotPassword}
-          disabled={!resetEmail.trim() || saving}
-          className={sheetButtonClass}
-        >
-          {saving ? <Spinner /> : 'weiter'}
-        </button>
-      </SheetLayout>
+      </StepFrame>
     )
   }
 
   if (step === 'forgot-sent') {
     return (
-      <SheetLayout title='Passwort' onClose={onClose}>
-        <span className='text-center text-subheading-1 text-sheet-body'>
-          Wir haben einen Link an <span className='font-semibold text-sheet-heading'>{resetEmail}</span> gesendet.
+      <StepFrame title='Passwort' onBack={onClose} button={{ label: 'fertig', onClick: onClose }}>
+        <p className='max-w-[350px] text-center text-text-2 text-text'>
+          Wir haben einen Link an <span className='font-semibold text-heading'>{resetEmail}</span> gesendet.
           Öffne ihn, um dir ein neues Passwort zu setzen.
-        </span>
-
-        <button type='button' onClick={onClose} className={sheetButtonClass}>
-          fertig
-        </button>
-      </SheetLayout>
+        </p>
+      </StepFrame>
     )
   }
 
   return (
-    <SheetLayout title='Login' onClose={onClose}>
-      <div className='flex flex-col gap-3'>
-        <div className={sheetCardClass}>
-          <label className={sheetRowClass}>
-            <span className={sheetRowLabelClass}>Email</span>
-            <input
-              type='email'
-              autoComplete='email'
-              placeholder='max.mustermann@gmail.com'
-              className={sheetRowInputClass}
-              value={email}
-              onChange={(e) => {
-                setEmail(e.target.value)
-                setWarning(null)
-              }}
-              onKeyDown={handleEmailKeyDown}
-            />
-          </label>
+    <StepFrame
+      title='login'
+      onBack={onClose}
+      button={{
+        label: saving ? <Spinner /> : 'weiter',
+        onClick: handleSignIn,
+        disabled: !email.trim() || !password || saving,
+      }}
+    >
+      <InputGroup
+        rows={[
+          {
+            label: 'Email',
+            value: email,
+            onChange: (value) => {
+              setEmail(value)
+              setWarning(null)
+            },
+            type: 'email',
+            autoComplete: 'email',
+            placeholder: 'z.B. max@gmail.com',
+          },
+          {
+            label: 'Password',
+            value: password,
+            onChange: (value) => {
+              setPassword(value)
+              setWarning(null)
+            },
+            type: 'password',
+            autoComplete: 'current-password',
+            placeholder: '••••••••',
+            onEnter: handleSignIn,
+          },
+        ]}
+      />
 
-          <SheetRowDivider />
-
-          <label className={sheetRowClass}>
-            <span className={sheetRowLabelClass}>Password</span>
-            <input
-              ref={passwordRef}
-              type='password'
-              autoComplete='current-password'
-              placeholder='••••••••'
-              className={sheetRowInputClass}
-              value={password}
-              onChange={(e) => {
-                setPassword(e.target.value)
-                setWarning(null)
-              }}
-              onKeyDown={(e) => e.key === 'Enter' && handleSignIn()}
-            />
-          </label>
-        </div>
-
-        <button
-          type='button'
-          onClick={() => setStep('forgot')}
-          className='self-start px-1 text-subheading-1 text-sheet-body'
-        >
+      {/* StepFrame centres its children; the wrapper puts the link under the rows'
+          left edge, as in the mockup. */}
+      <div className='w-full max-w-[350px]'>
+        <button type='button' onClick={() => setStep('forgot')} className='px-1 text-text-3 text-text'>
           Password vergessen?
         </button>
       </div>
 
       {warning && <WarningBanner message={warning} />}
-
-      <button
-        type='button'
-        onClick={handleSignIn}
-        disabled={!email.trim() || !password || saving}
-        className={sheetButtonClass}
-      >
-        {saving ? <Spinner /> : 'weiter'}
-      </button>
-    </SheetLayout>
+    </StepFrame>
   )
 }

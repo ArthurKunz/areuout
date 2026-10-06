@@ -20,7 +20,7 @@ export default function StepFrame({
   title: ReactNode
   onClose?: () => void
   onBack?: () => void
-  button: { label: string; onClick: () => void; disabled?: boolean } | null
+  button: { label: ReactNode; onClick: () => void; disabled?: boolean } | null
   children: ReactNode
 }) {
   return (

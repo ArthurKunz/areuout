@@ -1,41 +1,34 @@
 'use client'
 
 import { useState } from 'react'
-import SheetLayout, { sheetButtonClass } from '@/components/shared/SheetLayout'
+import StepFrame from '@/features/create-party/StepFrame'
+import Input from '@/components/shared/Input'
 import Spinner from '@/components/shared/Spinner'
 import WarningBanner from '@/components/shared/WarningBanner'
 import { alertError } from '@/lib/utils'
 import type { VerifyProps } from '../types/auth.types'
 import { OTP_LENGTH } from '../constants/auth.constants'
-import { useOtpInput } from '../hooks/useOtpInput'
 import { resendSignupOtp, verifySignupOtp } from '../services/auth.service'
 import { authBannerMessage } from '../services/auth-errors'
 
-export default function VerifyOtpForm({ email, onSuccess, onClose }: VerifyProps) {
+// No back button (App Redesign 9): the code is the only way forward from here.
+export default function VerifyOtpForm({ email, onSuccess }: VerifyProps) {
+  const [code, setCode] = useState('')
   const [saving, setSaving] = useState(false)
   const [warning, setWarning] = useState<string | null>(null)
   const [resending, setResending] = useState(false)
   const [resent, setResent] = useState(false)
 
-  // Six digits is the whole answer, so there is nothing left to confirm: the code is
-  // verified the moment the last box is filled, without reaching for `weiter`.
-  // A function DECLARATION, so it is hoisted above the hook call that references it —
-  // the two are mutually dependent (the hook needs `verify`, `verify` needs the hook's
-  // `setDigits`/`inputRefs`) and a const arrow cannot be read before it is declared.
-  const { digits, setDigits, inputRefs, code, handleChange, handleKeyDown, handlePaste } =
-    useOtpInput(OTP_LENGTH, verify)
-
-  async function verify(value: string) {
+  const verify = async (value: string) => {
     if (value.length !== OTP_LENGTH || saving) return
     setSaving(true)
     setWarning(null)
     const { error } = await verifySignupOtp(email, value)
     if (error) {
       setSaving(false)
-      // Emptying the boxes both readies the next attempt and stops the auto-submit
+      // Emptying the field both readies the next attempt and stops the auto-submit
       // from firing again on the same wrong digits.
-      setDigits(Array.from({ length: OTP_LENGTH }, () => ''))
-      inputRefs.current[0]?.focus()
+      setCode('')
       const banner = authBannerMessage(error)
       if (banner) {
         setWarning(banner)
@@ -45,6 +38,14 @@ export default function VerifyOtpForm({ email, onSuccess, onClose }: VerifyProps
       return
     }
     onSuccess()
+  }
+
+  // Digits only, and six digits is the whole answer: the code is verified the moment it
+  // is complete, typed or pasted, without reaching for `weiter`.
+  const handleChange = (value: string) => {
+    const digits = value.replace(/\D/g, '').slice(0, OTP_LENGTH)
+    setCode(digits)
+    if (digits.length === OTP_LENGTH) verify(digits)
   }
 
   // Stays clickable after a successful send: a second mail is exactly what someone
@@ -70,56 +71,38 @@ export default function VerifyOtpForm({ email, onSuccess, onClose }: VerifyProps
   }
 
   return (
-    <SheetLayout title='Verifizierung' subtitle='Schau in dein Postfach' onClose={onClose}>
-      <div className='flex w-full gap-2'>
-        {digits.map((digit, index) => (
-          <input
-            key={index}
-            ref={(el) => {
-              inputRefs.current[index] = el
-            }}
-            type='text'
-            inputMode='numeric'
-            autoComplete={index === 0 ? 'one-time-code' : 'off'}
-            maxLength={1}
-            aria-label={`Ziffer ${index + 1}`}
-            value={digit}
-            onChange={(e) => handleChange(e.target.value, index)}
-            onKeyDown={(e) => handleKeyDown(e, index)}
-            onPaste={handlePaste}
-            className='h-12.5 min-w-0 flex-1 rounded-2xl bg-button-secondary text-center text-sheet-heading outline-none'
-          />
-        ))}
-      </div>
+    <StepFrame
+      title='Verifizierung'
+      button={{
+        label: saving ? <Spinner /> : 'weiter',
+        // Kept as the fallback for what the auto-submit cannot see: a retry after a
+        // wrong code, or a browser that fills the field without firing onChange.
+        onClick: () => verify(code),
+        disabled: code.length !== OTP_LENGTH || saving,
+      }}
+    >
+      <Input
+        label='Code'
+        value={code}
+        onChange={handleChange}
+        inputMode='numeric'
+        autoComplete='one-time-code'
+        maxLength={OTP_LENGTH}
+        placeholder='••••••'
+      />
 
       {warning && <WarningBanner message={warning} />}
 
-      {/* Kept as the fallback for what the auto-submit cannot see: a retry after a
-          wrong code, or a browser that fills the boxes without firing onChange. */}
-      <button
-        type='button'
-        onClick={() => verify(code)}
-        disabled={code.length !== OTP_LENGTH || saving}
-        className={sheetButtonClass}
-      >
-        {saving ? <Spinner /> : 'weiter'}
-      </button>
+      {resent && !warning && <span className='text-center text-text-3 text-text'>Wir haben dir einen neuen Code geschickt.</span>}
 
-      {resent && !warning && (
-        <span className='text-center text-subheading-1 text-sheet-body'>
-          Wir haben dir einen neuen Code geschickt.
-        </span>
-      )}
-
-      {/* Same quiet secondary action as 'Password vergessen?' on the login sheet. */}
       <button
         type='button'
         onClick={handleResend}
         disabled={resending}
-        className='self-center px-1 text-subheading-1 text-sheet-body disabled:opacity-60'
+        className='px-1 text-text-3 text-text disabled:opacity-60'
       >
-        {resending ? 'Wird gesendet …' : 'Code erneut senden'}
+        {resending ? 'Wird gesendet …' : 'Code erneut schicken'}
       </button>
-    </SheetLayout>
+    </StepFrame>
   )
 }

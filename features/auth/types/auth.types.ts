@@ -18,5 +18,4 @@ export interface SignUpProps {
 export interface VerifyProps {
   email: string
   onSuccess: () => void
-  onClose: () => void
 }

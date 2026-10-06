@@ -21,7 +21,8 @@ export default function ColorSwatchPicker({
   value,
   onChange,
 }: {
-  value: SwatchColor
+  // Null: nothing is ticked yet.
+  value: SwatchColor | null
   onChange: (next: SwatchColor) => void
 }) {
   return (
