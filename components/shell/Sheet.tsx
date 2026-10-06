@@ -33,9 +33,8 @@ export default function Sheet({
   onOpenChange: (open: boolean) => void
   // False on screens without navigation: no handle, no drag, always open.
   draggable: boolean
-  // The create flow's container: as tall as its content, up to
-  // --spacing-sheet-height-max. Only ever set on screens without navigation, so it
-  // never changes the drag distance while it matters.
+  // As tall as its content, up to --spacing-sheet-height-max (the create flow, the
+  // profile). The drag distance and the handle follow the content's height.
   fit: boolean
   navRef: RefObject<HTMLElement | null>
   children: ReactNode
@@ -107,11 +106,22 @@ export default function Sheet({
     const measure = () => {
       // offsetTop ignores transforms, so this is the resting layout of both elements.
       travel.current = navRef.current && sheetRef.current ? navRef.current.offsetTop - sheetRef.current.offsetTop : 0
+      // A fitted container is only as tall as its content, so the handle's layer takes
+      // its height to keep the handle on the container's top edge.
+      if (handleLayerRef.current && sheetRef.current) {
+        handleLayerRef.current.style.height = fit ? `${sheetRef.current.offsetHeight}px` : ''
+      }
       render(progress.current)
     }
     measure()
+    // A fitted container changes height with its content (loading, a warning).
+    const observer = new ResizeObserver(measure)
+    if (sheetRef.current) observer.observe(sheetRef.current)
     window.addEventListener('resize', measure)
-    return () => window.removeEventListener('resize', measure)
+    return () => {
+      observer.disconnect()
+      window.removeEventListener('resize', measure)
+    }
   }, [draggable, fit, navRef, render])
 
   // State changes from outside (a tab tap, a screen without navigation). A drag release

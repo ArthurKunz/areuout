@@ -92,8 +92,9 @@ export default function MeScreen() {
     setProfile({ ...profile, avatar_url: result.url })
   }
 
+  // flex-auto, not flex-1: the fitted container has no height of its own to share out.
   return (
-    <div className='min-h-0 flex-1 overflow-y-auto px-5 pt-4 pb-25'>
+    <div className='min-h-0 flex-auto overflow-y-auto px-5 pt-4 pb-25'>
       <div className='mx-auto flex w-full max-w-[350px] flex-col items-center'>
         {loading ? (
           <>
@@ -140,7 +141,7 @@ export default function MeScreen() {
             />
 
             <span className='mt-4 text-heading-3 font-bold text-heading'>{storedName || 'Unbekannt'}</span>
-            <span className='text-subheading-1 text-subheading'>{email}</span>
+            <span className='text-text-3 text-text'>{email}</span>
 
             <div className='mt-6 flex w-full flex-col items-center gap-3'>
               <SettingsList
