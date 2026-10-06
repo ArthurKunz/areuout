@@ -60,6 +60,11 @@ export default function Sheet({
         sheetRef.current.style.transform = y
         // Collapsed, the container must not swallow touches meant for the map.
         sheetRef.current.style.pointerEvents = value > 0.5 ? 'none' : ''
+        // Fully collapsed it reaches under Safari's toolbar, and iOS 26 tints the toolbar
+        // from any layer at the bottom edge, even an invisible one. Nothing of it shows
+        // at this point (surface and content are at opacity 0), so hiding it changes no
+        // pixel; the first frame of opening shows it again.
+        sheetRef.current.style.visibility = value >= 1 ? 'hidden' : ''
       }
       if (handleLayerRef.current) handleLayerRef.current.style.transform = y
       const visible = String(1 - clamp01(value))
@@ -210,17 +215,19 @@ export default function Sheet({
       </div>
 
       {/* The handle has its own layer above the bar, moving with the container: once
-          collapsed it sits on the bar's top edge and has to stay grabbable there. */}
+          collapsed it sits on the bar's top edge and has to stay grabbable there. The
+          layer itself is invisible and only the handle visible: collapsed, the layer
+          reaches under Safari's toolbar, which iOS 26 would tint from it. */}
       {draggable && (
         <div
           ref={handleLayerRef}
           {...pointerHandlers}
-          className='pointer-events-none fixed inset-x-sheet-gutter bottom-sheet-gutter z-30 h-sheet-height will-change-transform'
+          className='pointer-events-none invisible fixed inset-x-sheet-gutter bottom-sheet-gutter z-30 h-sheet-height will-change-transform'
         >
           <div
             data-sheet-drag
             aria-hidden
-            className='pointer-events-auto mx-auto flex h-5 w-30 cursor-grab touch-none select-none justify-center pt-2 active:cursor-grabbing'
+            className='pointer-events-auto visible mx-auto flex h-5 w-30 cursor-grab touch-none select-none justify-center pt-2 active:cursor-grabbing'
           >
             <span className='h-1 w-12.5 rounded-full bg-slider' />
           </div>
