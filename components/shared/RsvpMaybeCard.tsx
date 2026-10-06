@@ -11,7 +11,7 @@ export default function RsvpMaybeCard({ value }: { value: number }) {
         <span className='text-[18px] font-bold leading-none text-main-white'>?</span>
       </span>
       <div className='mt-2 flex flex-col'>
-        <span className='text-text-2 font-bold text-heading'>Vielleicht</span>
+        <span className='text-text-2 font-semibold text-heading'>Vielleicht</span>
         <span className='text-text-3 text-text'>{value}</span>
       </div>
     </div>

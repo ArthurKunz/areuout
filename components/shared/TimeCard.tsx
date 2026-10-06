@@ -12,7 +12,7 @@ export default function TimeCard({ value }: { value: string }) {
         <Clock size={18} className='text-main-white' />
       </span>
       <div className='mt-2 flex flex-col'>
-        <span className='text-text-2 font-bold text-heading'>Uhrzeit</span>
+        <span className='text-text-2 font-semibold text-heading'>Uhrzeit</span>
         <span className='text-text-3 text-text'>{value}</span>
       </div>
     </div>

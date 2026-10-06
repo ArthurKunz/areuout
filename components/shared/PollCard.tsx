@@ -24,7 +24,7 @@ export default function PollCard({
       <span className='flex h-[30px] w-[30px] shrink-0 items-center justify-center rounded-full bg-violet'>
         <List size={18} className='text-main-white' />
       </span>
-      <span className='mt-2 text-text-2 font-bold text-heading'>{question}</span>
+      <span className='mt-2 text-text-2 font-semibold text-heading'>{question}</span>
 
       <div className='mt-4 flex flex-col gap-4'>
         {options.map((option, i) => {

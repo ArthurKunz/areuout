@@ -19,7 +19,7 @@ export default function LocationCard({
         <Footprints size={18} className='text-main-white' />
       </span>
       <div className='mt-2 flex flex-col'>
-        <span className='text-text-2 font-bold text-heading'>Location</span>
+        <span className='text-text-2 font-semibold text-heading'>Location</span>
         <span className='text-text-3 text-text'>{address}</span>
       </div>
       <div className='mt-auto flex flex-col gap-3'>

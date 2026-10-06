@@ -81,7 +81,7 @@ export function InfoCard({
       <span className={`mb-3 flex size-8 items-center justify-center rounded-full text-main-white ${ICON_CLASS[color]}`}>
         <Icon size={18} />
       </span>
-      <span className='text-text-2 font-bold break-words text-heading'>{title}</span>
+      <span className='text-text-2 font-semibold break-words text-heading'>{title}</span>
       {value && <span className='text-text-3 break-words whitespace-pre-line text-text'>{value}</span>}
       {children}
       {link && (

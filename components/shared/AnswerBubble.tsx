@@ -25,7 +25,7 @@ export default function AnswerBubble({
         }`}
       >
         <span className={`block text-text-3 ${own ? 'text-main-white/70' : 'text-text'}`}>{name}</span>
-        <span className={`block break-words text-text-2 font-bold ${own ? 'text-main-white' : 'text-heading'}`}>{text}</span>
+        <span className={`block break-words text-text-2 font-semibold ${own ? 'text-main-white' : 'text-heading'}`}>{text}</span>
       </div>
     </div>
   )

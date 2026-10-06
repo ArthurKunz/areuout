@@ -17,7 +17,7 @@ export default function PollOptionResults({
   return (
     <div className='flex w-full flex-col rounded-[25px] bg-main p-4 backdrop-blur-[100px]'>
       <div className='flex items-center justify-between gap-3'>
-        <span className='min-w-0 break-words text-text-2 font-bold text-heading'>{label}</span>
+        <span className='min-w-0 break-words text-text-2 font-semibold text-heading'>{label}</span>
         <span className='shrink-0 text-text-2 text-text'>{votes} Votes</span>
       </div>
       {voters.length > 0 && <div className='mt-3 h-px w-full bg-divider' />}

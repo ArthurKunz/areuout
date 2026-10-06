@@ -26,7 +26,7 @@ export default function QuestionCard({
       <span className='flex h-[30px] w-[30px] shrink-0 items-center justify-center rounded-full bg-yellow'>
         <MessageCircleQuestionMark size={18} className='text-main-white' />
       </span>
-      <span className='mt-2 text-text-2 font-bold text-heading'>{question}</span>
+      <span className='mt-2 text-text-2 font-semibold text-heading'>{question}</span>
 
       <div className='mt-auto flex flex-col gap-3'>
         <div className='h-px w-full bg-divider' />

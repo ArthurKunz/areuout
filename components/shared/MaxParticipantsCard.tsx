@@ -12,7 +12,7 @@ export default function MaxParticipantsCard({ value }: { value: number }) {
         <Users size={18} className='text-main-white' />
       </span>
       <div className='mt-2 flex flex-col'>
-        <span className='text-text-2 font-bold text-heading'>Max. Teilnehmer</span>
+        <span className='text-text-2 font-semibold text-heading'>Max. Teilnehmer</span>
         <span className='text-text-3 text-text'>max. {value}</span>
       </div>
     </div>

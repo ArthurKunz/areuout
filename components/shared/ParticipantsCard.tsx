@@ -19,7 +19,7 @@ export default function ParticipantsCard({
         <Users size={18} className='text-main-white' />
       </span>
       <div className='mt-2 flex flex-col'>
-        <span className='text-text-2 font-bold text-heading'>Teilnehmer</span>
+        <span className='text-text-2 font-semibold text-heading'>Teilnehmer</span>
         <span className='text-text-3 text-text'>{count} Teilnehmer</span>
       </div>
       <div className='mt-auto flex flex-col gap-3'>

@@ -70,7 +70,7 @@ export default function HostingList({
                 /public; both work as src. */}
             <img src={party.background_url} alt='' className='size-10 shrink-0 rounded-full object-cover' />
             <div className='flex min-w-0 flex-1 flex-col'>
-              <span className='truncate text-text-2 font-bold text-heading'>{party.title}</span>
+              <span className='truncate text-text-2 font-semibold text-heading'>{party.title}</span>
               <span className='text-text-3 text-text'>{formatDate(party.event_date)}</span>
             </div>
             {showStatus && party.my_status && <span className='shrink-0 text-main-white'>{STATUS_ICON[party.my_status]}</span>}

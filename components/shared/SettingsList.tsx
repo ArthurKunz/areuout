@@ -35,7 +35,7 @@ export default function SettingsList({ rows }: { rows: SettingsRow[] }) {
           {i > 0 && <div className='mx-4 h-px rounded-full bg-divider' />}
           {row.onChange ? (
             <div className='flex h-[50px] w-full items-center justify-between gap-3 px-4'>
-              <span className='shrink-0 text-text-2 font-bold text-heading'>{row.label}</span>
+              <span className='shrink-0 text-text-2 font-semibold text-heading'>{row.label}</span>
               <input
                 value={row.value}
                 onChange={(e) => row.onChange(e.target.value)}
@@ -53,7 +53,7 @@ export default function SettingsList({ rows }: { rows: SettingsRow[] }) {
               onClick={row.onClick}
               className='flex h-[50px] w-full items-center justify-between px-4 text-left'
             >
-              <span className='text-text-2 font-bold text-heading'>{row.label}</span>
+              <span className='text-text-2 font-semibold text-heading'>{row.label}</span>
               <ChevronRight size={20} className='text-text' />
             </button>
           )}

@@ -12,7 +12,7 @@ export default function DescriptionCard({ text }: { text: string }) {
         <Info size={18} className='text-main-white' />
       </span>
       <div className='mt-2 flex flex-col'>
-        <span className='text-text-2 font-bold text-heading'>Beschreibung</span>
+        <span className='text-text-2 font-semibold text-heading'>Beschreibung</span>
         <span className='text-text-3 text-text'>{text}</span>
       </div>
     </div>

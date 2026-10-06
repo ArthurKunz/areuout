@@ -12,7 +12,7 @@ export default function DateCard({ value }: { value: string }) {
         <Calendar size={18} className='text-main-white' />
       </span>
       <div className='mt-2 flex flex-col'>
-        <span className='text-text-2 font-bold text-heading'>Datum</span>
+        <span className='text-text-2 font-semibold text-heading'>Datum</span>
         <span className='text-text-3 text-text'>{value}</span>
       </div>
     </div>
