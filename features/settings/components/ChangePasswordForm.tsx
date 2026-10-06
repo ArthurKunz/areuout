@@ -1,16 +1,10 @@
 'use client'
 
-import { useRef, useState, type KeyboardEvent } from 'react'
+import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabase/client'
-import SheetLayout, {
-  sheetButtonClass,
-  sheetCardClass,
-  sheetRowClass,
-  sheetRowInputClass,
-  sheetRowLabelClass,
-  SheetRowDivider,
-} from '@/components/shared/SheetLayout'
+import StepFrame from '@/features/create-party/StepFrame'
+import InputGroup from '@/components/shared/InputGroup'
 import Spinner from '@/components/shared/Spinner'
 import WarningBanner from '@/components/shared/WarningBanner'
 import { alertError } from '@/lib/utils'
@@ -21,23 +15,16 @@ interface ChangePasswordFormProps {
   onSuccess?: () => void
 }
 
-// The last step of the reset flow, reached from the link in the email. It is the same
-// sheet as every other auth and onboarding step, and the same two-row shape and live
-// warnings as the profile's Passwort screen.
+// The last step of the reset flow, reached from the link in the email. No mockup: the
+// same frame as every other auth step, and the same two rows and live warnings as the
+// profile's Password page.
 export default function ChangePasswordForm({ onSuccess }: ChangePasswordFormProps) {
   const router = useRouter()
   const [password, setPassword] = useState('')
   const [confirm, setConfirm] = useState('')
   const [saving, setSaving] = useState(false)
   const [serverWarning, setServerWarning] = useState<string | null>(null)
-  const confirmRef = useRef<HTMLInputElement>(null)
   const { passwordWarning, isPasswordValid } = usePasswordValidation(password)
-
-  const handlePasswordKeyDown = (e: KeyboardEvent<HTMLInputElement>) => {
-    if (e.key !== 'Enter') return
-    e.preventDefault()
-    if (password.trim()) confirmRef.current?.focus()
-  }
 
   // Both warnings are live rather than waiting for the save: a mismatch beats a
   // weak-password hint, since it is the one that blocks the button.
@@ -67,54 +54,41 @@ export default function ChangePasswordForm({ onSuccess }: ChangePasswordFormProp
       return
     }
     if (onSuccess) onSuccess()
-    else router.push('/parties')
+    else router.push('/explore')
   }
 
   return (
-    <SheetLayout title='Passwort' onClose={() => router.push('/login')} appear>
-      <div className={sheetCardClass}>
-        <div className={sheetRowClass}>
-          <label htmlFor='new-password' className={sheetRowLabelClass}>neues Passwort</label>
-          <input
-            id='new-password'
-            type='password'
-            value={password}
-            onChange={(e) => {
-              setPassword(e.target.value)
+    <StepFrame
+      title='Passwort'
+      onBack={() => router.push('/login')}
+      button={{ label: saving ? <Spinner /> : 'speichern', onClick: handleSave, disabled: !canSave || saving }}
+    >
+      <InputGroup
+        rows={[
+          {
+            label: 'neues Passwort',
+            value: password,
+            onChange: (value) => {
+              setPassword(value)
               setServerWarning(null)
-            }}
-            onKeyDown={handlePasswordKeyDown}
-            autoComplete='new-password'
-            enterKeyHint='next'
-            placeholder='••••••••'
-            className={sheetRowInputClass}
-          />
-        </div>
-
-        <SheetRowDivider />
-
-        <div className={sheetRowClass}>
-          <label htmlFor='confirm-password' className={sheetRowLabelClass}>Passwort wiederholen</label>
-          <input
-            ref={confirmRef}
-            id='confirm-password'
-            type='password'
-            value={confirm}
-            onChange={(e) => setConfirm(e.target.value)}
-            onKeyDown={(e) => e.key === 'Enter' && handleSave()}
-            autoComplete='new-password'
-            enterKeyHint='done'
-            placeholder='••••••••'
-            className={sheetRowInputClass}
-          />
-        </div>
-      </div>
+            },
+            type: 'password',
+            autoComplete: 'new-password',
+            placeholder: '••••••••',
+          },
+          {
+            label: 'Passwort wiederholen',
+            value: confirm,
+            onChange: setConfirm,
+            type: 'password',
+            autoComplete: 'new-password',
+            placeholder: '••••••••',
+            onEnter: handleSave,
+          },
+        ]}
+      />
 
       {warning && <WarningBanner message={warning} />}
-
-      <button type='button' onClick={handleSave} disabled={!canSave || saving} className={sheetButtonClass}>
-        {saving ? <Spinner /> : 'speichern'}
-      </button>
-    </SheetLayout>
+    </StepFrame>
   )
 }

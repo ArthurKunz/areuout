@@ -3,16 +3,9 @@
 import Link from 'next/link'
 import { useState } from 'react'
 import { alertError } from '@/lib/utils'
-import SheetLayout from '@/components/shared/SheetLayout'
+import BigButton from '@/components/shared/BigButton'
 import Spinner from '@/components/shared/Spinner'
 import { signInWithGoogle } from '../services/auth.service'
-
-// lucide dropped brand marks, so the provider logo is an inline path.
-const GoogleIcon = (
-  <svg width='20' height='20' viewBox='0 0 24 24' fill='currentColor' aria-hidden='true'>
-    <path d='M12.24 10.285V14.4h6.806c-.275 1.765-2.056 5.174-6.806 5.174-4.095 0-7.439-3.389-7.439-7.574s3.344-7.574 7.439-7.574c2.33 0 3.891.989 4.785 1.849l3.254-3.138C18.189 1.186 15.479 0 12.24 0c-6.635 0-12 5.365-12 12s5.365 12 12 12c6.926 0 11.52-4.869 11.52-11.726 0-.788-.085-1.39-.189-1.989H12.24z' />
-  </svg>
-)
 
 type Props = {
   onCreateAccount: () => void
@@ -20,17 +13,11 @@ type Props = {
   // Where to return after the OAuth round-trip (an invite link, usually).
   next?: string | null
   description?: string
-  // Slides the sheet up from the bottom edge on mount.
-  appear?: boolean
 }
 
-export default function AuthSheet({
-  onCreateAccount,
-  onSignIn,
-  next,
-  description,
-  appear = false,
-}: Props) {
+// The start screen (App Redesign 9): the content of the shell container over the map,
+// on /login and on the invite page for someone without an account.
+export default function AuthSheet({ onCreateAccount, onSignIn, next, description }: Props) {
   const [pending, setPending] = useState(false)
 
   const handleGoogle = async () => {
@@ -44,60 +31,54 @@ export default function AuthSheet({
   }
 
   return (
-    <SheetLayout appear={appear}>
-      <div className='flex flex-col gap-1.5 text-center'>
-        <span className='text-heading-3 font-semibold text-sheet-heading'>Sign up oder login</span>
-        {description && <span className='text-subheading-1 text-sheet-body'>{description}</span>}
+    <div className='flex flex-col items-center gap-3 overflow-y-auto px-5 pb-6'>
+      {description && <p className='max-w-[350px] text-center text-text-2 text-text'>{description}</p>}
+
+      <BigButton variant='main' onClick={onCreateAccount}>
+        Sign up
+      </BigButton>
+      <BigButton variant='main' onClick={onSignIn}>
+        Anmelden
+      </BigButton>
+
+      <div className='flex w-full max-w-[350px] items-center gap-2'>
+        <span className='h-px flex-1 bg-divider' />
+        <span className='text-text-4 text-text'>oder</span>
+        <span className='h-px flex-1 bg-divider' />
       </div>
 
-      <div className='flex flex-col gap-1.5'>
-        <button
-          type='button'
-          onClick={onCreateAccount}
-          className='h-14 w-full rounded-full bg-button-primary text-button font-semibold text-sheet transition-transform duration-200 ease-[cubic-bezier(0.32,0.72,0,1)] active:scale-95'
-        >
-          Erstelle ein Account
-        </button>
-
-        <button
-          type='button'
-          onClick={onSignIn}
-          className='h-14 w-full rounded-full bg-button-secondary text-button font-semibold text-sheet-heading transition-transform duration-200 ease-[cubic-bezier(0.32,0.72,0,1)] active:scale-95'
-        >
-          Bei Account Anmelden
-        </button>
-
-        <button
-          type='button'
-          onClick={handleGoogle}
-          disabled={pending}
-          className='h-14 w-full flex items-center justify-center gap-2 rounded-full bg-button-secondary text-button font-semibold text-sheet-heading transition-transform duration-200 ease-[cubic-bezier(0.32,0.72,0,1)] active:scale-95 disabled:text-sheet-body'
-        >
-          {/* The wait here is a redirect to Google, which is exactly the kind of
-              shapeless pause the spinner exists for. */}
-          {pending ? <Spinner /> : <>{GoogleIcon}Google</>}
-        </button>
+      <div className='flex w-full max-w-[350px] gap-3'>
+        {/* The wait here is a redirect to Google, which is exactly the kind of
+            shapeless pause the spinner exists for. */}
+        <BigButton variant='white' onClick={handleGoogle} disabled={pending}>
+          {pending ? <Spinner /> : 'Google'}
+        </BigButton>
+        {/* Shown only: Sign in with Apple needs an Apple Developer account first
+            (Redesign Build Order, step 12). Disabled, so it greys out and cannot be tapped. */}
+        <BigButton variant='white' disabled>
+          Apple
+        </BigButton>
       </div>
 
-      {/* Dieses Sheet ist der einzige Ort, den JEDER Fremde zu sehen bekommt: es liegt
-          über /login und über die Einladungsseite. Damit ist es auch die Stelle, an der
+      {/* Dieser Bildschirm ist der einzige Ort, den JEDER Fremde zu sehen bekommt: er liegt
+          auf /login und auf der Einladungsseite. Damit ist es auch die Stelle, an der
           das Impressum ohne Konto erreichbar sein muss — ein Impressum muss ständig
           verfügbar und leicht erkennbar sein, nicht erst nach der Anmeldung.
 
           target='_blank', damit ein Blick hinein den angefangenen Login nicht wegwirft. */}
-      <div className='flex items-center justify-center gap-2 text-label-2 text-sheet-body'>
-        <Link href='/impressum' target='_blank' rel='noopener noreferrer' className='underline'>
+      <div className='flex items-center justify-center gap-1 pt-2 text-text-4 text-text'>
+        <Link href='/impressum' target='_blank' rel='noopener noreferrer'>
           Impressum
         </Link>
         <span aria-hidden='true'>·</span>
-        <Link href='/datenschutz' target='_blank' rel='noopener noreferrer' className='underline'>
+        <Link href='/datenschutz' target='_blank' rel='noopener noreferrer'>
           Datenschutz
         </Link>
         <span aria-hidden='true'>·</span>
-        <Link href='/nutzungsbedingungen' target='_blank' rel='noopener noreferrer' className='underline'>
+        <Link href='/nutzungsbedingungen' target='_blank' rel='noopener noreferrer'>
           Nutzungsbedingungen
         </Link>
       </div>
-    </SheetLayout>
+    </div>
   )
 }

@@ -4,7 +4,7 @@ import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabase/client'
 import { alertError, sanitizeNextPath } from '@/lib/utils'
-import FloatingEmojis from '@/features/parties/components/FloatingEmojis'
+import { FitSheet } from '@/components/shell/Shell'
 import { getSession } from './services/onboarding.service'
 import PersonalDataForm from './components/PersonalDataForm'
 import ProfilePictureForm from './components/ProfilePictureForm'
@@ -50,15 +50,14 @@ export default function OnboardingScreen({ nextParam }: { nextParam: string | nu
       alertError('Dein Profil konnte nicht gespeichert werden.', error.message)
       return
     }
-    router.push(next ?? '/parties')
+    router.push(next ?? '/explore')
   }
 
   return (
-    <div className='relative w-full h-dvh overflow-hidden bg-main'>
-      <FloatingEmojis active seed />
+    <>
+      {/* Over the shell's map, without navigation (App Redesign 9). */}
+      <FitSheet />
 
-      {/* Only the Name sheet slides up (it sets `appear` itself): the later steps
-          swap their contents inside a panel that is already standing. */}
       {step === 'name' && <PersonalDataForm onSuccess={handleNameDone} />}
 
       {step === 'picture' && (
@@ -69,6 +68,6 @@ export default function OnboardingScreen({ nextParam }: { nextParam: string | nu
           onClose={() => setStep('name')}
         />
       )}
-    </div>
+    </>
   )
 }

@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { HideShell } from '@/components/shell/Shell'
+import { FitSheet, HideShell } from '@/components/shell/Shell'
 import { useShellMap } from '@/components/shell/MapContext'
 import AuthSheet from '@/features/auth/components/AuthSheet'
 import PartyMarkers, { type MarkerParty } from '@/features/hosting/PartyMarkers'
@@ -65,10 +65,11 @@ export default function InviteScreen({ inviteCode }: { inviteCode: string }) {
           }}
         />
       )}
-      {/* Without an account nobody can answer: the sign-up sheet comes first. */}
+      {/* Without an account nobody can answer: the start screen comes first, in the
+          container, as tall as its content. */}
       {state.kind === 'signedOut' && (
         <>
-          <div className='fixed inset-0 z-30 touch-none overscroll-none bg-main/30 backdrop-blur-xl' />
+          <FitSheet />
           <AuthSheet
             description='Um an einer Party teilnehmen zu können brauchst du einen Account.'
             next={inviteNext}

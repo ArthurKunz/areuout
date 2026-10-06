@@ -1,30 +1,33 @@
 'use client'
 
 import { useRef, useState } from 'react'
-import Image from 'next/image'
-import { Check, Pencil } from 'lucide-react'
 import { supabase } from '@/lib/supabase/client'
+import StepFrame from '@/features/create-party/StepFrame'
 import Avatar from '@/components/shared/Avatar'
+import ColorSwatchPicker, { type SwatchColor } from '@/components/shared/ColorSwatchPicker'
+import ImageUploadCircle from '@/components/shared/ImageUploadCircle'
 import Spinner from '@/components/shared/Spinner'
-import SheetLayout, { sheetButtonClass } from '@/components/shared/SheetLayout'
 import WarningBanner from '@/components/shared/WarningBanner'
-import { alertError, cn } from '@/lib/utils'
+import { alertError } from '@/lib/utils'
 import type { ProfilePictureFormProps } from '../types/onboarding.types'
-import { MAX_BYTES, BUCKET, AVATAR_COLORS, pickRandomAvatarColor } from '../constants/onboarding.constants'
+import { MAX_BYTES, BUCKET, AVATAR_SWATCHES, pickRandomAvatarColor } from '../constants/onboarding.constants'
 import { stripMetadataAndResize, AVATAR_MAX_EDGE } from '@/lib/image'
 import { getSession } from '../services/onboarding.service'
 
-// The same two ways of having an avatar as the profile's picture screen: a photo,
-// or initials on one of the nine party colours. NOTHING is selected to begin with —
-// the circle shows the default silhouette until the user picks one or the other, so
-// the screen does not pretend a choice has been made for them.
+const CIRCLE = 120
+
+// Two ways of having an avatar (App Redesign 9): a photo, or initials on one of the
+// seven colour dots. NOTHING is selected to begin with — the circle shows the upload
+// icon until the user picks one or the other, so the screen does not pretend a choice
+// has been made for them. With neither, a random one of the seven is saved.
 export default function ProfilePictureForm({ onSuccess, onClose, firstname, lastname }: ProfilePictureFormProps) {
-  const [color, setColor] = useState<string | null>(null)
+  const [color, setColor] = useState<SwatchColor | null>(null)
   const [previewUrl, setPreviewUrl] = useState<string | null>(null)
   const [file, setFile] = useState<File | null>(null)
   const [saving, setSaving] = useState(false)
   // What this flow has already uploaded, so a second attempt can clear the first.
   const uploadedPath = useRef<string | null>(null)
+  const fileRef = useRef<HTMLInputElement>(null)
   // Picking the wrong file is the user's to fix, right here, so it is a banner and
   // not an alert — see features/auth/services/auth-errors.ts for the rule.
   const [warning, setWarning] = useState<string | null>(null)
@@ -49,7 +52,7 @@ export default function ProfilePictureForm({ onSuccess, onClose, firstname, last
     })
   }
 
-  const selectColor = (value: string) => {
+  const selectColor = (value: SwatchColor) => {
     setColor(value)
     setFile(null)
     setPreviewUrl((prev) => {
@@ -64,7 +67,7 @@ export default function ProfilePictureForm({ onSuccess, onClose, firstname, last
 
     // Initials: nothing to upload, the colour goes straight into the profile row.
     if (!file) {
-      await onSuccess(null, color ?? pickRandomAvatarColor())
+      await onSuccess(null, color ? AVATAR_SWATCHES[color] : pickRandomAvatarColor())
       setSaving(false)
       return
     }
@@ -109,82 +112,34 @@ export default function ProfilePictureForm({ onSuccess, onClose, firstname, last
     setSaving(false)
   }
 
+  const openPicker = () => fileRef.current?.click()
+
   return (
-    <SheetLayout title='Profilbild' onClose={onClose}>
-      {/* One wrapper, so the sheet's gap-5 does not compound with the margins below:
-          the 36px and 28px here reproduce EditPictureScreen exactly, where a mt-6 grid
-          and a mt-4 button sit in SettingsPage's gap-3 column. */}
-      <div className='flex flex-col'>
-        {/* The circle is the file input; the pencil badge is decoration on top of it. */}
-        <label className='flex cursor-pointer justify-center'>
-          <div className='group relative'>
-            {previewUrl || color ? (
-              <Avatar
-                size={175}
-                url={previewUrl}
-                color={color}
-                firstname={firstname}
-                lastname={lastname}
-                className='transition-transform duration-200 ease-[cubic-bezier(0.32,0.72,0,1)] active:scale-95'
-              />
-            ) : (
-              <Image
-                src='/images/noProfilPicture.jpg'
-                alt=''
-                width={175}
-                height={175}
-                priority
-                // The asset is a grey figure on a WHITE ground, so on the white sheet
-                // the circle has no edge of its own — the hairline is what makes it
-                // read as an avatar rather than a shape floating in the page.
-                className='h-43.75 w-43.75 rounded-full border-border border-sheet-body/40 object-cover transition-transform duration-200 ease-[cubic-bezier(0.32,0.72,0,1)] active:scale-95'
-              />
-            )}
-            <span className='absolute bottom-1 right-1 flex h-11.25 w-11.25 items-center justify-center rounded-full bg-button-primary transition-transform duration-200 ease-[cubic-bezier(0.32,0.72,0,1)] group-active:scale-95'>
-              <Pencil size={18} strokeWidth={2.5} className='text-sheet' />
-            </span>
-          </div>
-          <input
-            type='file'
-            accept='image/*'
-            className='hidden'
-            onChange={(e) => onPickFile(e.target.files?.[0] ?? null)}
-          />
-        </label>
+    <StepFrame
+      title='Profilbild'
+      onBack={onClose}
+      button={{ label: saving ? <Spinner /> : 'weiter', onClick: handleDone, disabled: saving }}
+    >
+      {/* The upload icon until something is picked, then the photo or the initials on
+          the chosen colour, both with the pencil badge. Every state opens the file picker. */}
+      <ImageUploadCircle imageUrl={previewUrl} onClick={openPicker}>
+        {color && <Avatar size={CIRCLE} url={null} color={AVATAR_SWATCHES[color]} firstname={firstname} lastname={lastname} />}
+      </ImageUploadCircle>
+      <input
+        ref={fileRef}
+        type='file'
+        accept='image/*'
+        hidden
+        onChange={(e) => {
+          onPickFile(e.target.files?.[0] ?? null)
+          // Lets the same file be picked again after an error.
+          e.target.value = ''
+        }}
+      />
 
-        <div className='mt-9 grid grid-cols-3 gap-3'>
-          {AVATAR_COLORS.map((value) => (
-            <button key={value} type='button' onClick={() => selectColor(value)} className='flex flex-col items-center gap-2'>
-              <Avatar
-                size={90}
-                url={null}
-                color={value}
-                firstname={firstname}
-                lastname={lastname}
-                className='transition-transform duration-200 ease-[cubic-bezier(0.32,0.72,0,1)] active:scale-95'
-              />
-              <span
-                className={`flex h-6 w-6 items-center justify-center rounded-full transition-colors duration-200 ${
-                  color === value ? 'bg-link' : 'border border-sheet-body/50'
-                }`}
-              >
-                {color === value && <Check size={14} strokeWidth={3} className='text-white animate-fade-in-up' />}
-              </span>
-            </button>
-          ))}
-        </div>
+      <ColorSwatchPicker value={color} onChange={selectColor} />
 
-        {warning && <div className='mt-7'><WarningBanner message={warning} /></div>}
-
-        <button
-          type='button'
-          onClick={handleDone}
-          disabled={saving}
-          className={cn(sheetButtonClass, 'mt-7 h-12.5')}
-        >
-          {saving ? <Spinner /> : 'fertig'}
-        </button>
-      </div>
-    </SheetLayout>
+      {warning && <WarningBanner message={warning} />}
+    </StepFrame>
   )
 }

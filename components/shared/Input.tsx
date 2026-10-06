@@ -10,14 +10,19 @@ export function InputRow({
   type = 'text',
   maxLength,
   inputMode,
+  autoComplete,
+  onEnter,
 }: {
   label: string
   value: string
   onChange: (next: string) => void
   placeholder?: string
-  type?: 'text' | 'number' | 'password'
+  type?: 'text' | 'number' | 'password' | 'email'
   maxLength?: number
   inputMode?: 'text' | 'numeric'
+  autoComplete?: string
+  // Enter on the keyboard, e.g. to submit the form the row is the last field of.
+  onEnter?: () => void
 }) {
   return (
     <div className='flex h-[50px] items-center gap-3 px-4'>
@@ -29,6 +34,8 @@ export function InputRow({
         placeholder={placeholder}
         maxLength={maxLength}
         inputMode={inputMode}
+        autoComplete={autoComplete}
+        onKeyDown={onEnter ? (e) => e.key === 'Enter' && onEnter() : undefined}
         className='min-w-0 flex-1 bg-transparent text-right text-text-3 text-text outline-none placeholder:text-input'
       />
     </div>
