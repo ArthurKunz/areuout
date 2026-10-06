@@ -64,7 +64,7 @@
     /* SHELL (map, container, bottom navigation) */
     --color-nav-selector: #00000040;
     --blur-nav: 15px;
-    --blur-sheet: 8px;
+    --blur-sheet: 10px;
     --spacing-nav-width: 350px;
     --spacing-nav-height: 75px;
     --spacing-nav-bottom: 24px;
