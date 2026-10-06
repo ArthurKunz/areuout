@@ -3,8 +3,25 @@
 import { ChevronRight } from 'lucide-react'
 
 type SettingsRow =
-  | { label: string; value: string; onChange: (next: string) => void; placeholder?: string; onClick?: never }
-  | { label: string; onClick: () => void; value?: never; onChange?: never; placeholder?: never }
+  | {
+      label: string
+      value: string
+      onChange: (next: string) => void
+      placeholder?: string
+      // Called when the field loses focus or Enter is pressed, for rows that save in place.
+      onCommit?: () => void
+      maxLength?: number
+      onClick?: never
+    }
+  | {
+      label: string
+      onClick: () => void
+      value?: never
+      onChange?: never
+      placeholder?: never
+      onCommit?: never
+      maxLength?: never
+    }
 
 // The 350x210 profile/settings list: one 50px row per item, either an
 // editable label/input pair (Name) or a label with a chevron that
@@ -23,6 +40,10 @@ export default function SettingsList({ rows }: { rows: SettingsRow[] }) {
                 value={row.value}
                 onChange={(e) => row.onChange(e.target.value)}
                 placeholder={row.placeholder}
+                maxLength={row.maxLength}
+                onBlur={row.onCommit}
+                onKeyDown={(e) => e.key === 'Enter' && e.currentTarget.blur()}
+                enterKeyHint='done'
                 className='min-w-0 flex-1 bg-transparent text-right text-text-2 text-text outline-none placeholder:text-input'
               />
             </div>
