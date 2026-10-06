@@ -39,6 +39,7 @@ export default function Sheet({
   navRef: RefObject<HTMLElement | null>
   children: ReactNode
 }) {
+  const frameRef = useRef<HTMLDivElement>(null)
   const sheetRef = useRef<HTMLDivElement>(null)
   const handleLayerRef = useRef<HTMLDivElement>(null)
   const surfaceRef = useRef<HTMLDivElement>(null)
@@ -60,11 +61,6 @@ export default function Sheet({
         sheetRef.current.style.transform = y
         // Collapsed, the container must not swallow touches meant for the map.
         sheetRef.current.style.pointerEvents = value > 0.5 ? 'none' : ''
-        // Fully collapsed it reaches under Safari's toolbar, and iOS 26 tints the toolbar
-        // from any layer at the bottom edge, even an invisible one. Nothing of it shows
-        // at this point (surface and content are at opacity 0), so hiding it changes no
-        // pixel; the first frame of opening shows it again.
-        sheetRef.current.style.visibility = value >= 1 ? 'hidden' : ''
       }
       if (handleLayerRef.current) handleLayerRef.current.style.transform = y
       const visible = String(1 - clamp01(value))
@@ -109,13 +105,13 @@ export default function Sheet({
 
   useLayoutEffect(() => {
     const measure = () => {
-      // offsetTop ignores transforms, so this is the resting layout of both elements.
-      travel.current = navRef.current && sheetRef.current ? navRef.current.offsetTop - sheetRef.current.offsetTop : 0
-      // A fitted container is only as tall as its content, so the handle's layer takes
-      // its height to keep the handle on the container's top edge.
-      if (handleLayerRef.current && sheetRef.current) {
-        handleLayerRef.current.style.height = fit ? `${sheetRef.current.offsetHeight}px` : ''
-      }
+      // offsetTop ignores transforms, so this is the resting layout of both elements. The
+      // container's own offsetTop is inside its frame.
+      const sheetTop = (frameRef.current?.offsetTop ?? 0) + (sheetRef.current?.offsetTop ?? 0)
+      travel.current = navRef.current && sheetRef.current ? navRef.current.offsetTop - sheetTop : 0
+      // The handle's layer starts on the resting container's top edge, which a fitted
+      // container moves with its content.
+      if (handleLayerRef.current) handleLayerRef.current.style.top = `${sheetTop}px`
       render(progress.current)
     }
     measure()
@@ -196,38 +192,48 @@ export default function Sheet({
 
   return (
     <>
+      {/* The frame stays where the open container rests and clips it there, so while it
+          slides down to the bar nothing of it reaches the screen's bottom edge: iOS 26
+          tints Safari's toolbar from whatever layer sits at that edge, and it samples
+          mid-transition. Its rounded bottom matches the container's, so the open state
+          looks the same; it is as tall as the tallest container and lets touches through
+          to the map above the container. */}
       <div
-        ref={sheetRef}
-        {...pointerHandlers}
-        className={`fixed inset-x-sheet-gutter bottom-sheet-gutter z-10 flex flex-col will-change-transform ${
-          fit ? 'max-h-sheet-height-max' : 'h-sheet-height'
-        }`}
+        ref={frameRef}
+        className='pointer-events-none fixed inset-x-sheet-gutter bottom-sheet-gutter z-10 h-sheet-height-max overflow-hidden rounded-b-sheet'
       >
-        <div ref={surfaceRef} className='absolute inset-0 rounded-sheet bg-main backdrop-blur-sheet' />
-        {/* A flex item that may shrink: with a fitted container it is as tall as its
-            content until the maximum, then the screen's own body scrolls inside it.
-            Rounded and clipped like the surface, so scrolled cards are cut at the
-            container's corners. Fixed children (WheelSheet) belong to the container's
-            transform, not to this box, and are not clipped by it. */}
-        <div ref={contentRef} className='relative flex min-h-0 flex-auto flex-col overflow-hidden rounded-sheet pt-6'>
-          {children}
+        <div
+          ref={sheetRef}
+          {...pointerHandlers}
+          className={`pointer-events-auto absolute inset-x-0 bottom-0 flex flex-col will-change-transform ${
+            fit ? 'max-h-sheet-height-max' : 'h-sheet-height'
+          }`}
+        >
+          <div ref={surfaceRef} className='absolute inset-0 rounded-sheet bg-main backdrop-blur-sheet' />
+          {/* A flex item that may shrink: with a fitted container it is as tall as its
+              content until the maximum, then the screen's own body scrolls inside it.
+              Rounded and clipped like the surface, so scrolled cards are cut at the
+              container's corners. Fixed children (WheelSheet) belong to the container's
+              transform, not to this box, and are not clipped by it. */}
+          <div ref={contentRef} className='relative flex min-h-0 flex-auto flex-col overflow-hidden rounded-sheet pt-6'>
+            {children}
+          </div>
         </div>
       </div>
 
       {/* The handle has its own layer above the bar, moving with the container: once
-          collapsed it sits on the bar's top edge and has to stay grabbable there. The
-          layer itself is invisible and only the handle visible: collapsed, the layer
-          reaches under Safari's toolbar, which iOS 26 would tint from it. */}
+          collapsed it sits on the bar's top edge and has to stay grabbable there. Only as
+          tall as the handle, so it never reaches the screen's bottom edge either. */}
       {draggable && (
         <div
           ref={handleLayerRef}
           {...pointerHandlers}
-          className='pointer-events-none invisible fixed inset-x-sheet-gutter bottom-sheet-gutter z-30 h-sheet-height will-change-transform'
+          className='pointer-events-none fixed inset-x-sheet-gutter z-30 h-5 will-change-transform'
         >
           <div
             data-sheet-drag
             aria-hidden
-            className='pointer-events-auto visible mx-auto flex h-5 w-30 cursor-grab touch-none select-none justify-center pt-2 active:cursor-grabbing'
+            className='pointer-events-auto mx-auto flex h-5 w-30 cursor-grab touch-none select-none justify-center pt-2 active:cursor-grabbing'
           >
             <span className='h-1 w-12.5 rounded-full bg-slider' />
           </div>
