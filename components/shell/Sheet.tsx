@@ -114,12 +114,13 @@ export default function Sheet({
       render(progress.current)
     }
     measure()
-    // A fitted container changes height with its content (loading, a warning).
-    const observer = new ResizeObserver(measure)
-    if (sheetRef.current) observer.observe(sheetRef.current)
+    // A fitted container changes height with its content (loading, a warning). The
+    // fixed-height lists never need this, so it only runs in fit mode.
+    const observer = fit ? new ResizeObserver(measure) : null
+    if (observer && sheetRef.current) observer.observe(sheetRef.current)
     window.addEventListener('resize', measure)
     return () => {
-      observer.disconnect()
+      observer?.disconnect()
       window.removeEventListener('resize', measure)
     }
   }, [draggable, fit, navRef, render])
