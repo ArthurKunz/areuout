@@ -5,12 +5,8 @@ import { useEffect, useRef, type ReactNode } from 'react'
 // A detail page's scrolling body with its buttons floating above it, as in Find My
 // (Redesign Build Order, step 11b): on the way down the buttons leave with the content,
 // on the way up they come back wherever the list is, with no bar or blur behind them.
-// Written to the DOM on scroll, never through React state, like Sheet.
-//
-// Inside `bar`, `data-headroom-actions` marks the buttons whose width the body keeps
-// free beside the big title (`pr-(--headroom-actions)`), and `data-headroom-slim` a
-// title that only shows once the body's `data-headroom-title` has scrolled out. The bar
-// lets touches through; its buttons take them back with `pointer-events-auto`.
+// Written to the DOM on scroll, never through React state, like Sheet. The bar lets
+// touches through; its buttons take them back with `pointer-events-auto`.
 export default function Headroom({ bar, children }: { bar: ReactNode; children: ReactNode }) {
   const scrollRef = useRef<HTMLDivElement>(null)
   const barRef = useRef<HTMLDivElement>(null)
@@ -19,9 +15,6 @@ export default function Headroom({ bar, children }: { bar: ReactNode; children: 
     const scroller = scrollRef.current
     const overlay = barRef.current
     if (!scroller || !overlay) return
-    const title = scroller.querySelector<HTMLElement>('[data-headroom-title]')
-    const slim = overlay.querySelector<HTMLElement>('[data-headroom-slim]')
-    const actions = overlay.querySelector<HTMLElement>('[data-headroom-actions]')
 
     let last = 0
     let offset = 0
@@ -33,20 +26,9 @@ export default function Headroom({ bar, children }: { bar: ReactNode; children: 
       offset = Math.min(Math.max(offset + top - last, 0), overlay.offsetHeight, top)
       last = top
       overlay.style.transform = `translate3d(0, ${-offset}px, 0)`
-      if (title && slim) slim.style.opacity = top > title.offsetTop + title.offsetHeight ? '1' : '0'
     }
     scroller.addEventListener('scroll', update, { passive: true })
-
-    // The RSVP button changes width with the answer.
-    const measure = () => scroller.style.setProperty('--headroom-actions', `${actions?.offsetWidth ?? 0}px`)
-    measure()
-    const observer = actions ? new ResizeObserver(measure) : null
-    if (observer && actions) observer.observe(actions)
-
-    return () => {
-      scroller.removeEventListener('scroll', update)
-      observer?.disconnect()
-    }
+    return () => scroller.removeEventListener('scroll', update)
   }, [])
 
   return (
