@@ -120,15 +120,11 @@ export default function ProfilePictureForm({ onSuccess, onClose, firstname, last
       onBack={onClose}
       button={{ label: saving ? <Spinner /> : 'weiter', onClick: handleDone, disabled: saving }}
     >
-      {/* Initials on the chosen colour, otherwise the upload circle (with the photo once
-          one is picked). Both open the same file picker. */}
-      {color ? (
-        <button type='button' onClick={openPicker} aria-label='Bild auswählen' className='rounded-full'>
-          <Avatar size={CIRCLE} url={null} color={AVATAR_SWATCHES[color]} firstname={firstname} lastname={lastname} />
-        </button>
-      ) : (
-        <ImageUploadCircle imageUrl={previewUrl} onClick={openPicker} />
-      )}
+      {/* The upload icon until something is picked, then the photo or the initials on
+          the chosen colour, both with the pencil badge. Every state opens the file picker. */}
+      <ImageUploadCircle imageUrl={previewUrl} onClick={openPicker}>
+        {color && <Avatar size={CIRCLE} url={null} color={AVATAR_SWATCHES[color]} firstname={firstname} lastname={lastname} />}
+      </ImageUploadCircle>
       <input
         ref={fileRef}
         type='file'
