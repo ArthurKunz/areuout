@@ -1,4 +1,7 @@
 import { supabase } from '@/lib/supabase/client'
+import { removeStorageFileByUrl } from '@/lib/storage'
+import { stripMetadataAndResize, AVATAR_MAX_EDGE } from '@/lib/image'
+import { BUCKET } from '@/features/onboarding/constants/onboarding.constants'
 
 export type Profile = {
   firstname: string | null
@@ -29,4 +32,35 @@ export async function updateProfileAvatar(userId: string, avatarUrl: string) {
 // avatar components fall back to initials exactly when avatar_url is null.
 export async function updateProfileAvatarColor(userId: string, avatarColor: string) {
   return supabase.from('profiles').update({ avatar_url: null, avatar_color: avatarColor }).eq('id', userId)
+}
+
+// Uploads a new profile picture and points the row at it. The picked file never reaches
+// the bucket unchanged (metadata stripped, resized, as in onboarding), and the old file
+// goes only once the row points at the new one, so a failed update cannot leave the
+// profile aimed at a file that no longer exists. Returns the new URL, or the German
+// error text to show.
+export async function uploadAvatar(
+  userId: string,
+  file: File,
+  previousUrl: string | null,
+): Promise<{ url: string } | { error: string; detail?: string }> {
+  let clean: File
+  try {
+    clean = await stripMetadataAndResize(file, AVATAR_MAX_EDGE)
+  } catch {
+    return { error: 'Dieses Bild konnte nicht verarbeitet werden. Versuch es mit einem anderen.' }
+  }
+
+  const path = `${userId}/avatar-${Date.now()}.jpg`
+  const { error: uploadError } = await supabase.storage
+    .from(BUCKET)
+    .upload(path, clean, { cacheControl: '3600', upsert: false })
+  if (uploadError) return { error: 'Dein Bild konnte nicht hochgeladen werden.', detail: uploadError.message }
+
+  const url = supabase.storage.from(BUCKET).getPublicUrl(path).data.publicUrl
+  const { error } = await updateProfileAvatar(userId, url)
+  if (error) return { error: 'Dein Profilbild konnte nicht gespeichert werden.', detail: error.message }
+
+  await removeStorageFileByUrl(BUCKET, previousUrl)
+  return { url }
 }

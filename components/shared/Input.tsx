@@ -15,7 +15,7 @@ export function InputRow({
   value: string
   onChange: (next: string) => void
   placeholder?: string
-  type?: 'text' | 'number'
+  type?: 'text' | 'number' | 'password'
   maxLength?: number
   inputMode?: 'text' | 'numeric'
 }) {
