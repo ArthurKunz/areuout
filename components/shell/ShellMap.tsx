@@ -70,9 +70,11 @@ export default function ShellMap() {
 
   return (
     // 100lvh, not dvh: the map runs under Safari's bars instead of stopping at them.
-    // The wrapper carries the positioning because maplibre's own CSS sets the
-    // container to position: relative.
-    <div className='fixed inset-x-0 top-0 z-0 h-lvh'>
+    // Absolute, not fixed: iOS 26 Safari draws only page content under its bars and
+    // fills them with a flat colour wherever a fixed layer reaches an edge. The wrapper
+    // carries the positioning because maplibre's own CSS sets the container to
+    // position: relative.
+    <div className='absolute inset-x-0 top-0 z-0 h-lvh'>
       <div ref={container} className='h-full w-full' />
     </div>
   )

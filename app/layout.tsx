@@ -35,9 +35,6 @@ export const viewport: Viewport = {
   width: 'device-width',
   initialScale: 1,
   viewportFit: 'cover',
-  // The browser's own top/bottom bars take this color — it has to match
-  // --color-main (#000) or those bars read as a lighter frame around the app.
-  themeColor: '#000000',
 };
 
 export default function RootLayout({

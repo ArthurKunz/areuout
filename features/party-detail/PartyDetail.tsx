@@ -289,8 +289,7 @@ export default function PartyDetail({
           title={page.kind === 'guests' ? 'Teilnehmer' : page.kind === 'poll' ? 'Umfrage' : 'Frage'}
           actions={page.kind === 'guests' ? rsvp : undefined}
           onBack={() => setPage(null)}
-        />
-        <div className='min-h-0 flex-1 overflow-y-auto px-5 pt-4 pb-5'>
+        >
           {page.kind === 'guests' && (
             <GuestsPage
               partyId={party.id}
@@ -302,7 +301,7 @@ export default function PartyDetail({
           )}
           {poll && <PollPage poll={poll} />}
           {question && <QuestionPage question={question} hostName={hostName} userId={userId} />}
-        </div>
+        </PageHeader>
       </div>
     )
   }
@@ -328,8 +327,7 @@ export default function PartyDetail({
             rsvp || undefined
           )
         }
-      />
-      <div className='min-h-0 flex-1 overflow-y-auto px-5 pt-4 pb-5'>
+      >
         {invite && over && (
           <div className='pb-2.5'>
             <WarningBanner message='Diese Party ist vorbei.' />
@@ -348,7 +346,7 @@ export default function PartyDetail({
           onPollSaved={reloadPolls}
           onOpen={setPage}
         />
-      </div>
+      </DetailHeader>
       {bar && <div className='flex shrink-0 justify-center px-5 pt-3 pb-5'>{bar}</div>}
     </div>
   )

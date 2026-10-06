@@ -198,10 +198,13 @@ export default function Sheet({
           fit ? 'max-h-sheet-height-max' : 'h-sheet-height'
         }`}
       >
-        <div ref={surfaceRef} className='absolute inset-0 rounded-sheet bg-main backdrop-blur-3xl' />
+        <div ref={surfaceRef} className='absolute inset-0 rounded-sheet bg-main backdrop-blur-sheet' />
         {/* A flex item that may shrink: with a fitted container it is as tall as its
-            content until the maximum, then the screen's own body scrolls inside it. */}
-        <div ref={contentRef} className='relative flex min-h-0 flex-auto flex-col pt-6'>
+            content until the maximum, then the screen's own body scrolls inside it.
+            Rounded and clipped like the surface, so scrolled cards are cut at the
+            container's corners. Fixed children (WheelSheet) belong to the container's
+            transform, not to this box, and are not clipped by it. */}
+        <div ref={contentRef} className='relative flex min-h-0 flex-auto flex-col overflow-hidden rounded-sheet pt-6'>
           {children}
         </div>
       </div>
