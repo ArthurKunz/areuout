@@ -28,23 +28,6 @@ export async function getPartyMitbring(partyId: string): Promise<MitbringItem[]>
   return withClaims(itemRows as RawItemRow[], (claimRows ?? []) as MitbringClaim[])
 }
 
-// Die Einladungsseite kommt nicht an die Tabelle: sie ist auf Mitglieder beschraenkt,
-// und wer die Party noch nicht beantwortet hat, ist keines. Dieselbe Loesung wie bei
-// den Umfragen — die Gegenstaende ueber den Invite-Code-RPC, die Beanspruchungen
-// weiterhin ueber get_mitbring_claims_by_event, das einem Nicht-Mitglied nichts
-// zurueckgibt. Die Liste steht also da, nur weiss noch niemand, wer was hat.
-export async function getPartyMitbringByInviteCode(
-  inviteCode: string,
-  partyId: string
-): Promise<MitbringItem[]> {
-  const [{ data: itemJson }, { data: claimRows }] = await Promise.all([
-    supabase.rpc('get_party_mitbring_by_invite_code', { p_invite_code: inviteCode }),
-    supabase.rpc('get_mitbring_claims_by_event', { p_event_id: partyId }),
-  ])
-
-  return withClaims((itemJson ?? []) as RawItemRow[], (claimRows ?? []) as MitbringClaim[])
-}
-
 export async function createMitbringItem(eventId: string, label: string) {
   return supabase.from('mitbring_items').insert({ event_id: eventId, label })
 }
