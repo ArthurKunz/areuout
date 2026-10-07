@@ -9,7 +9,7 @@ export default function LocationResultsList({
   results: { id: string; label: string; onClick?: () => void }[]
 }) {
   return (
-    <div className='flex w-full max-w-[350px] flex-col rounded-[25px] bg-main backdrop-blur-[100px]'>
+    <div className='flex w-full max-w-[350px] flex-col rounded-[25px] bg-main glass-control'>
       {results.map((result, i) => (
         <div key={result.id}>
           {i > 0 && <div className='mx-4 h-px rounded-full bg-divider' />}

@@ -14,4 +14,4 @@ export const previewDivider = <div className='mx-4 h-px rounded-full bg-divider'
 
 // The surface behind a preview: a card for a poll, a pill (same radius at one row) for
 // a question.
-export const previewSurface = 'w-full max-w-[350px] rounded-[25px] bg-main backdrop-blur-[100px]'
+export const previewSurface = 'w-full max-w-[350px] rounded-[25px] bg-main glass-control'

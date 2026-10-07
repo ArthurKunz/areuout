@@ -15,7 +15,7 @@ export default function PollOptionResults({
   voters: { id: string; firstname: string | null; lastname: string | null; avatarUrl: string | null; avatarColor: string | null }[]
 }) {
   return (
-    <div className='flex w-full flex-col rounded-[25px] bg-main p-4 backdrop-blur-[100px]'>
+    <div className='flex w-full flex-col rounded-[25px] bg-main p-4 glass-control'>
       <div className='flex items-center justify-between gap-3'>
         <span className='min-w-0 break-words text-text-2 font-semibold text-heading'>{label}</span>
         <span className='shrink-0 text-text-2 text-text'>{votes} Votes</span>

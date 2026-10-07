@@ -29,7 +29,7 @@ type SettingsRow =
 // the same way as InputGroup.
 export default function SettingsList({ rows }: { rows: SettingsRow[] }) {
   return (
-    <div className='flex w-[350px] flex-col justify-center rounded-[25px] bg-main py-[5px] backdrop-blur-[100px]'>
+    <div className='flex w-[350px] flex-col justify-center rounded-[25px] bg-main py-[5px] glass-control'>
       {rows.map((row, i) => (
         <div key={row.label}>
           {i > 0 && <div className='mx-4 h-px rounded-full bg-divider' />}

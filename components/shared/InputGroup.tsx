@@ -7,7 +7,7 @@ import { InputRow } from './Input'
 // separated by hairline dividers (e.g. Startzeit/Endzeit).
 export default function InputGroup({ rows }: { rows: ComponentProps<typeof InputRow>[] }) {
   return (
-    <div className='w-full max-w-[350px] rounded-[25px] bg-main backdrop-blur-[100px]'>
+    <div className='w-full max-w-[350px] rounded-[25px] bg-main glass-control'>
       {rows.map((row, i) => (
         <div key={row.label}>
           {i > 0 && <div className='mx-4 h-px rounded-full bg-divider' />}

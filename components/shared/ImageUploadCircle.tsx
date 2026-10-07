@@ -27,7 +27,7 @@ export default function ImageUploadCircle({
         type='button'
         onClick={onClick}
         aria-label={label}
-        className='flex h-[120px] w-[120px] shrink-0 items-center justify-center rounded-full bg-main backdrop-blur-[100px]'
+        className='flex h-[120px] w-[120px] shrink-0 items-center justify-center rounded-full bg-main glass-control'
       >
         <ImageUp size={36} className='text-heading' />
       </button>

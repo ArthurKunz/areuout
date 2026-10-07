@@ -25,7 +25,7 @@ export function ToggleInputRow({
 // Endzeit).
 export default function ToggleInput(props: Parameters<typeof ToggleInputRow>[0]) {
   return (
-    <div className='w-full max-w-[350px] rounded-full bg-main backdrop-blur-[100px]'>
+    <div className='w-full max-w-[350px] rounded-full bg-main glass-control'>
       <ToggleInputRow {...props} />
     </div>
   )
