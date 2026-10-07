@@ -15,13 +15,13 @@ const MapContext = createContext<MapRegistry | null>(null)
 
 const ZOOM = 15
 
-// The open container covers the bottom of the map: its height plus the gutter under it.
+// The open container covers the bottom of the map: its height plus the space under it.
 // Read from the same variables Sheet uses (resolved through a probe element, since
 // 50svh only becomes pixels in layout), so the party lands in the middle of the map
 // that is still visible above the container.
 function containerInset() {
   const probe = document.createElement('div')
-  probe.style.cssText = 'position:fixed;visibility:hidden;height:calc(var(--spacing-sheet-height) + var(--spacing-sheet-gutter))'
+  probe.style.cssText = 'position:fixed;visibility:hidden;height:calc(var(--spacing-sheet-height) + var(--spacing-sheet-bottom))'
   document.body.appendChild(probe)
   const height = probe.getBoundingClientRect().height
   probe.remove()

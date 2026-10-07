@@ -67,7 +67,11 @@
     --blur-sheet: 10px;
     --spacing-nav-width: 350px;
     --spacing-nav-height: 75px;
-    --spacing-nav-bottom: 24px;
+    --spacing-nav-bottom: 20px;
+    /* The container's bottom edge: 14px under the bar's, so the two always move together.
+       Keep it at least 6px: iOS 26 fills its toolbar with a flat colour when a fixed layer
+       covers the bottom edge's centre 4px up, which breaks the full-bleed map. */
+    --spacing-sheet-bottom: calc(var(--spacing-nav-bottom) - 14px);
     --spacing-sheet-height: 50svh;
     /* The create flow's container fits its content up to this. */
     --spacing-sheet-height-max: 80svh;

@@ -193,14 +193,15 @@ export default function Sheet({
   return (
     <>
       {/* The frame stays where the open container rests and clips it there, so while it
-          slides down to the bar nothing of it reaches the screen's bottom edge: iOS 26
-          tints Safari's toolbar from whatever layer sits at that edge, and it samples
-          mid-transition. Its rounded bottom matches the container's, so the open state
+          slides down to the bar nothing of it reaches further down than the open
+          container: iOS 26 tints Safari's toolbar from whatever layer sits at the
+          bottom edge, and it samples mid-transition. The open container itself ends 6px
+          above that edge (--spacing-sheet-bottom). Its rounded bottom matches the container's, so the open state
           looks the same; it is as tall as the tallest container and lets touches through
           to the map above the container. */}
       <div
         ref={frameRef}
-        className='pointer-events-none fixed inset-x-sheet-gutter bottom-sheet-gutter z-10 h-sheet-height-max overflow-hidden rounded-b-sheet'
+        className='pointer-events-none fixed inset-x-sheet-gutter bottom-sheet-bottom z-10 h-sheet-height-max overflow-hidden rounded-b-sheet'
       >
         <div
           ref={sheetRef}
