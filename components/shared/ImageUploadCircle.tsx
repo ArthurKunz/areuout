@@ -36,7 +36,7 @@ export default function ImageUploadCircle({
   return (
     <button type='button' onClick={onClick} aria-label={label} className='relative h-[120px] w-[120px] shrink-0'>
       {children ?? <img src={imageUrl ?? undefined} alt='' className='h-full w-full rounded-full object-cover' />}
-      <span className='absolute -bottom-1 -right-1 flex h-[45px] w-[45px] items-center justify-center rounded-full bg-button-circle text-main-white backdrop-blur-xl'>
+      <span className='absolute -bottom-1 -right-1 flex h-[45px] w-[45px] items-center justify-center rounded-full bg-button-circle text-main-white glass-control'>
         <Pencil size={24} />
       </span>
     </button>

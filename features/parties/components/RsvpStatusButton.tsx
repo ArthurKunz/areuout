@@ -23,7 +23,7 @@ export default function RsvpStatusButton({
       type='button'
       onClick={onClick}
       aria-label='RSVP-Status ändern'
-      className={`flex h-[45px] w-[45px] shrink-0 items-center justify-center rounded-full text-main-white backdrop-blur-[100px] ${STATUS_CLASS[status]}`}
+      className={`flex h-[45px] w-[45px] shrink-0 items-center justify-center rounded-full text-main-white glass-control ${STATUS_CLASS[status]}`}
     >
       {status === 'going' && <Check size={30} strokeWidth={2.5} />}
       {status === 'maybe' && <span className='text-[30px] font-bold leading-none'>?</span>}

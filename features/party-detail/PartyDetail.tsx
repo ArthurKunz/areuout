@@ -239,7 +239,7 @@ export default function PartyDetail({
   }
 
   // The round ✗ and ? either side of the invite bar: as tall as the green button.
-  const round = 'flex h-[50px] w-[50px] shrink-0 items-center justify-center rounded-full text-main-white backdrop-blur-[100px] transition-opacity duration-200 disabled:opacity-40'
+  const round = 'flex h-[50px] w-[50px] shrink-0 items-center justify-center rounded-full text-main-white glass-control transition-opacity duration-200 disabled:opacity-40'
 
   // The bar at the bottom (App Redesign 3.5), only for someone without an answer while
   // the party is not over.

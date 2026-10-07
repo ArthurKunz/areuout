@@ -20,7 +20,7 @@ export default function IconButton({
       type={type}
       onClick={onClick}
       aria-label={label}
-      className='flex h-[45px] w-[45px] shrink-0 items-center justify-center rounded-full bg-button-circle text-main-white backdrop-blur-xl transition-transform duration-200 active:scale-90'
+      className='flex h-[45px] w-[45px] shrink-0 items-center justify-center rounded-full bg-button-circle text-main-white glass-control transition-transform duration-200 active:scale-90'
     >
       <Icon size={24} />
     </button>

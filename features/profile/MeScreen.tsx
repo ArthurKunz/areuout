@@ -124,7 +124,7 @@ export default function MeScreen() {
                   <Spinner />
                 </span>
               )}
-              <span className='absolute right-0 bottom-0 flex h-[45px] w-[45px] items-center justify-center rounded-full bg-button-circle text-main-white backdrop-blur-xl'>
+              <span className='absolute right-0 bottom-0 flex h-[45px] w-[45px] items-center justify-center rounded-full bg-button-circle text-main-white glass-control'>
                 <Pencil size={24} />
               </span>
             </button>

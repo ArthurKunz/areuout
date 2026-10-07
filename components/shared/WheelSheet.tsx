@@ -110,7 +110,7 @@ const CLOSE_MS = 300
 // is open the top corners are its two answers, not the page's way back. Styled as
 // IconButton, but not rendered through it: these need `fixed` and the fade-in.
 const cornerButtonClass =
-  'fixed top-0 z-50 mt-7.5 flex h-11.25 w-11.25 items-center justify-center rounded-full bg-button-circle backdrop-blur-xl transition-[transform,opacity] duration-300 ease-[cubic-bezier(0.32,0.72,0,1)] active:scale-95'
+  'fixed top-0 z-50 mt-7.5 flex h-11.25 w-11.25 items-center justify-center rounded-full bg-button-circle glass-control transition-[transform,opacity] duration-300 ease-[cubic-bezier(0.32,0.72,0,1)] active:scale-95'
 
 export default function WheelSheet({
   columns,
