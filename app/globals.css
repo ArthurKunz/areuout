@@ -56,6 +56,18 @@
     --text-hint-1: 10px;
     --text-hint-2: 8px;
 
+    /* RESTORED: removed in 08b45bf while WarningBanner, ConfirmDialog and the old
+       screens still use them; values as they were before. */
+    --color-secondary: rgba(118, 118, 128, 0.25);
+    --color-tertiary: rgba(255, 255, 255, 0.25);
+    --color-quaternary: rgba(29, 29, 29, 0.9);
+    --color-warning: #FF453A;
+    --color-sheet: #FFFFFF;
+    --color-subheading: rgba(148, 148, 148, 0.9);
+    --color-label-large: rgba(255, 255, 255, 0.9);
+    --text-subheading-1: 15px;
+    --text-button: 16px;
+
     /* FONT WEIGHTS: semibold a step under Tailwind's 600, set by eye on the iPhone.
        San Francisco has continuous weights; a font with fixed weights rounds this up
        to its 600. Bold stays at Tailwind's 700. */
