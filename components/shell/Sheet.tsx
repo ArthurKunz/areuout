@@ -210,7 +210,7 @@ export default function Sheet({
             fit ? 'max-h-sheet-height-max' : 'h-sheet-height'
           }`}
         >
-          <div ref={surfaceRef} className='absolute inset-0 rounded-sheet bg-main backdrop-blur-sheet' />
+          <div ref={surfaceRef} className='absolute inset-0 rounded-sheet bg-main glass-surface' />
           {/* A flex item that may shrink: with a fitted container it is as tall as its
               content until the maximum, then the screen's own body scrolls inside it.
               Rounded and clipped like the surface, so scrolled cards are cut at the

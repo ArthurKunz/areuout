@@ -29,7 +29,7 @@ export default function TabNav({
   return (
     <nav
       ref={ref}
-      className='fixed inset-x-0 bottom-nav-bottom z-20 mx-auto h-nav-height w-nav-width origin-bottom rounded-full bg-main p-2 backdrop-blur-nav will-change-transform'
+      className='fixed inset-x-0 bottom-nav-bottom z-20 mx-auto h-nav-height w-nav-width origin-bottom rounded-full bg-main p-2 glass-surface [--glass-blur:var(--blur-nav)] [--glass-shadow:var(--glass-nav-shadow)] will-change-transform'
     >
       <div className='relative flex h-full'>
         {/* The selector slides between items instead of jumping per item */}
