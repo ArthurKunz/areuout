@@ -98,6 +98,93 @@
     --color-map: #426a5a;
 }
 
+/* GLASS (step 11b): the three tiers of glass-surface, glass-control and glass-overlay
+   below. Static, because only that CSS reads them, never a utility. */
+@theme static {
+    --glass-saturate: 160%;
+
+    /* Container and navbar. The blur stays the shell's own (10px / 15px). */
+    --glass-surface-blur: var(--blur-sheet);
+    --glass-surface-rim-start: rgb(255 255 255 / 0.55);
+    --glass-surface-rim-end: rgb(255 255 255 / 0.3);
+    --glass-surface-highlight: inset 0 1px 0 rgb(255 255 255 / 0.35);
+    --glass-surface-glow: inset 0 0 16px rgb(255 255 255 / 0.06);
+    --glass-surface-shadow: 0 8px 32px rgb(0 0 0 / 0.25);
+    /* The navbar's own outer shadow: it reaches down to the screen's bottom edge, where
+       iOS 26 decides Safari's toolbar tint. If the green strip comes back, set this to
+       0 0 #0000 (box-shadow lists take no `none`). */
+    --glass-nav-shadow: var(--glass-surface-shadow);
+
+    /* Round buttons, pills, cards, inputs. */
+    --glass-control-blur: 24px;
+    --glass-control-rim-start: rgb(255 255 255 / 0.4);
+    --glass-control-rim-end: rgb(255 255 255 / 0.2);
+    --glass-control-highlight: inset 0 1px 0 rgb(255 255 255 / 0.25);
+    --glass-control-glow: inset 0 0 16px rgb(255 255 255 / 0.05);
+    --glass-control-shadow: 0 4px 16px rgb(0 0 0 / 0.18);
+
+    /* Menus, prompts, the picker panel. */
+    --glass-overlay-blur: 40px;
+    --glass-overlay-rim-start: rgb(255 255 255 / 0.55);
+    --glass-overlay-rim-end: rgb(255 255 255 / 0.3);
+    --glass-overlay-highlight: inset 0 1px 0 rgb(255 255 255 / 0.35);
+    --glass-overlay-glow: inset 0 0 16px rgb(255 255 255 / 0.06);
+    --glass-overlay-shadow: 0 16px 48px rgb(0 0 0 / 0.35);
+}
+
+/* One glass look, three strengths. Components layer on purpose: a position utility on
+   the element (fixed, absolute) still wins over the `relative` the rim needs. The
+   background stays the element's own class. An element can override one value with an
+   arbitrary property, e.g. TabNav's [--glass-blur:var(--blur-nav)]. */
+@layer components {
+    .glass-surface {
+        --glass-blur: var(--glass-surface-blur);
+        --glass-rim-start: var(--glass-surface-rim-start);
+        --glass-rim-end: var(--glass-surface-rim-end);
+        --glass-highlight: var(--glass-surface-highlight);
+        --glass-glow: var(--glass-surface-glow);
+        --glass-shadow: var(--glass-surface-shadow);
+    }
+    .glass-control {
+        --glass-blur: var(--glass-control-blur);
+        --glass-rim-start: var(--glass-control-rim-start);
+        --glass-rim-end: var(--glass-control-rim-end);
+        --glass-highlight: var(--glass-control-highlight);
+        --glass-glow: var(--glass-control-glow);
+        --glass-shadow: var(--glass-control-shadow);
+    }
+    .glass-overlay {
+        --glass-blur: var(--glass-overlay-blur);
+        --glass-rim-start: var(--glass-overlay-rim-start);
+        --glass-rim-end: var(--glass-overlay-rim-end);
+        --glass-highlight: var(--glass-overlay-highlight);
+        --glass-glow: var(--glass-overlay-glow);
+        --glass-shadow: var(--glass-overlay-shadow);
+    }
+    .glass-surface, .glass-control, .glass-overlay {
+        position: relative;
+        -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
+        backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
+        box-shadow: var(--glass-highlight), var(--glass-glow), var(--glass-shadow);
+    }
+    /* The rim: a 1px ring inside the element, light from the top left, transparent in
+       the middle, softer at the bottom right. The two masks cut everything but the
+       padding away, so it follows any radius; it takes no space and no touches. */
+    .glass-surface::before, .glass-control::before, .glass-overlay::before {
+        content: '';
+        position: absolute;
+        inset: 0;
+        padding: 1px;
+        border-radius: inherit;
+        background: linear-gradient(135deg, var(--glass-rim-start), transparent 35%, transparent 65%, var(--glass-rim-end));
+        -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+        -webkit-mask-composite: xor;
+        mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+        mask-composite: exclude;
+        pointer-events: none;
+    }
+}
+
 @layer base {
     html {
         background-color: #000;
