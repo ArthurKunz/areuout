@@ -42,7 +42,7 @@ export default function ConfirmPrompt({
         disabled={pending}
         className='absolute inset-0 bg-main backdrop-blur-sm'
       />
-      <div className='relative flex w-full max-w-80 flex-col items-center gap-5 rounded-[25px] bg-main p-5 backdrop-blur-3xl animate-fade-in-up'>
+      <div className='relative flex w-full max-w-80 flex-col items-center gap-5 rounded-[25px] bg-main p-5 glass-overlay animate-fade-in-up'>
         <div className='flex flex-col gap-1.5 text-center'>
           <span id='confirm-prompt-title' className='text-heading-4 font-bold text-heading'>
             {title}

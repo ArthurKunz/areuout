@@ -93,7 +93,7 @@ export default function HostActions({
       <div ref={menuRef} className='relative'>
         <IconButton icon={Ellipsis} label='Mehr' onClick={() => setMenuOpen((open) => !open)} />
         {menuOpen && (
-          <div role='menu' className='absolute top-full right-0 z-20 mt-2 w-max overflow-hidden rounded-[20px] bg-main py-1 backdrop-blur-3xl animate-fade-in-up'>
+          <div role='menu' className='absolute top-full right-0 z-20 mt-2 w-max overflow-hidden rounded-[20px] bg-main py-1 glass-overlay animate-fade-in-up'>
             <button type='button' role='menuitem' onClick={pick(() => setConfirm('reset'))} className={`${menuItem} text-heading`}>
               <Link size={22} />
               Link-reset

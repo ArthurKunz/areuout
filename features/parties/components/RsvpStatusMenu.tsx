@@ -19,7 +19,7 @@ export default function RsvpStatusMenu({
   onSelect: (next: RsvpStatus) => void
 }) {
   return (
-    <div className='flex h-[115px] w-[130px] flex-col rounded-[25px] bg-main backdrop-blur-[15px]'>
+    <div className='flex h-[115px] w-[130px] flex-col rounded-[25px] bg-main glass-overlay'>
       {OPTIONS.map((option, i) => (
         <div key={option.status} className='flex flex-1 flex-col'>
           {i > 0 && <div className='mx-3 h-px rounded-full bg-divider' />}

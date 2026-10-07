@@ -196,7 +196,7 @@ export default function WheelSheet({
         }`}
       >
         <div className='overflow-hidden'>
-          <div className='rounded-t-3xl bg-main px-4 pb-safe-rsvp pt-6 backdrop-blur-3xl'>
+          <div className='rounded-t-3xl bg-main px-4 pb-safe-rsvp pt-6 glass-overlay'>
             <div className='relative flex w-full'>
               {/* Selection band sits behind the columns, dead centre, in the same fill as
                   the shared selection fill (bg-selector). */}
