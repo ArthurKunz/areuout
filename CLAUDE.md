@@ -125,6 +125,8 @@ actually protects the data.
   rule and the six-hour pair is deleted — until then, changing one pair must never touch
   the other.
 - Colours, sizes and spacing come from the variables in `app/globals.css`. If no variable fits, ask before adding one.
+- The look in `DESIGN.md` is locked: container width, glass tiers, header rule. Never
+  change a value in it and never add a new surface style without asking Arthur.
 - Icons come from `lucide-react`. Never hand-roll an `<svg>` for an icon.
 - No monetisation. Not ads, not paid tiers, not a payment provider, not an affiliate
   link. If a change would push past a free tier, say so before writing it.
@@ -139,6 +141,7 @@ actually protects the data.
 | Why the database is built the way it is — RLS, anon, storage, the traps | `SCHEMA.md` |
 | The live truth: policies, grants, triggers, constraints | the database itself, over the Supabase MCP. `SCHEMA.md` carries the queries |
 | Which migrations are actually on the database | `supabase/migrations/README.md` |
+| Width, glass tiers, header rule: the locked look | `DESIGN.md` |
 | Environment variables and what each one is for | `.env.example` |
 | Setup and deployment | `README.md` |
 | Product, audience, tone, scope, roadmap, dates | the vault, below |
