@@ -153,7 +153,7 @@ export default function EditPartyFlow({ partyId, userId }: { partyId: string; us
         label='Name'
         value={draft.title}
         onChange={(title) => update({ title })}
-        placeholder='Hausparty'
+        placeholder='z.B. Hausparty'
         maxLength={LIMITS.title}
       />
       <TimeFields draft={draft} update={update} />

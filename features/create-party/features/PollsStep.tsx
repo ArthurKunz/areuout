@@ -61,7 +61,7 @@ export default function PollsStep({
             label='Frage'
             value={poll.question}
             onChange={(question) => edit({ question })}
-            placeholder='z. B. Bringst du was mit?'
+            placeholder='z.B. Bringst du was mit?'
             maxLength={LIMITS.pollQuestion}
           />
           {poll.options.map((option, i) => (

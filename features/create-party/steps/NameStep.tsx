@@ -29,7 +29,7 @@ export default function NameStep({
         label='Name'
         value={draft.title}
         onChange={(title) => update({ title })}
-        placeholder='Hausparty'
+        placeholder='z.B. Hausparty'
         maxLength={LIMITS.title}
       />
     </StepFrame>

@@ -14,9 +14,9 @@ const toGuests = (value: string) => {
 }
 
 const FIELDS = {
-  motto: { label: 'Motto', placeholder: 'Halloween', maxLength: LIMITS.motto },
+  motto: { label: 'Motto', placeholder: 'z.B. Halloween', maxLength: LIMITS.motto },
   maxGuests: { label: 'Max. Teilnehmer', placeholder: 'z.B. 50', maxLength: undefined },
-  dresscode: { label: 'Dresscode', placeholder: 'Verkleidung', maxLength: LIMITS.dresscode },
+  dresscode: { label: 'Dresscode', placeholder: 'z.B. Verkleidung', maxLength: LIMITS.dresscode },
 } as const
 
 // The Motto, max. Teilnehmer and Dresscode sub-steps: one row each (mockups Create

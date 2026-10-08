@@ -50,7 +50,7 @@ export default function QuestionsStep({
           label='Frage'
           value={form.text}
           onChange={(next) => setForm({ ...form, text: next })}
-          placeholder='Was bringst du mit?'
+          placeholder='z.B. Was bringst du mit?'
           maxLength={LIMITS.question}
         />
       </StepFrame>
