@@ -11,6 +11,7 @@ import {
   Lightbulb,
   MessageCircleQuestion,
   Shirt,
+  UserPlus,
   Users,
   type LucideIcon,
 } from 'lucide-react'
@@ -22,7 +23,11 @@ import PollOptions from './PollOptions'
 export type PartyDetailRow = Database['public']['Functions']['get_party_detail']['Returns'][number]
 
 // The pages inside the detail (App Redesign 3.6), opened from the card links.
-export type DetailPage = { kind: 'guests' } | { kind: 'poll'; id: string } | { kind: 'question'; id: string }
+export type DetailPage =
+  | { kind: 'guests' }
+  | { kind: 'requests' }
+  | { kind: 'poll'; id: string }
+  | { kind: 'question'; id: string }
 
 const pad = (n: number) => String(n).padStart(2, '0')
 const formatTime = (iso: string) => {
@@ -105,14 +110,14 @@ const PageLink = ({ label, onClick }: { label: string; onClick: () => void }) =>
 // cards (Datum, Uhrzeit, Dresscode, Motto) share a row; a lone one keeps half width.
 // Polls and questions come only for viewers get_party_poll_data hands them to; without
 // an RSVP they show greyed out and only their links work. The host's card `Anfragen`
-// comes in from outside and sits right after `Teilnehmer` (App Redesign 6.3).
+// sits right after `Teilnehmer` while requests are open (App Redesign 6.3).
 export default function DetailCards({
   party,
   polls,
   questions,
   userId,
   canAnswer,
-  requests,
+  requestCount,
   onPollChange,
   onPollSaved,
   onOpen,
@@ -122,7 +127,7 @@ export default function DetailCards({
   questions: DetailPoll[]
   userId: string | null
   canAnswer: boolean
-  requests?: ReactNode
+  requestCount: number
   onPollChange: (poll: DetailPoll) => void
   onPollSaved: () => void
   onOpen: (page: DetailPage) => void
@@ -160,7 +165,16 @@ export default function DetailCards({
         wide
         link={<PageLink label='Gästeliste anzeigen' onClick={() => onOpen({ kind: 'guests' })} />}
       />
-      {requests}
+      {requestCount > 0 && (
+        <InfoCard
+          icon={UserPlus}
+          color='green'
+          title='Anfragen'
+          value={requestCount === 1 ? '1 Anfrage' : `${requestCount} Anfragen`}
+          wide
+          link={<PageLink label='Anfragen anzeigen' onClick={() => onOpen({ kind: 'requests' })} />}
+        />
+      )}
       {party.description && <InfoCard icon={Info} color='taupe' title='Infos' value={party.description} wide />}
       {polls.map((poll) => (
         <InfoCard

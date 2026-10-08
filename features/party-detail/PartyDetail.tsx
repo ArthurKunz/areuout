@@ -15,10 +15,10 @@ import DetailCards, { type DetailPage, type PartyDetailRow } from './DetailCards
 import DetailHeader from './DetailHeader'
 import GuestsPage from './GuestsPage'
 import HostActions from './HostActions'
-import JoinRequestsCard, { type JoinRequest } from './JoinRequestsCard'
 import PageHeader from './PageHeader'
 import PollPage from './PollPage'
 import QuestionPage from './QuestionPage'
+import RequestsPage, { type JoinRequest } from './RequestsPage'
 import RsvpControl from './RsvpControl'
 
 // Who is looking. 'host' gets ⋯ and share; get_party_detail and get_party_poll_data
@@ -80,7 +80,9 @@ export default function PartyDetail({
   const [requesting, setRequesting] = useState(false)
   // The answer being written from the invite bar: the spinner sits on that button.
   const [answering, setAnswering] = useState<RsvpStatus | null>(null)
-  const [page, setPage] = useState<DetailPage | null>(null)
+  // The pages opened from the cards, newest last: back returns to the one underneath,
+  // the detail itself when none is left.
+  const [pages, setPages] = useState<DetailPage[]>([])
   // Bumped by every vote and answer: a re-read that started before the latest one would
   // otherwise overwrite what the viewer just tapped.
   const pollVersion = useRef(0)
@@ -188,6 +190,18 @@ export default function PartyDetail({
 
   const over = isPartyOver(party.event_date, party.ends_at)
 
+  // With the last request answered the page `Anfragen` has nothing left to show: it
+  // drops out, and the detail underneath has lost its card too.
+  const stack = requests.length === 0 ? pages.filter((item) => item.kind !== 'requests') : pages
+  const page = stack.at(-1)
+  const open = (next: DetailPage) => setPages([...stack, next])
+  const back = () => setPages(stack.slice(0, -1))
+
+  // A request answered on the page `Anfragen` leaves the list the card counts too. From
+  // the current list, not this render's: two answers may be on their way at once.
+  const answered = (requestUserId: string) =>
+    setLoaded((current) => current && { ...current, requests: current.requests.filter((item) => item.user_id !== requestUserId) })
+
   // From the data, not the caller: whoever has an answer gets the RSVP button, so a
   // stranger who just tapped Teilnehmen turns into a guest in place.
   const rsvp = viewer !== 'host' && myStatus && (
@@ -286,9 +300,11 @@ export default function PartyDetail({
     return (
       <div className='flex min-h-0 flex-1 flex-col'>
         <PageHeader
-          title={page.kind === 'guests' ? 'Teilnehmer' : page.kind === 'poll' ? 'Umfrage' : 'Frage'}
+          title={
+            page.kind === 'guests' ? 'Teilnehmer' : page.kind === 'requests' ? 'Anfragen' : page.kind === 'poll' ? 'Umfrage' : 'Frage'
+          }
           actions={page.kind === 'guests' ? rsvp : undefined}
-          onBack={() => setPage(null)}
+          onBack={back}
         >
           {page.kind === 'guests' && (
             <GuestsPage
@@ -299,6 +315,7 @@ export default function PartyDetail({
               canRemove={viewer === 'host'}
             />
           )}
+          {page.kind === 'requests' && <RequestsPage partyId={party.id} requests={requests} onAnswered={answered} />}
           {poll && <PollPage poll={poll} />}
           {question && <QuestionPage question={question} hostName={hostName} userId={userId} />}
         </PageHeader>
@@ -341,10 +358,10 @@ export default function PartyDetail({
           questions={questions}
           userId={userId}
           canAnswer={canAnswer}
-          requests={viewer === 'host' && requests.length > 0 ? <JoinRequestsCard partyId={party.id} initial={requests} /> : undefined}
+          requestCount={viewer === 'host' ? requests.length : 0}
           onPollChange={changePoll}
           onPollSaved={reloadPolls}
-          onOpen={setPage}
+          onOpen={open}
         />
       </DetailHeader>
       {bar && <div className='flex shrink-0 justify-center px-5 pt-3 pb-5'>{bar}</div>}
