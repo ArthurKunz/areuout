@@ -212,6 +212,17 @@ values, which the trigger lets through and a REVOKE would not. Checked 2026-10-0
 every other table: no other UPDATE path can move a row into a party the writer is not
 already a member or host of.
 
+**The 30-day cap on an end** (step 11c) lives in `create_party` and `update_party`, not
+in a CHECK on `events`. Until then `ends_at` was a clock time the client turned into a
+day, so an end was always within a day of the start and an absurd one was not enterable;
+once the host picks the end's date, it is. The cap matters because
+`private.party_visible_until` counts its 24 hours from the **end**: without it a party
+could sit on the map for months. It is not a table constraint because a CHECK across two
+columns would also bind the old app, which still writes `events` directly and builds
+`ends_at` the old way — a save there could fail on a party that was legal when it was
+created. Existing rows are untouched either way. Mirrored by `MAX_PARTY_DAYS` in
+`features/create-party/draft.ts`.
+
 **Two separate "how long" constants, now.** `ASSUMED_PARTY_HOURS`/`c_assumed_hours` (6
 hours) decide when `get_party_by_invite_code` stops handing out the address to a
 non-host. `PARTY_VISIBLE_HOURS`/`private.party_visible_until` (24 hours) decide when a
@@ -231,8 +242,8 @@ insert still passes the caller's own RLS (`events` only with `host_id = auth.uid
 It validates before the first insert and raises `check_violation` (23514) with a
 readable message. The limits mirror the create flow's `LIMITS`: title, motto and
 dresscode 1–20 characters after trimming, description up to 500, `max_guests` 1–500,
-location and coordinates and background picture required, `ends_at` after `event_date`,
-`price` above 0 and at most 9999.99,
+location and coordinates and background picture required, `ends_at` after `event_date`
+and at most 30 days later, `price` above 0 and at most 9999.99,
 up to 5 polls (question 1–60, 2–10 options of 1–30 each) and up to 5 questions (1–60).
 `p_polls` is a JSON array of `{question, options, allow_multiple}`, `p_questions` a
 JSON array of strings. A poll becomes a `pools` row with `type = 'options'` and its

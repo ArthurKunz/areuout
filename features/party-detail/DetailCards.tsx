@@ -165,11 +165,18 @@ export default function DetailCards({
     ? `${formatTime(party.event_date)} - ${formatTime(party.ends_at)} Uhr`
     : `${formatTime(party.event_date)} Uhr`
 
+  // The end can sit on another day, so the card says both dates rather than the start
+  // alone. Same day, or no end at all: the single date as before.
+  const date =
+    party.ends_at && formatDate(party.ends_at) !== formatDate(party.event_date)
+      ? `${formatDate(party.event_date)} - ${formatDate(party.ends_at)}`
+      : formatDate(party.event_date)
+
   const cards: CardSpec[] = []
   const half = (key: string, render: (wide: boolean) => ReactNode) => cards.push({ key, half: true, render })
   const full = (key: string, node: ReactNode) => cards.push({ key, half: false, render: () => node })
 
-  half('datum', (wide) => <InfoCard icon={CalendarDays} color='red' title='Datum' value={formatDate(party.event_date)} wide={wide} />)
+  half('datum', (wide) => <InfoCard icon={CalendarDays} color='red' title='Datum' value={date} wide={wide} />)
   half('uhrzeit', (wide) => <InfoCard icon={Clock} color='green' title='Uhrzeit' value={time} wide={wide} />)
   if (party.location) {
     full(

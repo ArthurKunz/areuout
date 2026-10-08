@@ -18,6 +18,9 @@ export function toEditDraft(
     date: { day: start.getDate(), month: start.getMonth(), year: start.getFullYear() },
     start: { hour: start.getHours(), minute: start.getMinutes() },
     endEnabled: end !== null,
+    // The end's day is kept, not re-derived from the start: a party stored past midnight
+    // comes back with the following day in Enddatum, which is what it has always meant.
+    endDate: end ? { day: end.getDate(), month: end.getMonth(), year: end.getFullYear() } : null,
     end: end ? { hour: end.getHours(), minute: end.getMinutes() } : null,
     // The host always gets the exact position and the address.
     location: { label: party.location ?? '', lat: party.lat, lng: party.lng },

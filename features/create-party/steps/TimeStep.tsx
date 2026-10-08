@@ -4,12 +4,13 @@ import { useState } from 'react'
 import { createPortal } from 'react-dom'
 import StepFrame from '../StepFrame'
 import Collapse from '@/components/shared/Collapse'
+import WarningBanner from '@/components/shared/WarningBanner'
 import ToggleInput from '@/components/shared/ToggleInput'
 import PartyDateSheet, { type PartyDate } from '@/features/parties/components/PartyDateSheet'
 import PartyTimeSheet, { type PartyTime } from '@/features/parties/components/PartyTimeSheet'
-import { canLeaveTime, type PartyDraft } from '../draft'
+import { canLeaveTime, endProblem, type PartyDraft } from '../draft'
 
-type Open = 'date' | 'start' | 'end' | null
+type Open = 'date' | 'endDate' | 'start' | 'end' | null
 
 const pad = (n: number) => String(n).padStart(2, '0')
 const formatDate = (d: PartyDate) => `${pad(d.day)}.${pad(d.month + 1)}.${String(d.year).slice(-2)}`
@@ -23,6 +24,12 @@ const today = (): PartyDate => {
 }
 const DEFAULT_START: PartyTime = { hour: 20, minute: 0 }
 const DEFAULT_END: PartyTime = { hour: 2, minute: 0 }
+
+const nextDay = (d: PartyDate): PartyDate => {
+  const date = new Date(d.year, d.month, d.day + 1)
+  return { day: date.getDate(), month: date.getMonth(), year: date.getFullYear() }
+}
+const minutes = (t: PartyTime) => t.hour * 60 + t.minute
 
 // A row that opens a wheel instead of taking text. Same shape as InputRow; the value
 // sits in a read-only input so it renders exactly like a typed one, placeholder colour
@@ -45,20 +52,38 @@ export function PickerRow({ label, value, onClick }: { label: string; value: str
 
 export const cardClass = 'w-full max-w-[350px] rounded-[25px] bg-main glass-field'
 
-// Datum, Startzeit and an optional Endzeit with their wheels. The end joins the start's
-// card when the switch below is on (mockups Create 02 and 03). Step 2 of Create Party
-// and the Edit Party form both show it.
+// Startdatum and Startzeit with their wheels, and an optional end that has its own date
+// as well as its own time. Each end row joins its start's card when the switch below is
+// on (mockups Create 02, 03 and 18). Step 2 of Create Party and the Edit Party form both
+// show it.
 export function TimeFields({ draft, update }: { draft: PartyDraft; update: (patch: Partial<PartyDraft>) => void }) {
   const [open, setOpen] = useState<Open>(null)
   const close = () => setOpen(null)
+  const problem = endProblem(draft)
 
   // The wheel opens on a default, and that default is what the user sees — so it counts
   // as the answer straight away, as in the old flow.
   const openSheet = (which: Exclude<Open, null>) => {
     if (which === 'date' && !draft.date) update({ date: today() })
+    if (which === 'endDate' && !draft.endDate) update({ endDate: draft.date ?? today() })
     if (which === 'start' && !draft.start) update({ start: DEFAULT_START })
     if (which === 'end' && !draft.end) update({ end: DEFAULT_END })
     setOpen(which)
+  }
+
+  // Switching the end on fills both of its rows at once, so the card never opens on an
+  // error the host did not cause. The date is the start's -- except when the end time
+  // would land at or before the start, the ordinary party past midnight, which gets the
+  // next day. That is what the flow did implicitly before the end had a date of its own.
+  const toggleEnd = (endEnabled: boolean) => {
+    if (!endEnabled) return update({ endEnabled })
+    const end = draft.end ?? DEFAULT_END
+    const date = draft.date ?? today()
+    update({
+      endEnabled,
+      end,
+      endDate: draft.endDate ?? (draft.start && minutes(end) <= minutes(draft.start) ? nextDay(date) : date),
+    })
   }
 
   // The container carries a transform, which turns `position: fixed` inside it into
@@ -67,6 +92,12 @@ export function TimeFields({ draft, update }: { draft: PartyDraft; update: (patc
   const sheet =
     open === 'date' ? (
       <PartyDateSheet value={draft.date ?? today()} onChange={(date) => update({ date })} onClose={close} />
+    ) : open === 'endDate' ? (
+      <PartyDateSheet
+        value={draft.endDate ?? draft.date ?? today()}
+        onChange={(endDate) => update({ endDate })}
+        onClose={close}
+      />
     ) : open === 'start' ? (
       <PartyTimeSheet value={draft.start ?? DEFAULT_START} onChange={(start) => update({ start })} onClose={close} />
     ) : open === 'end' ? (
@@ -76,7 +107,15 @@ export function TimeFields({ draft, update }: { draft: PartyDraft; update: (patc
   return (
     <>
       <div className={cardClass}>
-        <PickerRow label='Datum' value={draft.date ? formatDate(draft.date) : ''} onClick={() => openSheet('date')} />
+        <PickerRow label='Startdatum' value={draft.date ? formatDate(draft.date) : ''} onClick={() => openSheet('date')} />
+        <Collapse open={draft.endEnabled}>
+          <div className='mx-4 h-px rounded-full bg-divider' />
+          <PickerRow
+            label='Enddatum'
+            value={draft.endDate ? formatDate(draft.endDate) : ''}
+            onClick={() => openSheet('endDate')}
+          />
+        </Collapse>
       </div>
 
       <div className={cardClass}>
@@ -87,7 +126,9 @@ export function TimeFields({ draft, update }: { draft: PartyDraft; update: (patc
         </Collapse>
       </div>
 
-      <ToggleInput label='Endzeit' checked={draft.endEnabled} onChange={(endEnabled) => update({ endEnabled })} />
+      <ToggleInput label='Endzeit' checked={draft.endEnabled} onChange={toggleEnd} />
+
+      {problem && <WarningBanner message={problem} />}
 
       {sheet && createPortal(sheet, document.body)}
     </>

@@ -124,6 +124,11 @@ actually protects the data.
   the redesign, when `get_party_by_invite_code` and `isPartyOver` switch to the 24-hour
   rule and the six-hour pair is deleted — until then, changing one pair must never touch
   the other.
+- `MAX_PARTY_DAYS` in `features/create-party/draft.ts` and the two `interval '30 days'`
+  checks in `create_party` and `update_party` are the same cap written twice. Change one,
+  change the other. It is a third, separate rule from the two pairs above: it decides how
+  long a party may be declared to run, not when its address is blanked or when it leaves
+  the map.
 - Colours, sizes and spacing come from the variables in `app/globals.css`. If no variable fits, ask before adding one.
 - The look in `DESIGN.md` is locked: container width, glass tiers, header rule. Never
   change a value in it and never add a new surface style without asking Arthur.

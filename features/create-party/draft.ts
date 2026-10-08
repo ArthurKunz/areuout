@@ -21,6 +21,7 @@ export type PartyDraft = {
   date: PartyDate | null
   start: PartyTime | null
   endEnabled: boolean
+  endDate: PartyDate | null
   end: PartyTime | null
   location: { label: string; lat: number; lng: number } | null
   cover: Cover | null
@@ -59,6 +60,7 @@ export function emptyDraft(): PartyDraft {
     date: null,
     start: null,
     endEnabled: false,
+    endDate: null,
     end: null,
     location: null,
     cover: null,
@@ -77,7 +79,8 @@ export const canLeaveName = (d: PartyDraft) => {
   const title = d.title.trim()
   return title.length > 0 && title.length <= LIMITS.title
 }
-export const canLeaveTime = (d: PartyDraft) => Boolean(d.date && d.start && (!d.endEnabled || d.end))
+export const canLeaveTime = (d: PartyDraft) =>
+  Boolean(d.date && d.start && (!d.endEnabled || (d.endDate && d.end))) && endProblem(d) === null
 export const canLeaveCover = (d: PartyDraft) => d.cover !== null
 
 // React keys for the Umfrage and Frage blocks. A counter, not crypto.randomUUID, which
@@ -104,22 +107,40 @@ export function cleanPolls(polls: PollDraft[]): PollDraft[] {
 export const pollsValid = (polls: PollDraft[]) =>
   cleanPolls(polls).every((poll) => poll.question && poll.options.length >= LIMITS.minOptions)
 
+// One picked day plus one picked time as a local Date. PartyDate's month is 0-based (it
+// is the wheel's index), so it goes into Date as is.
+const at = (date: PartyDate, time: PartyTime) =>
+  new Date(date.year, date.month, date.day, time.hour, time.minute, 0, 0)
+
+// How long a party may run. Mirrors the same check in create_party and update_party --
+// change one, change the other. It is there because private.party_visible_until counts
+// 24 hours from the END: without a cap, an end months away would park a party on the
+// map for months.
+export const MAX_PARTY_DAYS = 30
+
+// Why the chosen end cannot be saved, or null when it can. The warning under the rows
+// and the disabled button both read this, so the two can never disagree. An incomplete
+// end is not a problem here -- canLeaveTime holds the button for that.
+export function endProblem(d: PartyDraft): string | null {
+  if (!d.endEnabled || !d.date || !d.start || !d.endDate || !d.end) return null
+  const start = at(d.date, d.start)
+  const end = at(d.endDate, d.end)
+  if (end <= start) return 'Das Ende muss nach dem Start liegen.'
+  if (end.getTime() - start.getTime() > MAX_PARTY_DAYS * 24 * 60 * 60 * 1000) {
+    return `Eine Party darf höchstens ${MAX_PARTY_DAYS} Tage dauern.`
+  }
+  return null
+}
+
 // Both columns are timestamptz and the database session runs in UTC, so the picked
 // wall-clock time is built as a local Date and sent as an ISO string, which carries the
-// offset. PartyDate's month is 0-based (it is the wheel's index), so it goes into Date
-// as is. An end earlier than the start means the party runs past midnight.
+// offset. The end is its own picked day since step 11c: before that it was a clock time
+// only, and an end earlier than the start was silently read as the next day.
 export function toTimestamps(draft: PartyDraft): { eventDate: string; endsAt: string | null } {
   if (!draft.date || !draft.start) throw new Error('toTimestamps: date and start are required')
-  const { day, month, year } = draft.date
-  const start = new Date(year, month, day, draft.start.hour, draft.start.minute, 0, 0)
-
-  let endsAt: string | null = null
-  if (draft.endEnabled && draft.end) {
-    const end = new Date(start)
-    end.setHours(draft.end.hour, draft.end.minute, 0, 0)
-    if (end <= start) end.setDate(end.getDate() + 1)
-    endsAt = end.toISOString()
-  }
+  const start = at(draft.date, draft.start)
+  const endsAt =
+    draft.endEnabled && draft.endDate && draft.end ? at(draft.endDate, draft.end).toISOString() : null
   return { eventDate: start.toISOString(), endsAt }
 }
 

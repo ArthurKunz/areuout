@@ -230,6 +230,32 @@ weiterhin aufloest. Weil die alte Funktion gedroppt und nicht daneben stehen gel
 gibt es keine Ueberladung und damit kein "function is not unique". Warum es so gebaut ist,
 steht in `SCHEMA.md`, Abschnitte 8 und 9.
 
+## Die Migration zum Enddatum (Schritt 11c)
+
+| Datei | Was sie aendert | Wie angewendet |
+|---|---|---|
+| `20261008205110_cap_a_party_end_at_30_days.sql` | `create_party` und `update_party` lehnen ein `ends_at` ab, das mehr als 30 Tage nach `event_date` liegt | SQL-Editor |
+
+Wieder im SQL-Editor ausgefuehrt, der Dateiname traegt die Uhrzeit der Datenbank kurz
+danach (`20261008205110`); sie steht also nicht in `list_migrations`.
+
+Gleiche Signatur wie vorher, also `create or replace`: kein DROP, keine Grants in Gefahr,
+Owner, SECURITY, `search_path` und ACL vorher und nachher verglichen und identisch.
+Geaendert ist in beiden Funktionen genau ein Block.
+
+Der Grund: Bis Schritt 11c war `ends_at` eine reine Uhrzeit, die der Client auf einen Tag
+rechnete -- ein Ende lag damit immer innerhalb eines Tages nach dem Start, ein absurd
+weit entferntes war gar nicht eingebbar. Seit der Host das Enddatum selbst waehlt, schon.
+Und das trifft die 24-Stunden-Regel: `private.party_visible_until` zaehlt ab dem **Ende**,
+eine Party mit einem Ende in drei Monaten stuende drei Monate lang auf der Karte.
+
+Warum keine CHECK auf der Tabelle: Eine CHECK ueber zwei Spalten wuerde auch fuer die alte
+App gelten, die `events` direkt ueber PostgREST schreibt und `ends_at` weiterhin nach der
+alten Regel bildet; ein Speichern koennte dort an einer Party scheitern, die bei ihrer
+Anlage erlaubt war. Bestehende Zeilen werden so oder so nicht angefasst. Gespiegelt von
+`MAX_PARTY_DAYS` in `features/create-party/draft.ts`, siehe die harte Regel in
+`CLAUDE.md`. Warum es so gebaut ist, steht in `SCHEMA.md`, Abschnitt 9.
+
 ## Die Migration zu Schritt 8, Phase 2b (Anfragen in der App)
 
 | Datei | Was sie ändert | Wie angewendet |
