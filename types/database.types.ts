@@ -58,6 +58,7 @@ export type Database = {
           location: string
           max_guests: number | null
           motto: string | null
+          price: number | null
           title: string
         }
         Insert: {
@@ -78,6 +79,7 @@ export type Database = {
           location: string
           max_guests?: number | null
           motto?: string | null
+          price?: number | null
           title: string
         }
         Update: {
@@ -98,6 +100,7 @@ export type Database = {
           location?: string
           max_guests?: number | null
           motto?: string | null
+          price?: number | null
           title?: string
         }
         Relationships: [
@@ -428,6 +431,7 @@ export type Database = {
           p_max_guests: number
           p_motto: string
           p_polls: Json
+          p_price?: number
           p_questions: Json
           p_title: string
         }
@@ -581,6 +585,7 @@ export type Database = {
           location: string
           max_guests: number
           motto: string
+          price: number
           title: string
         }[]
       }
@@ -606,6 +611,7 @@ export type Database = {
           max_guests: number
           motto: string
           my_status: string
+          price: number
           title: string
         }[]
       }
@@ -739,6 +745,7 @@ export type Database = {
           p_max_guests: number
           p_motto: string
           p_polls: Json
+          p_price?: number
           p_questions: Json
           p_title: string
         }
@@ -872,6 +879,9 @@ export type CompositeTypes<
     : never
 
 export const Constants = {
+  graphql_public: {
+    Enums: {},
+  },
   public: {
     Enums: {},
   },

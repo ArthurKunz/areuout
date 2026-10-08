@@ -29,6 +29,7 @@ export function toEditDraft(
     maxGuests: party.max_guests,
     dresscode: party.dresscode,
     description: party.description,
+    price: party.price,
     polls: polls.map((poll) => ({
       question: poll.question,
       options: poll.options.map((option) => option.label),
@@ -39,9 +40,9 @@ export function toEditDraft(
 }
 
 type RpcArgs = Database['public']['Functions']['update_party']['Args']
-type NullableArg = 'p_ends_at' | 'p_description' | 'p_motto' | 'p_dresscode' | 'p_max_guests'
+type NullableArg = 'p_ends_at' | 'p_description' | 'p_motto' | 'p_dresscode' | 'p_max_guests' | 'p_price'
 
-// Widened like CreatePartyArgs in draft.ts: update_party takes null for these five.
+// Widened like CreatePartyArgs in draft.ts: update_party takes null for these six.
 export type UpdatePartyArgs = Omit<RpcArgs, NullableArg> & { [K in NullableArg]: RpcArgs[K] | null }
 
 export function toUpdateArgs(draft: PartyDraft, partyId: string, backgroundUrl: string): UpdatePartyArgs {
@@ -62,6 +63,7 @@ export function toUpdateArgs(draft: PartyDraft, partyId: string, backgroundUrl: 
     p_motto: orNull(draft.motto),
     p_dresscode: orNull(draft.dresscode),
     p_max_guests: draft.maxGuests,
+    p_price: draft.price,
     p_polls: draft.polls.map((poll) => ({
       question: poll.question.trim(),
       options: poll.options.map((option) => option.trim()),

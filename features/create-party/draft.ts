@@ -28,6 +28,8 @@ export type PartyDraft = {
   maxGuests: number | null
   dresscode: string | null
   description: string | null
+  // Euro, up to 2 decimals. null means no price; 0 is not a second way of saying that.
+  price: number | null
   // [] means the chip was not added.
   polls: PollDraft[]
   questions: string[]
@@ -64,6 +66,7 @@ export function emptyDraft(): PartyDraft {
     maxGuests: null,
     dresscode: null,
     description: null,
+    price: null,
     polls: [],
     questions: [],
   }
@@ -121,12 +124,13 @@ export function toTimestamps(draft: PartyDraft): { eventDate: string; endsAt: st
 }
 
 type RpcArgs = Database['public']['Functions']['create_party']['Args']
-type NullableArg = 'p_ends_at' | 'p_description' | 'p_motto' | 'p_dresscode' | 'p_max_guests'
+type NullableArg = 'p_ends_at' | 'p_description' | 'p_motto' | 'p_dresscode' | 'p_max_guests' | 'p_price'
 
 // The generated Args type marks every parameter as required and non-null, because
 // Postgres function parameters carry no nullability. create_party does take null for
-// these five (no end, no description, motto, dresscode or guest cap), so they are
-// widened here.
+// these six (no end, no description, motto, dresscode, guest cap or price), so they
+// are widened here. p_price is generated optional because it has a DEFAULT; it is
+// always sent anyway, so that it loses the `?` here is the shape we want.
 export type CreatePartyArgs = Omit<RpcArgs, NullableArg> & { [K in NullableArg]: RpcArgs[K] | null }
 
 export const orNull = (text: string | null) => text?.trim() || null
@@ -151,6 +155,7 @@ export function toRpcArgs(draft: PartyDraft, partyId: string, backgroundUrl: str
     p_motto: orNull(draft.motto),
     p_dresscode: orNull(draft.dresscode),
     p_max_guests: draft.maxGuests,
+    p_price: draft.price,
     p_polls: draft.polls.map((poll) => ({
       question: poll.question.trim(),
       options: poll.options.map((option) => option.trim()),

@@ -1,6 +1,6 @@
 import Chip from '@/components/shared/Chip'
 
-// The six features of step 5, in the order their chips appear (App Redesign 7.3).
+// The seven features of step 5, in the order their chips appear (App Redesign 7.3).
 export const FEATURES = [
   { key: 'motto', variant: 'motto', label: 'Motto' },
   { key: 'maxGuests', variant: 'maxParticipants', label: 'max. Teilnehmer' },
@@ -8,6 +8,7 @@ export const FEATURES = [
   { key: 'polls', variant: 'poll', label: 'Umfrage' },
   { key: 'questions', variant: 'question', label: 'Frage' },
   { key: 'description', variant: 'description', label: 'Beschreibung' },
+  { key: 'price', variant: 'price', label: 'Preis' },
 ] as const
 
 export type Feature = (typeof FEATURES)[number]['key']

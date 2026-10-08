@@ -19,7 +19,7 @@ export function InputRow({
   placeholder?: string
   type?: 'text' | 'number' | 'password' | 'email'
   maxLength?: number
-  inputMode?: 'text' | 'numeric'
+  inputMode?: 'text' | 'numeric' | 'decimal'
   autoComplete?: string
   // Enter on the keyboard, e.g. to submit the form the row is the last field of.
   onEnter?: () => void

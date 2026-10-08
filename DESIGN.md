@@ -64,6 +64,26 @@ takes one of the `--color-*` tokens from `globals.css`. Tailwind builds the `bg-
 | Token | Hex | Used by |
 |---|---|---|
 | `--color-lime` | #A4D400 | the open requests only: the `Anfragen` card in the detail and the `Anfragen` tile on its page. Added in step 11c with Arthur's approval. |
+| `--color-slate` | #7A8594 | the price only: the `Preis` chip in the Features step of Create and Edit Party, and the `Preis` card's icon in the detail. Added in step 11c with Arthur's approval. |
 
 The symbol stays `text-main-white`, as on every other icon circle. Any further colour
 needs Arthur's approval.
+
+## Card widths in the detail
+
+The detail's cards sit in a two-column grid (`features/party-detail/DetailCards.tsx`).
+A card is either half width or full width:
+
+- Half width: `Datum`, `Uhrzeit`, `Dresscode`, `Motto`, `Preis`.
+- Full width: `Location`, `Teilnehmer`, `Anfragen`, `Infos`, every poll, every question.
+
+**Consecutive half-width cards fill a row in pairs; a half-width card left without a
+partner in its row takes the full width instead of leaving a gap.** A full-width card
+always starts a new row, so a run of half cards is the same thing as a row, and the odd
+last one of a run goes wide. So `Motto` on its own is full width, `Dresscode` plus
+`Motto` share a row, and `Dresscode` plus `Motto` plus `Preis` puts `Preis` full width
+underneath the pair.
+
+The rule lives once in `widths()` beside the grid, never on a card: no card decides its
+own width. Added in step 11c with Arthur's approval; before it, a lone half card kept
+half width and left a gap.

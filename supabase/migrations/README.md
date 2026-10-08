@@ -197,6 +197,39 @@ Gleiche Rückgabeform, CREATE OR REPLACE, Rechte bleiben. Position, Adresse, `is
 und `my_status` sind unverändert. `private.visible_lastname` bleibt, `get_party_guests`
 kürzt weiter. Warum, steht in `SCHEMA.md`, Abschnitt 8.
 
+## Die Migration zum Preis (Schritt 11c)
+
+| Datei | Was sie aendert | Wie angewendet |
+|---|---|---|
+| `20261008203433_add_an_optional_price_to_a_party.sql` | Spalte `events.price` (`numeric(6,2)`, nullable) samt `events_price_check`; `get_party_detail`, `get_party_by_invite_code`, `create_party` und `update_party` geben den Preis weiter bzw. nehmen ihn entgegen | SQL-Editor |
+
+Die Ausnahme von der Regel oben, wie schon bei der Edit-Party-Migration: Diese Migration
+wurde am 08.10.2026 im SQL-Editor von Supabase ausgefuehrt, nicht ueber `apply_migration`.
+Der SQL-Editor traegt nichts in die Migrationshistorie ein, sie steht also **nicht** in
+`list_migrations`. Der Dateiname traegt die Uhrzeit der Datenbank kurz nach dem Ausfuehren
+(`20261008203433`).
+
+Drei Dinge, die beim Lesen leicht untergehen:
+
+1. **Alle vier Funktionen per DROP + CREATE.** Weder eine `RETURNS TABLE`-Form noch eine
+   Parameterliste laesst sich mit `create or replace` aendern. Vorher dreifach geprueft und
+   leer: `pg_depend`, die Rumpftexte aller uebrigen Funktionen, alle Views, alle Policies
+   und alle Spalten-Defaults nennen keine der vier. Deshalb kein `cascade`.
+2. **Der DROP nimmt die Grants mit.** `get_party_by_invite_code` ist dabei die
+   gefaehrliche: sie haelt `EXECUTE` fuer `anon` **und** fuer `PUBLIC`, und sie ist als
+   einzige der vier auf `search_path = public` statt `''` gesetzt. Ohne beides ist die
+   Einladungsseite ohne Konto tot. Vor und nach der Migration wurden Owner, SECURITY,
+   `search_path`, Volatilitaet, Sprache und ACL aller vier verglichen; sie sind identisch.
+3. **Die CHECK ist nicht bloss Doppelung der Oberflaeche.** Die alte App schreibt `events`
+   direkt ueber PostgREST, nicht ueber `create_party`/`update_party` — die Validierung in
+   den Funktionen allein wuerde sie gar nicht erreichen. `price = 0` wird abgelehnt: "kein
+   Preis" ist `NULL`, und 0 waere ein zweiter Weg, dasselbe zu sagen.
+
+`p_price` steht als **letzter** Parameter und hat `DEFAULT NULL`, damit ein Aufruf ohne ihn
+weiterhin aufloest. Weil die alte Funktion gedroppt und nicht daneben stehen gelassen wird,
+gibt es keine Ueberladung und damit kein "function is not unique". Warum es so gebaut ist,
+steht in `SCHEMA.md`, Abschnitte 8 und 9.
+
 ## Die Migration zu Schritt 8, Phase 2b (Anfragen in der App)
 
 | Datei | Was sie ändert | Wie angewendet |

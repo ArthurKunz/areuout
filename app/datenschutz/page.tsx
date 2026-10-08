@@ -95,7 +95,7 @@ const SECTIONS: LegalSection[] = [
     paragraphs: [
       'Konto: deine E-Mail-Adresse, dein Passwort, der Zeitpunkt der Anmeldung und der letzten Anmeldung sowie die Information, ob deine E-Mail-Adresse bestätigt ist und ob du dich per E-Mail oder über Google anmeldest. Das Passwort wird ausschließlich als kryptografischer Hash gespeichert, niemals im Klartext — auch wir können es nicht lesen.',
       'Profil: Vorname, Nachname, eine Avatar-Farbe und, wenn du eines hochlädst, ein Profilbild.',
-      'Partys, die du erstellst: Titel, Beschreibung, Datum, Uhrzeit, optionale Endzeit, Adresse, optionale maximale Gästezahl, ein Hintergrundbild — entweder eines der vorgegebenen Motive oder ein eigenes Foto — sowie ein zufällig erzeugter Einladungscode und der Erstellzeitpunkt.',
+      'Partys, die du erstellst: Titel, Beschreibung, Datum, Uhrzeit, optionale Endzeit, Adresse, optionale maximale Gästezahl, ein optionaler Preis, ein Hintergrundbild — entweder eines der vorgegebenen Motive oder ein eigenes Foto — sowie ein zufällig erzeugter Einladungscode und der Erstellzeitpunkt.',
       'Teilnahme: deine Antwort auf eine Einladung — zugesagt, vielleicht oder abgesagt — und der Zeitpunkt, zu dem du sie gegeben hast.',
       'Umfragen: die Fragen und Antwortmöglichkeiten, die ein Gastgeber stellt, und deine Auswahl beziehungsweise dein Freitext dazu.',
       'Technische Verbindungsdaten: Beim Aufruf der App und bei jeder Datenbankabfrage fallen bei unseren Dienstleistern IP-Adresse, Browser- und Gerätekennung, Zeitpunkt, Herkunftsland und die aufgerufene Adresse an. Die App selbst greift auf keine dieser Angaben zu und speichert sie nirgends in ihrer eigenen Datenbank.',

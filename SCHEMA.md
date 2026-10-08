@@ -158,7 +158,10 @@ choosing its own columns:
   only included with access, and `invite_code` is **never** in the result at all, not
   even blanked. Answers "exists, no access" with the same shape it would for a party
   that truly doesn't exist, except the non-address fields are visible to any logged-in
-  caller regardless of access.
+  caller regardless of access. `price` (step 11c) is such a non-address field, so it
+  needed no branch of its own: a stranger on a private party sees the price exactly as
+  they already see the title and the motto, and still no address, no exact point and no
+  row through `events_select_member`.
 - `get_party_guests(event_id)`, `get_party_polls(event_id)` — guest names and poll
   answers follow the same access rule as the address: truncated or hidden without it,
   full with it. Unlike the older `get_event_attendees`/`get_pool_responses_by_event`,
@@ -229,6 +232,7 @@ It validates before the first insert and raises `check_violation` (23514) with a
 readable message. The limits mirror the create flow's `LIMITS`: title, motto and
 dresscode 1–20 characters after trimming, description up to 500, `max_guests` 1–500,
 location and coordinates and background picture required, `ends_at` after `event_date`,
+`price` above 0 and at most 9999.99,
 up to 5 polls (question 1–60, 2–10 options of 1–30 each) and up to 5 questions (1–60).
 `p_polls` is a JSON array of `{question, options, allow_multiple}`, `p_questions` a
 JSON array of strings. A poll becomes a `pools` row with `type = 'options'` and its
