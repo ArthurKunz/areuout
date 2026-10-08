@@ -75,7 +75,7 @@ export default function RequestsPage({
 
   return (
     <div className='grid grid-cols-2 gap-2.5'>
-      <InfoCard icon={UserPlus} color='green' title='Anfragen' value={String(requests.length)} />
+      <InfoCard icon={UserPlus} color='lime' title='Anfragen' value={String(requests.length)} />
       <InfoCard
         icon={Check}
         color='green'

@@ -60,6 +60,7 @@ const ICON_CLASS = {
   taupe: 'bg-taupe',
   purple: 'bg-purple',
   yellow: 'bg-yellow',
+  lime: 'bg-lime',
 } as const
 
 const linkRow = 'flex h-11 w-full items-center justify-between text-text-2 text-blue'
@@ -170,7 +171,7 @@ export default function DetailCards({
       {requestCount > 0 && (
         <InfoCard
           icon={UserPlus}
-          color='green'
+          color='lime'
           title='Anfragen'
           value={requestCount === 1 ? '1 Anfrage' : `${requestCount} Anfragen`}
           wide

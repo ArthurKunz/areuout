@@ -54,3 +54,16 @@ onboarding, profile sub-pages). It scrolls away with the content, nothing is fix
 there is no bar or blur behind the buttons, and nothing appears on scroll up. Two
 things stay fixed on purpose: the `ListHeader` of Explore, My Parties and Hosting (it
 is the container's grab area) and a step's one action button at the bottom.
+
+## Icon colours
+
+The round icon of a card or tile (`InfoCard` in `features/party-detail/DetailCards.tsx`)
+takes one of the `--color-*` tokens from `globals.css`. Tailwind builds the `bg-` and
+`text-` variants from the token, so no colour is written twice.
+
+| Token | Hex | Used by |
+|---|---|---|
+| `--color-lime` | #A4D400 | the open requests only: the `Anfragen` card in the detail and the `Anfragen` tile on its page. Added in step 11c with Arthur's approval. |
+
+The symbol stays `text-main-white`, as on every other icon circle. Any further colour
+needs Arthur's approval.
