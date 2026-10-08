@@ -16,7 +16,7 @@ export default function SearchInput({
   placeholder?: string
 }) {
   return (
-    <div className='flex h-[50px] w-full max-w-[350px] items-center gap-3 rounded-full bg-main px-4 glass-control'>
+    <div className='flex h-[50px] w-full max-w-[350px] items-center gap-3 rounded-full bg-main px-4 glass-field'>
       <Search size={25} className='shrink-0 text-heading' />
       <input
         value={value}

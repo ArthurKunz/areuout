@@ -43,7 +43,7 @@ export function PickerRow({ label, value, onClick }: { label: string; value: str
   )
 }
 
-export const cardClass = 'w-full max-w-[350px] rounded-[25px] bg-main glass-control'
+export const cardClass = 'w-full max-w-[350px] rounded-[25px] bg-main glass-field'
 
 // Datum, Startzeit and an optional Endzeit with their wheels. The end joins the start's
 // card when the switch below is on (mockups Create 02 and 03). Step 2 of Create Party
