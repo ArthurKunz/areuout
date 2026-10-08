@@ -201,7 +201,7 @@ export default function Sheet({
           to the map above the container. */}
       <div
         ref={frameRef}
-        className='pointer-events-none fixed inset-x-sheet-gutter bottom-sheet-bottom z-10 h-sheet-height-max overflow-hidden rounded-b-sheet'
+        className='pointer-events-none fixed inset-x-0 bottom-sheet-bottom mx-auto w-shell-width md:left-sheet-gutter md:mx-0 z-10 h-sheet-height-max overflow-hidden rounded-b-sheet'
       >
         <div
           ref={sheetRef}
@@ -229,7 +229,7 @@ export default function Sheet({
         <div
           ref={handleLayerRef}
           {...pointerHandlers}
-          className='pointer-events-none fixed inset-x-sheet-gutter z-30 h-5 will-change-transform'
+          className='pointer-events-none fixed inset-x-0 z-30 mx-auto h-5 w-shell-width will-change-transform md:left-sheet-gutter md:mx-0'
         >
           <div
             data-sheet-drag

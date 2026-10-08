@@ -77,7 +77,9 @@
     --color-nav-selector: #00000040;
     --blur-nav: 15px;
     --blur-sheet: 10px;
-    --spacing-nav-width: 350px;
+    /* Every container and the navbar: 385px, narrower only where the phone has no room
+       for it beside the two gutters. From md (768px) the block sits bottom left. */
+    --spacing-shell-width: min(385px, calc(100vw - 2 * var(--spacing-sheet-gutter)));
     --spacing-nav-height: 75px;
     --spacing-nav-bottom: 20px;
     /* The container's bottom edge: 14px under the bar's, so the two always move together.

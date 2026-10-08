@@ -5,7 +5,7 @@ import { useEffect, useLayoutEffect, useRef } from 'react'
 import type { Map as MapLibreMap, MapOptions } from 'maplibre-gl'
 import baseStyle from '@/lib/map/style.json'
 import { GLYPHS_URL, LEIPZIG_BOUNDS, SPRITE_URL, TILE_SOURCE_URL } from '@/lib/map/config'
-import { runwayInset, useRegisterShellMap } from '@/components/shell/MapContext'
+import { containerInset, runwayInset, useRegisterShellMap } from '@/components/shell/MapContext'
 
 type Style = Exclude<MapOptions['style'], string | undefined>
 
@@ -42,8 +42,11 @@ export default function ShellMap() {
         bounds: LEIPZIG_BOUNDS,
         // Fitted to the whole screen, as in the mockups: collapsed shows Brehna to Lucka,
         // open puts Leipzig at the container's top edge. Collapsing does not re-zoom.
-        // The runway past the screen's edges is left out.
-        fitBoundsOptions: { padding: { top: runway.top + 16, bottom: runway.bottom + 16, left: 16, right: 16 } },
+        // The runway past the screen's edges is left out, and on a wide screen the
+        // container at the left.
+        fitBoundsOptions: {
+          padding: { top: runway.top + 16, bottom: runway.bottom + 16, left: containerInset().left + 16, right: 16 },
+        },
         dragRotate: false,
         pitchWithRotate: false,
         touchPitch: false,

@@ -18,14 +18,19 @@ const ZOOM = 15
 // The open container covers the bottom of the map: its height plus the space under it.
 // Read from the same variables Sheet uses (resolved through a probe element, since
 // 50svh only becomes pixels in layout), so the party lands in the middle of the map
-// that is still visible above the container.
-function containerInset() {
+// that is still visible above the container. From Tailwind's md (48rem) the container
+// sits bottom left (Sheet, TabNav) and covers the map's left side instead: its width
+// plus the gutter beside it.
+export function containerInset() {
+  const wide = window.matchMedia('(min-width: 48rem)').matches
   const probe = document.createElement('div')
-  probe.style.cssText = 'position:fixed;visibility:hidden;height:calc(var(--spacing-sheet-height) + var(--spacing-sheet-bottom))'
+  probe.style.cssText = wide
+    ? 'position:fixed;visibility:hidden;width:calc(var(--spacing-shell-width) + var(--spacing-sheet-gutter))'
+    : 'position:fixed;visibility:hidden;height:calc(var(--spacing-sheet-height) + var(--spacing-sheet-bottom))'
   document.body.appendChild(probe)
-  const height = probe.getBoundingClientRect().height
+  const { width, height } = probe.getBoundingClientRect()
   probe.remove()
-  return height
+  return wide ? { left: width, bottom: 0 } : { left: 0, bottom: height }
 }
 
 // How far the map reaches past the screen at the top and the bottom (the scroll
@@ -43,10 +48,11 @@ function move(map: MapLibreMap, { lng, lat }: Target) {
   // maplibre keeps the padding after the move, so later camera moves also centre on
   // the visible part above the container.
   const runway = runwayInset()
+  const inset = containerInset()
   const options = {
     center: [lng, lat] as [number, number],
     zoom: ZOOM,
-    padding: { top: runway.top, right: 0, left: 0, bottom: runway.bottom + containerInset() },
+    padding: { top: runway.top, right: 0, left: inset.left, bottom: runway.bottom + inset.bottom },
   }
   if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) map.jumpTo(options)
   else map.flyTo(options)
