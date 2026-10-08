@@ -14,6 +14,7 @@ export default function DetailHeader({
   isPublic,
   actions,
   onClose,
+  onHost,
   children,
 }: {
   title: string
@@ -21,6 +22,8 @@ export default function DetailHeader({
   isPublic: boolean
   actions?: ReactNode
   onClose: () => void
+  // Opens the host's profile; left out when the viewer is the host.
+  onHost?: () => void
   children: ReactNode
 }) {
   return (
@@ -30,7 +33,16 @@ export default function DetailHeader({
       <div className='relative z-10 flex items-start justify-between gap-3'>
         <div className='flex min-w-0 flex-col'>
           <h1 className='text-heading-1 font-bold break-words text-heading'>{title}</h1>
-          <span className='text-text-3 text-text'>von {hostName}</span>
+          <span className='text-text-3 text-text'>
+            von{' '}
+            {onHost ? (
+              <button type='button' onClick={onHost}>
+                {hostName}
+              </button>
+            ) : (
+              hostName
+            )}
+          </span>
           {!isPublic && <span className='text-text-3 text-yellow'>(Privat)</span>}
         </div>
         <div className='flex shrink-0 items-center gap-2'>

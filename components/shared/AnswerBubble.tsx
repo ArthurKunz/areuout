@@ -4,17 +4,19 @@
 // their answer, in a rounded chat-bubble. The viewer's own answer sits
 // right-aligned in the brand colour, everyone else's in bg-main: left-aligned by
 // default (the host's question), right-aligned when `align` says so (the other
-// answers on the Frage page).
+// answers on the Frage page). With onName, the name opens its author.
 export default function AnswerBubble({
   name,
   text,
   variant,
   align = variant === 'own' ? 'right' : 'left',
+  onName,
 }: {
   name: string
   text: string
   variant: 'own' | 'other'
   align?: 'left' | 'right'
+  onName?: () => void
 }) {
   const own = variant === 'own'
   return (
@@ -24,7 +26,13 @@ export default function AnswerBubble({
           own ? 'bg-brand' : 'bg-main'
         }`}
       >
-        <span className={`block text-text-3 ${own ? 'text-main-white/70' : 'text-text'}`}>{name}</span>
+        {onName ? (
+          <button type='button' onClick={onName} className='block text-left text-text-3 text-text'>
+            {name}
+          </button>
+        ) : (
+          <span className={`block text-text-3 ${own ? 'text-main-white/70' : 'text-text'}`}>{name}</span>
+        )}
         <span className={`block break-words text-text-2 font-semibold ${own ? 'text-main-white' : 'text-heading'}`}>{text}</span>
       </div>
     </div>

@@ -19,6 +19,7 @@ import type { DetailPoll } from '@/features/parties/services/pools.service'
 import type { Database } from '@/types/database.types'
 import AnswerRow from './AnswerRow'
 import PollOptions from './PollOptions'
+import type { ProfileUser } from './ProfilePage'
 
 export type PartyDetailRow = Database['public']['Functions']['get_party_detail']['Returns'][number]
 
@@ -28,6 +29,7 @@ export type DetailPage =
   | { kind: 'requests' }
   | { kind: 'poll'; id: string }
   | { kind: 'question'; id: string }
+  | { kind: 'profile'; user: ProfileUser }
 
 const pad = (n: number) => String(n).padStart(2, '0')
 const formatTime = (iso: string) => {

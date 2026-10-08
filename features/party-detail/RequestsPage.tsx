@@ -8,6 +8,7 @@ import { supabase } from '@/lib/supabase/client'
 import type { Database } from '@/types/database.types'
 import { alertError } from '@/lib/utils'
 import { InfoCard } from './DetailCards'
+import type { ProfileUser } from './ProfilePage'
 
 export type JoinRequest = Database['public']['Functions']['get_party_join_requests']['Returns'][number]
 
@@ -28,10 +29,12 @@ export default function RequestsPage({
   partyId,
   requests,
   onAnswered,
+  onProfile,
 }: {
   partyId: string
   requests: JoinRequest[]
   onAnswered: (userId: string) => void
+  onProfile: (user: ProfileUser) => void
 }) {
   const [busy, setBusy] = useState<string | null>(null)
   const [query, setQuery] = useState('')
@@ -92,14 +95,28 @@ export default function RequestsPage({
             <li key={request.user_id}>
               {i > 0 && <div className='h-px w-full bg-divider' />}
               <div className='flex h-12.5 items-center gap-3'>
-                <Avatar
-                  size={30}
-                  url={request.avatar_url}
-                  color={request.avatar_color}
-                  firstname={request.firstname}
-                  lastname={request.lastname}
-                />
-                <span className='min-w-0 flex-1 truncate text-text-3 font-bold text-heading'>{fullName(request)}</span>
+                <button
+                  type='button'
+                  onClick={() =>
+                    onProfile({
+                      id: request.user_id,
+                      firstname: request.firstname,
+                      lastname: request.lastname,
+                      avatarUrl: request.avatar_url,
+                      avatarColor: request.avatar_color,
+                    })
+                  }
+                  className='flex min-w-0 flex-1 items-center gap-3 text-left'
+                >
+                  <Avatar
+                    size={30}
+                    url={request.avatar_url}
+                    color={request.avatar_color}
+                    firstname={request.firstname}
+                    lastname={request.lastname}
+                  />
+                  <span className='min-w-0 flex-1 truncate text-text-3 font-bold text-heading'>{fullName(request)}</span>
+                </button>
                 {/* The ✗'s circle ends at the row's edge; its tap box reaches 7px past it. */}
                 <div className='-mr-[7px] flex shrink-0'>
                   <button

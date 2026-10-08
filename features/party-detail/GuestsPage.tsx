@@ -11,12 +11,21 @@ import { supabase } from '@/lib/supabase/client'
 import { alertError } from '@/lib/utils'
 import ConfirmPrompt from './ConfirmPrompt'
 import { InfoCard } from './DetailCards'
+import type { ProfileUser } from './ProfilePage'
 
 type Guest = { user_id: string; firstname: string; lastname: string; avatar_url: string; avatar_color: string; status: string }
 
 const STATUS_ICON = { going: Check, maybe: CircleQuestionMark, not_going: X } as const
 
 const fullName = (guest: Guest) => [guest.firstname, guest.lastname].filter(Boolean).join(' ') || 'Unbekannt'
+
+const toUser = (guest: Guest): ProfileUser => ({
+  id: guest.user_id,
+  firstname: guest.firstname,
+  lastname: guest.lastname,
+  avatarUrl: guest.avatar_url,
+  avatarColor: guest.avatar_color,
+})
 
 // The body of page `Teilnehmer` (App Redesign 3.6, mockup My Parties 07): four tiles
 // with the counts, a search by name, then one card with everyone. get_party_guest_list
@@ -30,6 +39,7 @@ export default function GuestsPage({
   userId,
   myStatus,
   canRemove,
+  onProfile,
 }: {
   partyId: string
   maxGuests: number | null
@@ -37,6 +47,7 @@ export default function GuestsPage({
   // The viewer's own answer as the RSVP button shows it, so the own row follows it.
   myStatus: RsvpStatus | null
   canRemove: boolean
+  onProfile: (user: ProfileUser) => void
 }) {
   const [guests, setGuests] = useState<Guest[] | null>(null)
   const [confirm, setConfirm] = useState<Guest | null>(null)
@@ -106,10 +117,24 @@ export default function GuestsPage({
         <ul className='col-span-2 flex flex-col rounded-[25px] bg-main px-4 py-1'>
           {shown.map((guest, i) => {
             const Icon = STATUS_ICON[guest.status as RsvpStatus] as (typeof STATUS_ICON)[RsvpStatus] | undefined
-            const row = (
-              <div className='flex h-12.5 items-center gap-3'>
+            const person = (
+              <>
                 <Avatar size={30} url={guest.avatar_url} color={guest.avatar_color} firstname={guest.firstname} lastname={guest.lastname} />
                 <span className='min-w-0 flex-1 truncate text-text-3 font-bold text-heading'>{fullName(guest)}</span>
+              </>
+            )
+            // A swipeable row opens the profile through its own tap instead: a button
+            // inside it would answer the same tap a second time.
+            const swipeable = canRemove && guest.status !== 'host'
+            const row = (
+              <div className='flex h-12.5 items-center gap-3'>
+                {swipeable || guest.user_id === userId ? (
+                  person
+                ) : (
+                  <button type='button' onClick={() => onProfile(toUser(guest))} className='flex min-w-0 flex-1 items-center gap-3 text-left'>
+                    {person}
+                  </button>
+                )}
                 {guest.status === 'host' ? (
                   <span className='shrink-0 text-text-3 text-text'>Gastgeber</span>
                 ) : (
@@ -120,8 +145,8 @@ export default function GuestsPage({
             return (
               <li key={guest.user_id}>
                 {i > 0 && <div className='h-px w-full bg-divider' />}
-                {canRemove && guest.status !== 'host' ? (
-                  <SwipeToRemove onTap={() => {}} onRemove={() => setConfirm(guest)}>
+                {swipeable ? (
+                  <SwipeToRemove onTap={() => onProfile(toUser(guest))} onRemove={() => setConfirm(guest)}>
                     {row}
                   </SwipeToRemove>
                 ) : (

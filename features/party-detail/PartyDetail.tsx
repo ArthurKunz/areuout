@@ -17,6 +17,7 @@ import GuestsPage from './GuestsPage'
 import HostActions from './HostActions'
 import PageHeader from './PageHeader'
 import PollPage from './PollPage'
+import ProfilePage, { type ProfileUser } from './ProfilePage'
 import QuestionPage from './QuestionPage'
 import RequestsPage, { type JoinRequest } from './RequestsPage'
 import RsvpControl from './RsvpControl'
@@ -162,6 +163,13 @@ export default function PartyDetail({
 
   const { party, polls, questions, inviteCode, userId, requested, full, requests } = loaded
   const hostName = `${party.host_firstname} ${party.host_lastname}`
+  const host: ProfileUser = {
+    id: party.host_id,
+    firstname: party.host_firstname,
+    lastname: party.host_lastname,
+    avatarUrl: party.host_avatar_url,
+    avatarColor: party.host_avatar_color,
+  }
   // The host votes and answers in their own party (Polls.md, Question.md); everyone
   // else needs an answer to the party first.
   const canAnswer = viewer === 'host' || myStatus !== null
@@ -196,6 +204,7 @@ export default function PartyDetail({
   const page = stack.at(-1)
   const open = (next: DetailPage) => setPages([...stack, next])
   const back = () => setPages(stack.slice(0, -1))
+  const openProfile = (user: ProfileUser) => open({ kind: 'profile', user })
 
   // A request answered on the page `Anfragen` leaves the list the card counts too. From
   // the current list, not this render's: two answers may be on their way at once.
@@ -301,7 +310,16 @@ export default function PartyDetail({
       <div className='flex min-h-0 flex-1 flex-col'>
         <PageHeader
           title={
-            page.kind === 'guests' ? 'Teilnehmer' : page.kind === 'requests' ? 'Anfragen' : page.kind === 'poll' ? 'Umfrage' : 'Frage'
+            // The profile has no title, only the back button (mockup User Profile 01).
+            page.kind === 'guests'
+              ? 'Teilnehmer'
+              : page.kind === 'requests'
+                ? 'Anfragen'
+                : page.kind === 'poll'
+                  ? 'Umfrage'
+                  : page.kind === 'question'
+                    ? 'Frage'
+                    : ''
           }
           actions={page.kind === 'guests' ? rsvp : undefined}
           onBack={back}
@@ -313,11 +331,15 @@ export default function PartyDetail({
               userId={userId}
               myStatus={myStatus}
               canRemove={viewer === 'host'}
+              onProfile={openProfile}
             />
           )}
-          {page.kind === 'requests' && <RequestsPage partyId={party.id} requests={requests} onAnswered={answered} />}
-          {poll && <PollPage poll={poll} />}
-          {question && <QuestionPage question={question} hostName={hostName} userId={userId} />}
+          {page.kind === 'requests' && (
+            <RequestsPage partyId={party.id} requests={requests} onAnswered={answered} onProfile={openProfile} />
+          )}
+          {poll && <PollPage poll={poll} userId={userId} onProfile={openProfile} />}
+          {question && <QuestionPage question={question} host={host} userId={userId} onProfile={openProfile} />}
+          {page.kind === 'profile' && <ProfilePage user={page.user} />}
         </PageHeader>
       </div>
     )
@@ -330,6 +352,7 @@ export default function PartyDetail({
         hostName={hostName}
         isPublic={party.is_public}
         onClose={onClose}
+        onHost={party.host_id === userId ? undefined : () => openProfile(host)}
         actions={
           viewer === 'host' && inviteCode ? (
             <HostActions
