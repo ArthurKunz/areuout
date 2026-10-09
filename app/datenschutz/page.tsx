@@ -20,7 +20,7 @@ import LegalTextScreen, { type LegalSection } from '@/features/profile/LegalText
 //                   DPA, Abschnitt 11.1, zusätzlich Standardvertragsklauseln
 //   Google Maps     features/parties/components/PartyMap.tsx (Static Maps API)
 //   Google Sign-In  features/auth/services/auth.service.ts:15, features/auth/components/AuthSheet.tsx
-//   Photon/komoot   features/parties/components/AddressSearchField.tsx:16
+//   Photon/komoot   features/parties/services/address.service.ts:5
 //
 // Drei Messungen, die im Text auftauchen und deshalb hier festgehalten sind:
 //
@@ -95,7 +95,7 @@ const SECTIONS: LegalSection[] = [
     paragraphs: [
       'Konto: deine E-Mail-Adresse, dein Passwort, der Zeitpunkt der Anmeldung und der letzten Anmeldung sowie die Information, ob deine E-Mail-Adresse bestätigt ist und ob du dich per E-Mail oder über Google anmeldest. Das Passwort wird ausschließlich als kryptografischer Hash gespeichert, niemals im Klartext — auch wir können es nicht lesen.',
       'Profil: Vorname, Nachname, eine Avatar-Farbe und, wenn du eines hochlädst, ein Profilbild.',
-      'Partys, die du erstellst: Titel, Beschreibung, Datum, Uhrzeit, optionale Endzeit, Adresse, optionale maximale Gästezahl, ein Hintergrundbild — entweder eines der vorgegebenen Motive oder ein eigenes Foto — sowie ein zufällig erzeugter Einladungscode und der Erstellzeitpunkt.',
+      'Partys, die du erstellst: Titel, Beschreibung, Datum, Uhrzeit, optionale Endzeit, Adresse, optionale maximale Gästezahl, ein optionaler Preis, ein Hintergrundbild — entweder eines der vorgegebenen Motive oder ein eigenes Foto — sowie ein zufällig erzeugter Einladungscode und der Erstellzeitpunkt.',
       'Teilnahme: deine Antwort auf eine Einladung — zugesagt, vielleicht oder abgesagt — und der Zeitpunkt, zu dem du sie gegeben hast.',
       'Umfragen: die Fragen und Antwortmöglichkeiten, die ein Gastgeber stellt, und deine Auswahl beziehungsweise dein Freitext dazu.',
       'Technische Verbindungsdaten: Beim Aufruf der App und bei jeder Datenbankabfrage fallen bei unseren Dienstleistern IP-Adresse, Browser- und Gerätekennung, Zeitpunkt, Herkunftsland und die aufgerufene Adresse an. Die App selbst greift auf keine dieser Angaben zu und speichert sie nirgends in ihrer eigenen Datenbank.',
@@ -121,7 +121,7 @@ const SECTIONS: LegalSection[] = [
       'Gäste derselben Party sehen deinen Vornamen, deinen Nachnamen, dein Profilbild beziehungsweise deine Initialen und deine Antwort auf die Einladung. Wer eine Umfrage beantwortet, dessen Antwort sehen die übrigen Gäste derselben Party und der Gastgeber.',
       'Der Gastgeber sieht dieselben Angaben und kann dich von seiner Gästeliste entfernen.',
       'Dein Profil selbst ist nicht öffentlich. Andere kommen an deinen Namen nur über eine Abfrage, die auf die Gästeliste einer konkreten Party beschränkt ist.',
-      'Wer den Einladungslink einer Party hat, sieht auch ohne Konto ihren Titel, ihre Beschreibung, das Datum, das Hintergrundbild und die Adresse. Die Gästeliste und die Umfragen zeigt die App nur angemeldeten Gästen. Der Link ist das einzige Geheimnis, das diese Angaben schützt — gib ihn nur an Menschen weiter, die eingeladen sein sollen.',
+      'Wer den Einladungslink einer Party hat, sieht auch ohne Konto ihren Titel, ihre Beschreibung, das Datum und das Hintergrundbild. Die Adresse, die Gästeliste und die Umfragen zeigt die App nur angemeldeten Gästen. Der Link ist das einzige Geheimnis, das diese Angaben schützt — gib ihn nur an Menschen weiter, die eingeladen sein sollen.',
       'Ist eine Party vorbei, blendet die App die Adresse aus. Der Link bleibt gültig, die Anschrift steht dann aber nicht mehr darin.',
       'Wird ein Einladungslink in einem Chat geteilt, erzeugt der Messenger daraus eine Vorschau und lädt dafür Titel, Beschreibung und Hintergrundbild von unserem Server. Die Adresse steht bewusst nicht in dieser Vorschau, weil sie sonst in fremden Chatverläufen und auf gesperrten Bildschirmen auftauchen würde.',
       'Profilbilder und Party-Hintergründe liegen in einem öffentlichen Dateispeicher. Wer die Adresse einer solchen Datei kennt, kann das Bild auch ohne Konto abrufen, solange es dort liegt. Lädst du ein neues Bild hoch oder wechselst du zurück zu den Initialen, wird das alte gelöscht und seine Adresse ungültig.',

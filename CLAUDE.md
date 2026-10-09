@@ -114,10 +114,18 @@ actually protects the data.
   16+ minimum lives in the terms of use. The Datenschutzerklärung names these as not
   collected, and `supabase/migrations/README.md` records three migrations deleted to
   stop them coming back. Reintroducing one contradicts a published legal text.
-- `ASSUMED_PARTY_HOURS` in `lib/utils.ts` and `c_assumed_hours` in the migrations are
-  the same six hours written twice. Change one, change the other — together they decide
-  when the database stops handing out a finished party's address.
-- Colours, sizes and spacing come from the variables in `app/globals.css`. If no variable fits, ask before adding one.
+- `PARTY_VISIBLE_HOURS` in `lib/utils.ts` and `private.party_visible_until` in the
+  migrations are the same 24 hours written twice. Change one, change the other —
+  together they decide when a party leaves every map and list, when requests close, and
+  when nobody but the host gets its address any more.
+- `MAX_PARTY_DAYS` in `features/create-party/draft.ts` and the two `interval '30 days'`
+  checks in `create_party` and `update_party` are the same cap written twice. Change one,
+  change the other. It is a separate rule from the pair above: it decides how long a
+  party may be declared to run, not when it is over.
+- Colours, sizes, spacing, durations and curves come from the variables in `app/globals.css`. If no variable fits, ask before adding one.
+- The look in `DESIGN.md` is locked: container width, glass tiers, header rule, motion.
+  Never change a value in it and never add a new surface style or animation without
+  asking Arthur.
 - Icons come from `lucide-react`. Never hand-roll an `<svg>` for an icon.
 - No monetisation. Not ads, not paid tiers, not a payment provider, not an affiliate
   link. If a change would push past a free tier, say so before writing it.
@@ -132,6 +140,7 @@ actually protects the data.
 | Why the database is built the way it is — RLS, anon, storage, the traps | `SCHEMA.md` |
 | The live truth: policies, grants, triggers, constraints | the database itself, over the Supabase MCP. `SCHEMA.md` carries the queries |
 | Which migrations are actually on the database | `supabase/migrations/README.md` |
+| Width, glass tiers, header rule: the locked look | `DESIGN.md` |
 | Environment variables and what each one is for | `.env.example` |
 | Setup and deployment | `README.md` |
 | Product, audience, tone, scope, roadmap, dates | the vault, below |

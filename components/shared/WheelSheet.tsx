@@ -11,7 +11,8 @@ const VISIBLE_ITEMS = 7
 const LIST_HEIGHT = ITEM_HEIGHT * VISIBLE_ITEMS
 const EDGE_PADDING = (LIST_HEIGHT - ITEM_HEIGHT) / 2
 
-// Fades the rows out towards the top and bottom edges, like the native wheel.
+// Fades the rows out towards the top and bottom edges, like the native wheel. A mask
+// works on alpha only, so it fades into whatever surface sits behind, dark glass included.
 const EDGE_FADE = 'linear-gradient(to bottom, transparent 0%, #000 28%, #000 72%, transparent 100%)'
 
 export type WheelColumn = {
@@ -88,8 +89,8 @@ function Column({ labels, index, onChange }: WheelColumn) {
           type='button'
           onClick={() => handleTap(i)}
           style={{ height: ITEM_HEIGHT }}
-          className={`flex w-full snap-center items-center justify-center text-heading-4 transition-colors duration-150 ${
-            i === index ? 'text-sheet-heading' : 'text-sheet-body'
+          className={`flex w-full snap-center items-center justify-center text-heading-4 transition-colors duration-(--duration-press) ease-ios ${
+            i === index ? 'text-heading' : 'text-text'
           }`}
         >
           {label}
@@ -99,16 +100,18 @@ function Column({ labels, index, onChange }: WheelColumn) {
   )
 }
 
-// Matches the duration on both transitions below: the sheet has to finish playing
-// its entry backwards before the parent is told to unmount it.
+// Matches --duration-move in globals.css, the duration on both transitions below: the
+// sheet has to finish playing its entry backwards before the parent is told to unmount
+// it. Change one, change the other.
 const CLOSE_MS = 300
 
 // Both controls belong to the PAGE, not to the sheet: the same 45px circle in the
 // same top corners as every other back button in the app. They sit ABOVE the scrim,
-// unlike SheetLayout's chevron, which deliberately hides under it — while the wheel
-// is open the top corners are its two answers, not the page's way back.
+// so while the wheel is open the top corners are its two answers, not the page's way
+// back. Styled as IconButton, but not rendered through it: these need their own
+// position in the column and the fade-in.
 const cornerButtonClass =
-  'fixed top-0 z-50 mt-7.5 flex h-11.25 w-11.25 items-center justify-center rounded-full bg-secondary backdrop-blur-xl transition-[transform,opacity] duration-300 ease-[cubic-bezier(0.32,0.72,0,1)] active:scale-95'
+  'pointer-events-auto absolute top-0 mt-7.5 flex h-11.25 w-11.25 items-center justify-center rounded-full bg-button-circle glass-control transition-[scale,opacity] duration-(--duration-move) ease-ios active:scale-95'
 
 export default function WheelSheet({
   columns,
@@ -135,18 +138,21 @@ export default function WheelSheet({
   const closeTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined)
   useEffect(() => () => clearTimeout(closeTimer.current), [])
 
-  const handleClose = () => {
+  // `before` runs once the exit has played, right before the parent unmounts the sheet.
+  const leave = (before?: () => void) => {
     // A second tap while it is already leaving must not queue another close.
     if (closeTimer.current) return
     setShown(false)
-    closeTimer.current = setTimeout(onClose, CLOSE_MS)
+    closeTimer.current = setTimeout(() => {
+      before?.()
+      onClose()
+    }, CLOSE_MS)
   }
+  const handleClose = () => leave()
 
-  const handleCancel = () => {
-    if (closeTimer.current) return
-    onCancel()
-    handleClose()
-  }
+  // The value goes back once the sheet is gone, not while it slides away: put back
+  // first, the wheels would visibly jump to the old value on their way out (step 11d).
+  const handleCancel = () => leave(onCancel)
 
   // The document must not scroll behind the sheet.
   useEffect(() => {
@@ -159,46 +165,53 @@ export default function WheelSheet({
     <>
       <div
         onClick={handleClose}
-        className={`fixed inset-0 z-40 bg-main/50 backdrop-blur-xs touch-none transition-opacity duration-300 ${
+        className={`fixed inset-0 z-40 bg-main/50 backdrop-blur-xs touch-none transition-opacity duration-(--duration-move) ease-ios ${
           shown ? 'opacity-100' : 'opacity-0'
         }`}
       />
 
-      {/* The way out, spelled out. Tapping the dimmed backdrop was the only exit
-          before, and an exit nobody can see is one nobody finds. */}
-      <button
-        type='button'
-        onClick={handleCancel}
-        aria-label='Abbrechen'
-        className={`left-4 ${cornerButtonClass} ${shown ? 'opacity-100' : 'opacity-0'}`}
-      >
-        <X size={24} strokeWidth={3} className='text-white' />
-      </button>
+      {/* The container's column: the whole width on a phone, the container's on a wide
+          screen (DESIGN.md, "Width and position"). Takes no touches itself, so a tap
+          beside the buttons still reaches the backdrop. */}
+      <div className='pointer-events-none fixed inset-x-0 top-0 z-50 md:right-auto md:left-sheet-gutter md:w-shell-width'>
+        {/* The way out, spelled out. Tapping the dimmed backdrop was the only exit
+            before, and an exit nobody can see is one nobody finds. */}
+        <button
+          type='button'
+          onClick={handleCancel}
+          aria-label='Abbrechen'
+          className={`left-4 ${cornerButtonClass} ${shown ? 'opacity-100' : 'opacity-0'}`}
+        >
+          <X size={24} strokeWidth={3} className='text-main-white' />
+        </button>
 
-      <button
-        type='button'
-        onClick={handleClose}
-        aria-label='Übernehmen'
-        className={`right-4 ${cornerButtonClass} ${shown ? 'opacity-100' : 'opacity-0'}`}
-      >
-        <Check size={24} strokeWidth={3} className='text-white' />
-      </button>
+        <button
+          type='button'
+          onClick={handleClose}
+          aria-label='Übernehmen'
+          className={`right-4 ${cornerButtonClass} ${shown ? 'opacity-100' : 'opacity-0'}`}
+        >
+          <Check size={24} strokeWidth={3} className='text-main-white' />
+        </button>
+      </div>
 
       {/* Grown by height rather than slid in with a transform: a transform on this
           element would put its backdrop-blur in its own compositing group, and the
-          sheet would sit there flat and grey until the animation finished. */}
+          sheet would sit there flat and grey until the animation finished. The surface is
+          the shell container's dark glass: translucent bg-main over the dimmed scrim. */}
       <div
-        className={`fixed inset-x-0 bottom-0 z-50 grid transition-[grid-template-rows] duration-300 ease-[cubic-bezier(0.32,0.72,0,1)] ${
+        className={`fixed inset-x-0 bottom-0 z-50 grid md:right-auto md:left-sheet-gutter md:w-shell-width transition-[grid-template-rows] duration-(--duration-move) ease-ios ${
           shown ? 'grid-rows-[1fr]' : 'grid-rows-[0fr]'
         }`}
       >
         <div className='overflow-hidden'>
-          <div className='rounded-t-3xl bg-sheet px-4 pb-safe-rsvp pt-6 backdrop-blur-2xl'>
+          <div className='rounded-t-3xl bg-main px-4 pb-safe-rsvp pt-6 glass-overlay'>
             <div className='relative flex w-full'>
-              {/* Selection band sits behind the columns, dead centre. */}
+              {/* Selection band sits behind the columns, dead centre, in the same fill as
+                  the shared selection fill (bg-selector). */}
               <div
                 aria-hidden='true'
-                className='pointer-events-none absolute inset-x-0 rounded-xl bg-button-secondary/80'
+                className='pointer-events-none absolute inset-x-0 rounded-xl bg-selector'
                 style={{ height: ITEM_HEIGHT, top: EDGE_PADDING }}
               />
               {columns.map((column, i) => (

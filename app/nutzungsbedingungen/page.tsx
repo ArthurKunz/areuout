@@ -18,12 +18,13 @@ import LegalTextScreen, { type LegalSection } from '@/features/profile/LegalText
 //                         Auth-Sperre über die ganze Seite
 //   Antwortzwang          InviteScreen.tsx:117 — ein angemeldeter Gast ohne Antwort
 //                         sieht die Party erst, nachdem er geantwortet hat
-//   Party vorbei          isPartyOver in lib/utils.ts:65; InviteScreen und
-//                         PartyDetailScreen blenden dann Adresse und RSVP-Zeile aus
+//   Party vorbei          isPartyOver in lib/utils.ts; PartyDetail blendet dann auf der
+//                         Einladungsseite Adresse und Antwortleiste aus
 //   Chat-Vorschau         app/e/[invite_code]/page.tsx:41 — bewusst OHNE Adresse
 //   Gästezahl             events.max_guests, RLS-Policy party_has_room plus Trigger
 //                         rsvps_enforce_capacity, Ablehnung mit "Diese Party ist voll."
-//   Gast entfernen        PartyGuestsScreen.tsx:64 — der Link funktioniert danach weiter
+//   Gast entfernen        features/party-detail/GuestsPage.tsx (deleteRsvp) — der Link
+//                         funktioniert danach weiter
 //   Umfrageantworten      pool_responses: Mitglieder derselben Party lesen ALLE Antworten,
 //                         auch die Freitexte
 //   Bildbearbeitung       lib/image.ts — EXIF raus, verkleinert, als JPEG neu kodiert
@@ -36,7 +37,7 @@ import LegalTextScreen, { type LegalSection } from '@/features/profile/LegalText
 //                         wahlweise Google. Eine Möglichkeit, die E-Mail-Adresse in der
 //                         App zu ändern, gibt es nicht — es gibt keinen Screen dafür
 //   Hintergrundmotive     public/backgrounds/bg-1..8.jpg, ausgewählt statt hochgeladen
-//                         (CreatePartyScreen.tsx:40)
+//                         (COVER_PRESETS, features/create-party/steps/CoverStep.tsx)
 //
 // Was der Text bewusst NICHT sagt:
 //
@@ -101,7 +102,7 @@ const SECTIONS: LegalSection[] = [
     heading: '5. Der Einladungslink',
     paragraphs: [
       'Jede Party bekommt einen Link mit einem zufälligen Code. Dieser Code ist der einzige Schutz der Party: Wer ihn hat, kommt an sie heran, und wir prüfen dabei nicht, ob er eingeladen war.',
-      'Wer den Link öffnet, sieht auch ohne Konto Titel, Beschreibung, Datum, Uhrzeit, Hintergrundbild und die Adresse. Die Gästeliste zeigt die App nur angemeldeten Gästen — sie wird nicht bloß ausgeblendet, der Server beantwortet die Anfrage ohne Konto gar nicht erst.',
+      'Wer den Link öffnet, sieht auch ohne Konto Titel, Beschreibung, Datum, Uhrzeit und Hintergrundbild. Die Adresse und die Gästeliste zeigt die App nur angemeldeten Gästen — sie werden nicht bloß ausgeblendet, der Server gibt sie ohne Konto gar nicht erst heraus.',
       'Bist du angemeldet und noch nicht eingetragen, musst du zuerst zu- oder absagen; die Party-Seite öffnet sich danach.',
       'Wird der Link in einem Chat geteilt, erzeugt der Messenger daraus eine Vorschau mit Titel, Beschreibung und Hintergrundbild. Die Adresse steht bewusst nicht darin, weil sie sonst in fremden Chatverläufen und auf gesperrten Bildschirmen auftauchen würde.',
       'Ist eine Party vorbei, blendet die App die Adresse aus und nimmt keine Antworten mehr an. Der Link bleibt gültig und zeigt die Party weiterhin als vergangen.',

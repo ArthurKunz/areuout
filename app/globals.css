@@ -2,63 +2,222 @@
 
 @theme {
     /* BRAND COLORS */
-    --color-brand-pink: #FF0090;
-    --color-brand-lila: #A336FF;
-    --color-brand-blue: #161BFA;
+    --color-brand: #1E5CFF;
 
     /* BASE COLORS */
-    --color-main: #000;
-    --color-secondary: rgba(118, 118, 128, 0.25);
-    --color-tertiary: rgba(255, 255, 255, 0.25);
-    --color-quaternary: rgba(29, 29, 29, 0.9);
+    --color-main: #00000066;
+    --color-main-white: #ffffffe6;
 
     /*COMPONENTS*/
-    --color-arrow: rgba(127, 127, 127, 0.9);
-    /* Hairline dividers. The bright one sits inside the glass ••• panel, where the
-       blurred backdrop swallows anything darker; the subtle one sits on the black
-       page, where it only has to hint at a break. */
-    --color-divider: #3D3D3D;
-    --color-divider-subtle: #161616;
+    --color-divider: #ffffff33;
+    --color-slider: #ffffff33;
+    --color-selector: #ffffff1A;
+    --color-button-circle: #00000040;
+    --color-button-toggle-off: #ffffff40;
+    --color-pin-border: #2A2A2A;
+    --color-progress-track: #ffffff0D;
 
     /* TEXT */
-    --color-heading: rgba(255, 255, 255, 0.9);
-    --color-subheading: rgba(148, 148, 148, 0.9);
-    --color-label-large: rgba(255, 255, 255, 0.9);
-    --color-label-small: rgba(204, 204, 204, 0.5);
-    --color-body: rgba(111, 111, 111, 0.9);
-    --color-link: #0A84FF;
+    --color-heading: #ffffe6;
+    --color-heading-black: #000000;
+    --color-text: #ffffff80;
+    --color-input: #ffffff40;
 
-    /* RSVP STATUS (Apple dark-mode system colors) */
-    --color-success: #30D158;
-    --color-maybe: #FFD60A;
-    --color-warning: #FF453A;
-    --color-host: #409CFF;
-
-    /* LIGHT SURFACE (the sign-up sheet over the invite page — the only light UI in the app) */
-    --color-sheet: #FFFFFF;
-    --color-sheet-heading: #0A0A0A;
-    --color-sheet-body: #8A8A8E;
-    --color-button-primary: #000000;
-    --color-button-secondary: #E9E9EB;
+    /* COLORS */
+    --color-yellow: #FFCC00;
+    --color-red: #D32F2F;
+    --color-green: #34C759;
+    --color-orange: #FF8D28;
+    --color-mint: #00C8B3;
+    --color-purple: #CB30E0;
+    --color-blue: #0088FF;
+    --color-rust: #D65A19;
+    --color-pink: #C02D75;
+    --color-sky: #5AC8FA;
+    --color-cobalt: #2878D0;
+    --color-taupe: #A2845E;
+    --color-violet: #7B48C7;
+    --color-lime: #A4D400;
+    --color-slate: #7A8594;
 
     /* SKELETON (loading placeholders) */
     --color-skeleton: rgba(118, 118, 128, 0.25);
     --color-skeleton-sheen: rgba(255, 255, 255, 0.08);
 
     /* TEXT SIZES */
-    --text-heading-1: 35px;
-    --text-heading-2: 30px;
-    --text-heading-3: 25px;
+    --text-heading-1: 26px;
+    --text-heading-2: 24px;
+    --text-heading-3: 22px;
     --text-heading-4: 20px;
 
+    --text-text-1: 18px;
+    --text-text-2: 16px;
+    --text-text-3: 14px;
+    --text-text-4: 12px;
+
+    --text-hint-1: 10px;
+    --text-hint-2: 8px;
+
+    /* RESTORED: removed in 08b45bf while WarningBanner and other screens still use
+       them; values as they were before. */
+    --color-secondary: rgba(118, 118, 128, 0.25);
+    --color-warning: #FF453A;
+    --color-sheet: #FFFFFF;
+    --color-subheading: rgba(148, 148, 148, 0.9);
+    --color-label-large: rgba(255, 255, 255, 0.9);
     --text-subheading-1: 15px;
-
-    --text-label-1: 13px;
-    --text-label-2: 12px;
-
-    --text-body-1: 12px;
-
     --text-button: 16px;
+
+    /* FONT WEIGHTS: semibold a step under Tailwind's 600, set by eye on the iPhone.
+       San Francisco has continuous weights; a font with fixed weights rounds this up
+       to its 600. Bold stays at Tailwind's 700. */
+    --font-weight-semibold: 550;
+
+    /* SHELL (map, container, bottom navigation) */
+    --color-nav-selector: #00000040;
+    --blur-nav: 15px;
+    --blur-sheet: 10px;
+    /* Every container and the navbar: 385px, narrower only where the phone has no room
+       for it beside the two gutters. From md (768px) the block sits bottom left. */
+    --spacing-shell-width: min(385px, calc(100vw - 2 * var(--spacing-sheet-gutter)));
+    --spacing-nav-height: 75px;
+    --spacing-nav-bottom: 20px;
+    /* The container's bottom edge: 14px under the bar's, so the two always move together.
+       Keep it at least 6px: iOS 26 fills its toolbar with a flat colour when a fixed layer
+       covers the bottom edge's centre 4px up, which breaks the full-bleed map. */
+    --spacing-sheet-bottom: calc(var(--spacing-nav-bottom) - 14px);
+    --spacing-sheet-height: 50svh;
+    /* The create flow's container fits its content up to this. */
+    --spacing-sheet-height-max: 80svh;
+    --spacing-sheet-gutter: 10px;
+    --radius-sheet: 35px;
+    /* Scroll runway: how far the map reaches above and below the screen. At least
+       Safari's status bar and its bottom toolbar, with room to spare. */
+    --spacing-runway-top: 100px;
+    --spacing-runway-bottom: 200px;
+    /* The map style's background layer (lib/map/style.json, "background"). Written
+       twice: change one, change the other. */
+    --color-map: #426a5a;
+}
+
+/* GLASS (step 11b): the four tiers of glass-surface, glass-control, glass-field and
+   glass-overlay below. Static, because only that CSS reads them, never a utility. */
+@theme static {
+    --glass-saturate: 160%;
+
+    /* Container and navbar. The blur stays the shell's own (10px / 15px). */
+    --glass-surface-blur: var(--blur-sheet);
+    --glass-surface-rim-start: rgb(255 255 255 / 0.37);
+    --glass-surface-rim-end: rgb(255 255 255 / 0.2);
+    --glass-surface-highlight: inset 0 1px 0 rgb(255 255 255 / 0.23);
+    --glass-surface-glow: inset 0 0 16px rgb(255 255 255 / 0.04);
+    --glass-surface-shadow: 0 8px 32px rgb(0 0 0 / 0.17);
+    /* The navbar's own outer shadow: it reaches down to the screen's bottom edge, where
+       iOS 26 decides Safari's toolbar tint. If the green strip comes back, set this to
+       0 0 #0000 (box-shadow lists take no `none`). */
+    --glass-nav-shadow: var(--glass-surface-shadow);
+
+    /* Buttons: round buttons, pills, BigButton. */
+    --glass-control-blur: 24px;
+    --glass-control-rim-start: rgb(255 255 255 / 0.4);
+    --glass-control-rim-end: rgb(255 255 255 / 0.2);
+    --glass-control-highlight: inset 0 1px 0 rgb(255 255 255 / 0.25);
+    --glass-control-glow: inset 0 0 16px rgb(255 255 255 / 0.05);
+    --glass-control-shadow: 0 4px 16px rgb(0 0 0 / 0.18);
+
+    /* Inputs, rows, cards: the control tier about a third weaker. */
+    --glass-field-blur: var(--glass-control-blur);
+    --glass-field-rim-start: rgb(255 255 255 / 0.27);
+    --glass-field-rim-end: rgb(255 255 255 / 0.13);
+    --glass-field-highlight: inset 0 1px 0 rgb(255 255 255 / 0.17);
+    --glass-field-glow: inset 0 0 16px rgb(255 255 255 / 0.03);
+    --glass-field-shadow: 0 4px 16px rgb(0 0 0 / 0.12);
+
+    /* Menus, prompts, the picker panel. */
+    --glass-overlay-blur: 40px;
+    --glass-overlay-rim-start: rgb(255 255 255 / 0.37);
+    --glass-overlay-rim-end: rgb(255 255 255 / 0.2);
+    --glass-overlay-highlight: inset 0 1px 0 rgb(255 255 255 / 0.23);
+    --glass-overlay-glow: inset 0 0 16px rgb(255 255 255 / 0.04);
+    --glass-overlay-shadow: 0 16px 48px rgb(0 0 0 / 0.23);
+}
+
+/* MOTION (step 11d): the one set of curves and durations. No component writes a number
+   of its own; see DESIGN.md, "Motion". Static, so every token is emitted even when it is
+   only read through duration-(--duration-*), which Tailwind cannot see. */
+@theme static {
+    /* The iOS sheet curve: everything that moves on screen or leaves it. */
+    --ease-ios: cubic-bezier(0.32, 0.72, 0, 1);
+    /* A strong ease-out, only for things that appear. */
+    --ease-out-soft: cubic-bezier(0.23, 1, 0.32, 1);
+
+    --duration-press: 150ms;  /* press down and release */
+    --duration-exit: 160ms;   /* something leaves */
+    --duration-enter: 220ms;  /* something appears */
+    /* Something changes place: the page push, the TabNav selector, the swipe settle,
+       Collapse, WheelSheet. 300ms is what all of them shipped with in step 11b. */
+    --duration-move: 300ms;
+}
+
+/* One glass look, four strengths. Components layer on purpose: a position utility on
+   the element (fixed, absolute) still wins over the `relative` the rim needs. The
+   background stays the element's own class. An element can override one value with an
+   arbitrary property, e.g. TabNav's [--glass-blur:var(--blur-nav)]. */
+@layer components {
+    .glass-surface {
+        --glass-blur: var(--glass-surface-blur);
+        --glass-rim-start: var(--glass-surface-rim-start);
+        --glass-rim-end: var(--glass-surface-rim-end);
+        --glass-highlight: var(--glass-surface-highlight);
+        --glass-glow: var(--glass-surface-glow);
+        --glass-shadow: var(--glass-surface-shadow);
+    }
+    .glass-control {
+        --glass-blur: var(--glass-control-blur);
+        --glass-rim-start: var(--glass-control-rim-start);
+        --glass-rim-end: var(--glass-control-rim-end);
+        --glass-highlight: var(--glass-control-highlight);
+        --glass-glow: var(--glass-control-glow);
+        --glass-shadow: var(--glass-control-shadow);
+    }
+    .glass-field {
+        --glass-blur: var(--glass-field-blur);
+        --glass-rim-start: var(--glass-field-rim-start);
+        --glass-rim-end: var(--glass-field-rim-end);
+        --glass-highlight: var(--glass-field-highlight);
+        --glass-glow: var(--glass-field-glow);
+        --glass-shadow: var(--glass-field-shadow);
+    }
+    .glass-overlay {
+        --glass-blur: var(--glass-overlay-blur);
+        --glass-rim-start: var(--glass-overlay-rim-start);
+        --glass-rim-end: var(--glass-overlay-rim-end);
+        --glass-highlight: var(--glass-overlay-highlight);
+        --glass-glow: var(--glass-overlay-glow);
+        --glass-shadow: var(--glass-overlay-shadow);
+    }
+    .glass-surface, .glass-control, .glass-field, .glass-overlay {
+        position: relative;
+        -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
+        backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
+        box-shadow: var(--glass-highlight), var(--glass-glow), var(--glass-shadow);
+    }
+    /* The rim: a 1px ring inside the element, light from the top left, transparent in
+       the middle, softer at the bottom right. The two masks cut everything but the
+       padding away, so it follows any radius; it takes no space and no touches. */
+    .glass-surface::before, .glass-control::before, .glass-field::before, .glass-overlay::before {
+        content: '';
+        position: absolute;
+        inset: 0;
+        padding: 1px;
+        border-radius: inherit;
+        background: linear-gradient(135deg, var(--glass-rim-start), transparent 35%, transparent 65%, var(--glass-rim-end));
+        -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+        -webkit-mask-composite: xor;
+        mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+        mask-composite: exclude;
+        pointer-events: none;
+    }
 }
 
 @layer base {
@@ -96,6 +255,33 @@
     height: 0;
 }
 
+/* The scroll runway, while the shell's map is on the page. iOS 26 Safari draws page
+   pixels under its status bar and toolbar only once the page is scrolled, and only
+   where the page reaches; at scroll 0 or past the page's end it shows a colour of its
+   own. So the map reaches past the screen at both ends (ShellMap), the page sits
+   scrolled to the runway's top (ShellMap puts it back if anything moves it), and
+   nobody can scroll or rubber-band it away from there. The map colour behind it is
+   for the first frame before that scroll. */
+html:has([data-runway]) {
+    overflow: hidden;
+    overscroll-behavior: none;
+    background-color: var(--color-map);
+}
+
+/* The map runs under the status bar (viewport-fit=cover) and starts the runway above
+   the screen, so its top controls have to start below both. Unlayered and one class
+   more specific than maplibre's own rule, so it wins regardless of which stylesheet
+   loads last. */
+.maplibregl-map .maplibregl-ctrl-top-right {
+    top: calc(var(--spacing-runway-top) + env(safe-area-inset-top, 0px));
+}
+
+/* Reduced motion: anything that changes place collapses to an instant; presses, fades
+   and colour changes keep their duration. Unlayered, so it wins over the theme's :root. */
+@media (prefers-reduced-motion: reduce) {
+    :root { --duration-move: 0.01ms; }
+}
+
 @keyframes skeleton-shimmer {
     100% { transform: translateX(100%); }
 }
@@ -112,16 +298,21 @@
     100% { opacity: 0.15; }
 }
 
-/* BottomNav: the icon that just became active swells while the capsule slides under it. */
-@keyframes nav-icon-pop {
-    0%   { transform: scale(1); }
-    45%  { transform: scale(1.22); }
-    100% { transform: scale(1); }
-}
-
 @keyframes fade-in-up {
     from { opacity: 0; transform: translateY(8px); }
     to   { opacity: 1; transform: none; }
+}
+
+/* The selected party's radar: grows from the spot to the full radius while it fades
+   out, like Find My's approximate location. Two keyframes so growth and fade can run
+   on different curves. */
+@keyframes radar-grow {
+    from { transform: scale(0.05); }
+    to   { transform: scale(1); }
+}
+@keyframes radar-fade {
+    from { opacity: 1; }
+    to   { opacity: 0; }
 }
 
 @layer utilities {
@@ -174,20 +365,165 @@
         .spinner-blade { animation: none; opacity: 0.5; }
     }
 
-    /* Replayed by remounting the icon on a key change, so it fires on every switch. */
-    .animate-nav-icon-pop {
-        animation: nav-icon-pop 0.3s cubic-bezier(0.32, 0.72, 0, 1);
-    }
-    @media (prefers-reduced-motion: reduce) {
-        .animate-nav-icon-pop { animation: none; }
-    }
-
-    /* Enter animation for content that swaps in place (e.g. the parties tab list). */
+    /* Enter animation for content that swaps in place (e.g. the parties tab list).
+       Opacity on an ancestor flattens any glass inside it for the animation's length
+       (Collapse.tsx), so it goes only on content without glass. */
     .animate-fade-in-up {
-        animation: fade-in-up 0.3s cubic-bezier(0.32, 0.72, 0, 1) both;
+        animation: fade-in-up var(--duration-enter) var(--ease-out-soft) both;
     }
     @media (prefers-reduced-motion: reduce) {
         .animate-fade-in-up { animation: none; }
+    }
+
+    /* Growth eases out; the fade eases in, so the circle stays visible while it grows
+       and is gone exactly when the loop restarts at the centre — no visible pause, no
+       jump back. */
+    .radar-pulse {
+        animation:
+            radar-grow 2s cubic-bezier(0.215, 0.61, 0.355, 1) infinite,
+            radar-fade 2s cubic-bezier(0.4, 0, 1, 1) infinite;
+    }
+    @media (prefers-reduced-motion: reduce) {
+        /* A still, faint circle at the full radius instead. */
+        .radar-pulse { animation: none; transform: none; opacity: 0.5; }
+    }
+
+    /* The detail's pages (step 11d), an iOS push: a page slides in from the right over
+       the one underneath, which moves a quarter to the left, and back is the exact
+       reverse. Pages are see-through over the glass, so the one underneath fades out
+       entirely rather than dimming, or both would read at once. PartyDetail sets
+       data-state, and drops a leaving page on its transitionend. */
+    .page-layer {
+        transition:
+            transform var(--duration-move) var(--ease-ios),
+            opacity var(--duration-move) var(--ease-ios);
+    }
+    .page-layer[data-state='under'] {
+        transform: translateX(-25%);
+        opacity: 0;
+    }
+    .page-layer[data-state='leaving'] {
+        transform: translateX(100%);
+    }
+    @starting-style {
+        .page-layer[data-pushed][data-state='top'] {
+            transform: translateX(100%);
+        }
+    }
+    @media (prefers-reduced-motion: reduce) {
+        /* No travel, only the fade. --duration-move is near zero here, so the fade
+           takes the enter duration instead. */
+        .page-layer {
+            transition: opacity var(--duration-enter) var(--ease-ios);
+        }
+        .page-layer[data-state] {
+            transform: none;
+        }
+        .page-layer[data-state='leaving'] {
+            opacity: 0;
+        }
+        @starting-style {
+            .page-layer[data-pushed][data-state='top'] {
+                opacity: 0;
+            }
+        }
+    }
+
+    /* Menus and prompts (step 11d). They stay rendered and switch with data-open: closed
+       is display none, and display is part of the transition (allow-discrete), so the
+       exit plays before the element goes. In: --duration-enter on the soft ease-out;
+       out: --duration-exit on the iOS curve. .pop grows out of its trigger from 0.95
+       (set transform-origin on the element); .pop-fade only fades, for a prompt's
+       backdrop, which must not show the screen's edges by shrinking. */
+    .pop, .pop-fade {
+        transition-property: opacity, transform, display;
+        transition-behavior: allow-discrete;
+        transition-duration: var(--duration-enter);
+        transition-timing-function: var(--ease-out-soft);
+    }
+    .pop:not([data-open]), .pop-fade:not([data-open]) {
+        display: none;
+        opacity: 0;
+        transition-duration: var(--duration-exit);
+        transition-timing-function: var(--ease-ios);
+    }
+    .pop:not([data-open]) {
+        transform: scale(0.95);
+    }
+    @starting-style {
+        .pop[data-open], .pop-fade[data-open] {
+            opacity: 0;
+        }
+        .pop[data-open] {
+            transform: scale(0.95);
+        }
+    }
+    @media (prefers-reduced-motion: reduce) {
+        /* The fade stays, the growing goes. */
+        .pop:not([data-open]) {
+            transform: none;
+        }
+        @starting-style {
+            .pop[data-open] {
+                transform: none;
+            }
+        }
+    }
+
+    /* The navbar coming and going with the screens that have it (step 11d): a fade and
+       an 8px drop, like .pop but without scale. It moves by translate, not transform:
+       Sheet writes the bar's inline transform (its scale) on every frame, and the two
+       properties compose. Hidden, it takes no touches while it fades. */
+    .pop-rise {
+        transition-property: opacity, translate, display;
+        transition-behavior: allow-discrete;
+        transition-duration: var(--duration-enter);
+        transition-timing-function: var(--ease-out-soft);
+    }
+    .pop-rise:not([data-open]) {
+        display: none;
+        opacity: 0;
+        translate: 0 8px;
+        pointer-events: none;
+        transition-duration: var(--duration-exit);
+        transition-timing-function: var(--ease-ios);
+    }
+    @starting-style {
+        .pop-rise[data-open] {
+            opacity: 0;
+            translate: 0 8px;
+        }
+    }
+    @media (prefers-reduced-motion: reduce) {
+        .pop-rise:not([data-open]) {
+            translate: none;
+        }
+        @starting-style {
+            .pop-rise[data-open] {
+                translate: none;
+            }
+        }
+    }
+
+    /* A glyph that arrives as the answer to a tap (the share tick, a selected check):
+       it grows in from 0.6 rather than appearing. Only on insert, never on leave. */
+    .icon-in {
+        transition:
+            opacity var(--duration-press) var(--ease-out-soft),
+            transform var(--duration-press) var(--ease-out-soft);
+    }
+    @starting-style {
+        .icon-in {
+            opacity: 0;
+            transform: scale(0.6);
+        }
+    }
+    @media (prefers-reduced-motion: reduce) {
+        @starting-style {
+            .icon-in {
+                transform: none;
+            }
+        }
     }
 
     .scrollbar-none {
@@ -200,16 +536,6 @@
         height: 0;
     }
 
-    /* BottomNav sits flush with the bottom edge, per Arthur */
-    .bottom-safe-nav {
-        bottom: 0;
-    }
-
-    /* Content bottom padding: clears BottomNav + safe area */
-    .pb-safe-nav {
-        padding-bottom: calc(6rem + env(safe-area-inset-bottom, 0px));
-    }
-
     /* Invite page RSVP bar: sits above the iPhone home indicator */
     .pb-safe-rsvp {
         padding-bottom: calc(2rem + env(safe-area-inset-bottom, 0px));
@@ -218,11 +544,5 @@
     /* Content bottom padding: clears the RSVP bar (50px buttons + its own 2rem) */
     .pb-safe-rsvp-content {
         padding-bottom: calc(5.5rem + env(safe-area-inset-bottom, 0px));
-    }
-
-    /* Create-flow content: clears the fixed weiter button (50px), its 1.5rem gap,
-       the step dots (8px) and the 2rem those sit on. */
-    .pb-safe-step {
-        padding-bottom: calc(8.5rem + env(safe-area-inset-bottom, 0px));
     }
 }

@@ -4,7 +4,7 @@ import FloatingEmojis from '@/features/parties/components/FloatingEmojis'
 // blown up to a whole screen. Shared because the two pages differ only in their
 // emoji, their words and their buttons.
 export const statusButtonClass =
-  'flex h-12.5 items-center gap-2 rounded-full bg-sheet px-6 text-button font-semibold text-sheet-heading transition-transform duration-200 ease-[cubic-bezier(0.32,0.72,0,1)] active:scale-95'
+  'flex h-12.5 items-center gap-2 rounded-full bg-sheet px-6 text-button font-semibold text-sheet-heading transition-transform duration-(--duration-press) ease-ios active:scale-95'
 
 export default function StatusScreen({
   emoji,

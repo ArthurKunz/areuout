@@ -1,0 +1,44 @@
+'use client'
+
+import type { ReactNode } from 'react'
+import { ImageUp, Pencil } from 'lucide-react'
+
+// The 120x120 picture picker used for Profilbild and Partycover: an empty
+// bg-main circle with an upload icon before a picture is chosen, the
+// picture itself with an edit badge once one is. Both the empty circle and
+// the chosen picture open the same picker, so this is one button — the
+// edit badge is a decorative overlay (same look as IconButton), not a
+// second nested control. `children` replaces the picture in the filled state (the
+// initials on a colour in onboarding), so the badge stays there too.
+export default function ImageUploadCircle({
+  imageUrl,
+  onClick,
+  label = 'Bild auswählen',
+  children,
+}: {
+  imageUrl?: string | null
+  onClick?: () => void
+  label?: string
+  children?: ReactNode
+}) {
+  if (!imageUrl && !children) {
+    return (
+      <button
+        type='button'
+        onClick={onClick}
+        aria-label={label}
+        className='flex h-[120px] w-[120px] shrink-0 items-center justify-center rounded-full bg-main glass-control transition-transform duration-(--duration-press) ease-ios active:scale-95'
+      >
+        <ImageUp size={36} className='text-heading' />
+      </button>
+    )
+  }
+  return (
+    <button type='button' onClick={onClick} aria-label={label} className='relative h-[120px] w-[120px] shrink-0 transition-transform duration-(--duration-press) ease-ios active:scale-95'>
+      {children ?? <img src={imageUrl ?? undefined} alt='' className='h-full w-full rounded-full object-cover' />}
+      <span className='absolute -bottom-1 -right-1 flex h-[45px] w-[45px] items-center justify-center rounded-full bg-button-circle text-main-white glass-control'>
+        <Pencil size={24} />
+      </span>
+    </button>
+  )
+}

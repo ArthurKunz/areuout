@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { sanitizeNextPath } from '@/lib/utils'
-import FloatingEmojis from '@/features/parties/components/FloatingEmojis'
+import { FitSheet } from '@/components/shell/Shell'
 import AuthSheet from './components/AuthSheet'
 import SignInForm from './components/SignInForm'
 import SignUpForm from './components/SignUpForm'
@@ -52,12 +52,13 @@ export default function AuthPage({
   const effectiveStep = stepParam === 'reset-password' ? ('reset-password' as const) : step
 
   return (
-    <div className='relative w-full h-dvh overflow-hidden bg-main'>
-      <FloatingEmojis active seed />
+    <>
+      {/* Over the shell's map, without navigation (App Redesign 9): the container is
+          as tall as the step. */}
+      <FitSheet />
 
       {effectiveStep === 'overview' && (
         <AuthSheet
-          appear
           next={next}
           onCreateAccount={() => setStep('signup')}
           onSignIn={() => setStep('signin')}
@@ -84,19 +85,18 @@ export default function AuthPage({
       {effectiveStep === 'verify' && (
         <VerifyOtpForm
           email={signupEmail}
-          onClose={() => setStep('signup')}
           onSuccess={() => router.push(onboardingHref)}
         />
       )}
 
       {effectiveStep === 'signin' && (
-        <SignInForm onClose={() => setStep('overview')} onSuccess={() => router.push(next ?? '/parties')} />
+        <SignInForm onClose={() => setStep('overview')} onSuccess={() => router.push(next ?? '/explore')} />
       )}
 
       {/* Where the reset link from the email lands. */}
       {effectiveStep === 'reset-password' && (
-        <ChangePasswordForm onSuccess={() => router.push('/parties')} />
+        <ChangePasswordForm onSuccess={() => router.push('/explore')} />
       )}
-    </div>
+    </>
   )
 }

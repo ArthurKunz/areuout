@@ -47,12 +47,18 @@ export type Database = {
           dresscode: string | null
           ends_at: string | null
           event_date: string
+          fuzzy_lat: number | null
+          fuzzy_lng: number | null
           host_id: string
           id: string
           invite_code: string
+          is_public: boolean
+          lat: number | null
+          lng: number | null
           location: string
           max_guests: number | null
           motto: string | null
+          price: number | null
           title: string
         }
         Insert: {
@@ -62,12 +68,18 @@ export type Database = {
           dresscode?: string | null
           ends_at?: string | null
           event_date: string
+          fuzzy_lat?: number | null
+          fuzzy_lng?: number | null
           host_id: string
           id?: string
           invite_code: string
+          is_public?: boolean
+          lat?: number | null
+          lng?: number | null
           location: string
           max_guests?: number | null
           motto?: string | null
+          price?: number | null
           title: string
         }
         Update: {
@@ -77,12 +89,18 @@ export type Database = {
           dresscode?: string | null
           ends_at?: string | null
           event_date?: string
+          fuzzy_lat?: number | null
+          fuzzy_lng?: number | null
           host_id?: string
           id?: string
           invite_code?: string
+          is_public?: boolean
+          lat?: number | null
+          lng?: number | null
           location?: string
           max_guests?: number | null
           motto?: string | null
+          price?: number | null
           title?: string
         }
         Relationships: [
@@ -95,70 +113,38 @@ export type Database = {
           },
         ]
       }
-      mitbring_claims: {
-        Row: {
-          claimed_by: string
-          created_at: string
-          event_id: string
-          id: string
-          item_id: string
-        }
-        Insert: {
-          claimed_by: string
-          created_at?: string
-          event_id: string
-          id?: string
-          item_id: string
-        }
-        Update: {
-          claimed_by?: string
-          created_at?: string
-          event_id?: string
-          id?: string
-          item_id?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "mitbring_claims_claimed_by_fkey"
-            columns: ["claimed_by"]
-            isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "mitbring_claims_item_fkey"
-            columns: ["item_id", "event_id"]
-            isOneToOne: false
-            referencedRelation: "mitbring_items"
-            referencedColumns: ["id", "event_id"]
-          },
-        ]
-      }
-      mitbring_items: {
+      join_requests: {
         Row: {
           created_at: string
           event_id: string
           id: string
-          label: string
+          user_id: string
         }
         Insert: {
           created_at?: string
           event_id: string
           id?: string
-          label: string
+          user_id: string
         }
         Update: {
           created_at?: string
           event_id?: string
           id?: string
-          label?: string
+          user_id?: string
         }
         Relationships: [
           {
-            foreignKeyName: "mitbring_items_event_id_fkey"
+            foreignKeyName: "join_requests_event_id_fkey"
             columns: ["event_id"]
             isOneToOne: false
             referencedRelation: "events"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "join_requests_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
         ]
@@ -356,6 +342,33 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      accept_join_request: {
+        Args: { p_event_id: string; p_user_id: string }
+        Returns: undefined
+      }
+      can_rsvp_to_event: { Args: { p_event_id: string }; Returns: boolean }
+      create_party: {
+        Args: {
+          p_background_url: string
+          p_description: string
+          p_dresscode: string
+          p_ends_at: string
+          p_event_date: string
+          p_id: string
+          p_invite_code: string
+          p_is_public: boolean
+          p_lat: number
+          p_lng: number
+          p_location: string
+          p_max_guests: number
+          p_motto: string
+          p_polls: Json
+          p_price?: number
+          p_questions: Json
+          p_title: string
+        }
+        Returns: string
+      }
       delete_self: { Args: never; Returns: undefined }
       get_event_attendees: {
         Args: { p_event_id: string }
@@ -409,6 +422,26 @@ export type Database = {
           lastname: string
         }[]
       }
+      get_explore_parties: {
+        Args: never
+        Returns: {
+          background_url: string
+          ends_at: string
+          event_date: string
+          host_avatar_color: string
+          host_avatar_url: string
+          host_firstname: string
+          host_id: string
+          host_lastname: string
+          id: string
+          is_exact: boolean
+          is_public: boolean
+          lat: number
+          lng: number
+          my_status: string
+          title: string
+        }[]
+      }
       get_host_info_for_events: {
         Args: { p_event_ids: string[] }
         Returns: {
@@ -419,15 +452,44 @@ export type Database = {
           lastname: string
         }[]
       }
-      get_mitbring_claims_by_event: {
-        Args: { p_event_id: string }
+      get_hosting_parties: {
+        Args: never
         Returns: {
-          avatar_color: string
-          avatar_url: string
-          claimed_by: string
-          firstname: string
-          item_id: string
-          lastname: string
+          background_url: string
+          ends_at: string
+          event_date: string
+          host_avatar_color: string
+          host_avatar_url: string
+          host_firstname: string
+          host_id: string
+          host_lastname: string
+          id: string
+          is_exact: boolean
+          is_public: boolean
+          lat: number
+          lng: number
+          my_status: string
+          title: string
+        }[]
+      }
+      get_my_parties: {
+        Args: never
+        Returns: {
+          background_url: string
+          ends_at: string
+          event_date: string
+          host_avatar_color: string
+          host_avatar_url: string
+          host_firstname: string
+          host_id: string
+          host_lastname: string
+          id: string
+          is_exact: boolean
+          is_public: boolean
+          lat: number
+          lng: number
+          my_status: string
+          title: string
         }[]
       }
       get_party_by_invite_code: {
@@ -441,15 +503,92 @@ export type Database = {
           host_id: string
           id: string
           invite_code: string
-          location: string
           max_guests: number
           motto: string
+          price: number
           title: string
         }[]
       }
-      get_party_mitbring_by_invite_code: {
-        Args: { p_invite_code: string }
-        Returns: Json
+      get_party_detail: {
+        Args: { p_event_id: string }
+        Returns: {
+          background_url: string
+          description: string
+          dresscode: string
+          ends_at: string
+          event_date: string
+          host_avatar_color: string
+          host_avatar_url: string
+          host_firstname: string
+          host_id: string
+          host_lastname: string
+          id: string
+          is_exact: boolean
+          is_public: boolean
+          lat: number
+          lng: number
+          location: string
+          max_guests: number
+          motto: string
+          my_status: string
+          price: number
+          title: string
+        }[]
+      }
+      get_party_guest_list: {
+        Args: { p_event_id: string }
+        Returns: {
+          avatar_color: string
+          avatar_url: string
+          firstname: string
+          lastname: string
+          status: string
+          user_id: string
+        }[]
+      }
+      get_party_guests: {
+        Args: { p_event_id: string }
+        Returns: {
+          avatar_color: string
+          avatar_url: string
+          firstname: string
+          lastname: string
+          status: string
+          user_id: string
+        }[]
+      }
+      get_party_join_requests: {
+        Args: { p_event_id: string }
+        Returns: {
+          avatar_color: string
+          avatar_url: string
+          created_at: string
+          firstname: string
+          lastname: string
+          user_id: string
+        }[]
+      }
+      get_party_poll_data: {
+        Args: { p_event_id: string }
+        Returns: {
+          allow_multiple: boolean
+          options: Json
+          pool_id: string
+          question: string
+          responses: Json
+          type: string
+        }[]
+      }
+      get_party_polls: {
+        Args: { p_event_id: string }
+        Returns: {
+          allow_multiple: boolean
+          options: Json
+          pool_id: string
+          question: string
+          text_responses: Json
+          type: string
+        }[]
       }
       get_party_pools_by_invite_code: {
         Args: { p_invite_code: string }
@@ -498,11 +637,33 @@ export type Database = {
         Args: { p_event_id: string; p_user_id: string }
         Returns: boolean
       }
+      request_to_join: { Args: { p_event_id: string }; Returns: undefined }
       set_single_pool_response: {
         Args: {
           p_option_id: string
           p_pool_id: string
           p_text_response: string
+        }
+        Returns: undefined
+      }
+      update_party: {
+        Args: {
+          p_background_url: string
+          p_description: string
+          p_dresscode: string
+          p_ends_at: string
+          p_event_date: string
+          p_id: string
+          p_is_public: boolean
+          p_lat: number
+          p_lng: number
+          p_location: string
+          p_max_guests: number
+          p_motto: string
+          p_polls: Json
+          p_price?: number
+          p_questions: Json
+          p_title: string
         }
         Returns: undefined
       }

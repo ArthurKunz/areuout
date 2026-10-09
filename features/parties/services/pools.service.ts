@@ -1,116 +1,45 @@
 import { supabase } from '@/lib/supabase/client'
-import type { Pool, PoolOption, PoolResponse, PoolType } from '../types/parties.types'
 
-type RawPoolRow = {
-  id: string
-  event_id: string
-  question: string
-  description: string | null
-  type: string
-  allow_text_response: boolean
-  allow_multiple: boolean | null
-  created_at: string | null
+export type DetailOption = { option_id: string; label: string }
+export type DetailResponse = {
+  option_id: string | null
+  user_id: string
+  firstname: string | null
+  lastname: string | null
+  avatar_url: string | null
+  avatar_color: string | null
+  text_response: string | null
 }
-
-type RawOptionRow = {
-  id: string
+export type DetailPoll = {
   pool_id: string
-  label: string
-  position: number
-}
-
-export async function getPartyPools(partyId: string): Promise<Pool[]> {
-  const [{ data: poolRows }, { data: responseRows }] = await Promise.all([
-    supabase
-      .from('pools')
-      .select('id, event_id, question, description, type, allow_text_response, allow_multiple, created_at')
-      .eq('event_id', partyId)
-      // Auf derselben Tabelle liegen auch die Fragen, als type = 'text_only'. Ohne
-      // diese Zeile stuenden sie hier als Umfragen ohne eine einzige Option.
-      // Begruendung in questions.service.ts.
-      .eq('type', 'options')
-      .order('created_at'),
-    supabase.rpc('get_pool_responses_by_event', { p_event_id: partyId }),
-  ])
-
-  if (!poolRows || poolRows.length === 0) return []
-
-  const poolIds = (poolRows as RawPoolRow[]).map((p) => p.id)
-  const { data: optionRows } = await supabase
-    .from('pool_options')
-    .select('id, pool_id, label, position')
-    .in('pool_id', poolIds)
-    .order('position')
-
-  const options = (optionRows ?? []) as RawOptionRow[]
-  const responses = (responseRows ?? []) as PoolResponse[]
-
-  return (poolRows as RawPoolRow[]).map((pool) => ({
-    id: pool.id,
-    event_id: pool.event_id,
-    question: pool.question,
-    description: pool.description,
-    type: pool.type as PoolType,
-    allow_text_response: pool.allow_text_response,
-    allow_multiple: pool.allow_multiple ?? false,
-    created_at: pool.created_at ?? '',
-    options: options
-      .filter((o) => o.pool_id === pool.id)
-      .map((o): PoolOption => ({ id: o.id, pool_id: o.pool_id, label: o.label, position: o.position })),
-    responses: responses.filter((r) => r.pool_id === pool.id),
-  }))
-}
-
-// The invite page's version of the call above. Same result, but the questions and
-// options come from an RPC keyed on the invite code instead of from the two tables,
-// which are members-only — a visitor without an account has no membership to check.
-// The answers still come from get_pool_responses_by_event, which returns nothing to
-// a non-member, so the polls appear empty behind the sign-up sheet exactly as before.
-export async function getPartyPoolsByInviteCode(inviteCode: string, partyId: string): Promise<Pool[]> {
-  const [{ data: poolJson }, { data: responseRows }] = await Promise.all([
-    supabase.rpc('get_party_pools_by_invite_code', { p_invite_code: inviteCode }),
-    supabase.rpc('get_pool_responses_by_event', { p_event_id: partyId }),
-  ])
-
-  // Der RPC kennt den Unterschied nicht und gibt beides heraus, Umfragen wie Fragen —
-  // derselbe Filter wie oben, nur hier im Client, weil die Funktion fest steht.
-  const pools = ((poolJson ?? []) as Omit<Pool, 'responses'>[]).filter((p) => p.type === 'options')
-  const responses = (responseRows ?? []) as PoolResponse[]
-
-  return pools.map((pool) => ({ ...pool, responses: responses.filter((r) => r.pool_id === pool.id) }))
-}
-
-export async function createPool(payload: {
-  event_id: string
   question: string
-  description: string | null
-  type: PoolType
-  allow_text_response: boolean
   allow_multiple: boolean
-}) {
-  return supabase.from('pools').insert(payload).select('id').single()
+  options: DetailOption[]
+  responses: DetailResponse[]
 }
 
-export async function updatePool(
-  poolId: string,
-  patch: { question: string; description: string | null; allow_multiple: boolean }
-) {
-  return supabase.from('pools').update(patch).eq('id', poolId)
-}
-
-// Renaming an option in place, rather than dropping it and inserting a new one, is
-// what keeps the votes on it: pool_responses.option_id is ON DELETE SET NULL, so a
-// delete would silently detach every answer that had picked it.
-export async function updatePoolOption(optionId: string, label: string, position: number) {
-  return supabase.from('pool_options').update({ label, position }).eq('id', optionId)
-}
-
-export async function deletePoolOption(optionId: string) {
-  return supabase.from('pool_options').delete().eq('id', optionId)
-}
-
-export async function addPoolOption(poolId: string, label: string, position: number) {
-  return supabase.from('pool_options').insert({ pool_id: poolId, label, position })
+// The redesign's detail: polls and questions with every vote and answer, from
+// get_party_poll_data. On a private party a stranger gets no rows at all; the function
+// decides that, not the screen. Polls and questions share the table and are told apart
+// here, by type.
+export async function getDetailPolls(partyId: string) {
+  const { data, error } = await supabase.rpc('get_party_poll_data', { p_event_id: partyId })
+  if (error) return { data: null, error }
+  const rows = data.map((row) => ({
+    type: row.type,
+    pool_id: row.pool_id,
+    question: row.question,
+    allow_multiple: row.allow_multiple,
+    options: row.options as unknown as DetailOption[],
+    responses: row.responses as unknown as DetailResponse[],
+  }))
+  return {
+    data: {
+      polls: rows.filter((row) => row.type === 'options'),
+      questions: rows.filter((row) => row.type === 'text_only'),
+    },
+    error: null,
+  }
 }
 
 // Single-answer polls: one row per user, replaced when they change their mind.
