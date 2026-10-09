@@ -41,6 +41,13 @@ is already in place. There is no second line of defence behind it.
 **Rule: every policy names its role explicitly, and that role is `authenticated`.** If
 you ever want an exception, that is a security decision, not an implementation detail.
 
+**`events` is the exception for SELECT (step 12).** Neither `anon` nor `authenticated`
+holds SELECT on the table. `authenticated` holds it per column, on every column except
+`location`, `lat` and `lng`, so a host or guest reading the table directly cannot get
+past the rules in section 8. Address and exact point come only from the functions.
+**A new column on `events` is unreadable until it gets its own `GRANT SELECT (...)`.**
+Migration `20261009180200_hide_the_address_columns_of_events.sql`.
+
 ## 3. What RLS cannot do
 
 **It cannot serialise.** A policy is an expression Postgres evaluates. It takes no lock
@@ -154,7 +161,9 @@ choosing its own columns:
   `private.party_visible_until(...)`. Never take a position or distance parameter, sort
   by date only, never added to `supabase_realtime`.
 - `get_party_detail(event_id)` — the full party row minus the address: `location` is
-  only included with access, and `invite_code` is **never** in the result at all, not
+  only included with access, and for everyone but the host only until
+  `private.party_visible_until` (after that: NULL, the blurred point, `is_exact`
+  false), and `invite_code` is **never** in the result at all, not
   even blanked. Answers "exists, no access" with the same shape it would for a party
   that truly doesn't exist, except the non-address fields are visible to any logged-in
   caller regardless of access. `price` (step 11c) is such a non-address field, so it
@@ -222,11 +231,11 @@ columns would also bind the old app, which still writes `events` directly and bu
 created. Existing rows are untouched either way. Mirrored by `MAX_PARTY_DAYS` in
 `features/create-party/draft.ts`.
 
-**Two separate "how long" constants, now.** `ASSUMED_PARTY_HOURS`/`c_assumed_hours` (6
-hours) decide when `get_party_by_invite_code` stops handing out the address to a
-non-host. `PARTY_VISIBLE_HOURS`/`private.party_visible_until` (24 hours) decide when a
-party leaves the map and every list. They look similar and are not the same rule — see
-the hard rule in `CLAUDE.md`.
+**One "how long" rule.** `PARTY_VISIBLE_HOURS`/`private.party_visible_until` (24 hours
+after the end, or after the start without an end) decide when a party leaves the map and
+every list, when requests close, and when `get_party_detail` stops handing the address
+and exact point to anyone but the host. The six-hour pair that used to decide the
+address on the invite page is gone since step 12 — see the hard rule in `CLAUDE.md`.
 
 ## 9. Creating a party (Step 3 of the redesign)
 

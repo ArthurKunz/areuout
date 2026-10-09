@@ -272,3 +272,23 @@ Anlage erlaubt war. Bestehende Zeilen werden so oder so nicht angefasst. Gespieg
 
 Gleiche Signatur, Sprache und `search_path`, Rechte und Policies bleiben. Alle Aufrufer
 übergeben schon die eigene ID. Warum, steht in `SCHEMA.md`, Abschnitt 9b.
+
+## Die Migrationen zu Schritt 12 (Aufräumen)
+
+Geschrieben am 09.10.2026, **noch nicht angewendet**. Bis dahin tragen die Dateinamen
+Platzhalter-Versionen; nach dem Anwenden werden sie auf die echte Version umbenannt.
+Zu jeder Datei außer der Mitbring-Löschung liegt ein Rollback in `supabase/rollbacks/`
+mit demselben Namen. Er liegt bewusst nicht hier, weil die Supabase CLI jede `.sql`-Datei
+in diesem Ordner als Migration abspielen würde.
+
+| Datei | Was sie ändert | Wann | Wie |
+|---|---|---|---|
+| `20261009170000_drop_the_mitbring_list.sql` | löscht `mitbring_items`, `mitbring_claims` und ihre zwei RPCs | nach dem Merge, Deployment auf Ready | `apply_migration` |
+| `20261009180000_hide_the_address_24_hours_after_a_party_ends.sql` | `get_party_detail`: ab `party_visible_until` für Nicht-Hosts keine Adresse, verwischter Punkt | jederzeit, `main` ruft sie nicht auf | `apply_migration` |
+| `20261009180200_hide_the_address_columns_of_events.sql` | `events`: SELECT nur noch spaltenweise, ohne `location`, `lat`, `lng` | nach dem Merge, Deployment auf Ready | `apply_migration` |
+
+`20261009180000` prüft vorher per md5, dass der Funktionsrumpf auf der Datenbank noch
+der vom 09.10.2026 ist, und bricht sonst ab. Getestet in
+zurückgerollten Transaktionen auf der Live-Datenbank: 24-Stunden-Grenze für Gast, Host
+und Fremden; Anlegen, Bearbeiten, Link-Zurücksetzen, RSVP und Abstimmen mit den neuen
+Spaltenrechten. Warum es so gebaut ist, steht in `SCHEMA.md`, Abschnitte 2 und 8.

@@ -118,24 +118,16 @@ export function generateInviteCode(): string {
   return code
 }
 
-// How long a party is assumed to run when the host set no end time. Six hours means
-// one that starts at 20:00 counts as over at 02:00 — not at 20:01, while the guests
-// are still looking up the address. Mirrors c_assumed_hours in get_party_by_invite_code
-// — change one, change the other.
-const ASSUMED_PARTY_HOURS = 6
+// A party counts as over 24 hours after it ends, or after it starts if it has no end
+// time. From then on it is gone from every map and list, requests and answers close,
+// and nobody but the host gets its address. Mirrors private.party_visible_until —
+// change one, change the other.
+export const PARTY_VISIBLE_HOURS = 24
 
 export function isPartyOver(eventDate: string, endsAt?: string | null): boolean {
-  const end = endsAt
-    ? new Date(endsAt)
-    : new Date(new Date(eventDate).getTime() + ASSUMED_PARTY_HOURS * 60 * 60 * 1000)
-  return end.getTime() < Date.now()
+  const end = new Date(endsAt ?? eventDate)
+  return end.getTime() + PARTY_VISIBLE_HOURS * 60 * 60 * 1000 <= Date.now()
 }
-
-// A separate, later cutoff: a party stays on the map and in every list until 24 hours
-// after it ends (or after it starts, if it has no end time) — not the same six hours
-// above, which only decides when the address stops being handed out on the invite
-// page. Mirrors private.party_visible_until — change one, change the other.
-export const PARTY_VISIBLE_HOURS = 24
 
 export function getInitials(firstname: string | null, lastname: string | null): string {
   const first = firstname?.trim()?.[0] ?? ''

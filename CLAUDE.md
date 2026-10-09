@@ -114,21 +114,14 @@ actually protects the data.
   16+ minimum lives in the terms of use. The Datenschutzerklärung names these as not
   collected, and `supabase/migrations/README.md` records three migrations deleted to
   stop them coming back. Reintroducing one contradicts a published legal text.
-- `ASSUMED_PARTY_HOURS` in `lib/utils.ts` and `c_assumed_hours` in the migrations are
-  the same six hours written twice. Change one, change the other — together they decide
-  when the database stops handing out a finished party's address.
 - `PARTY_VISIBLE_HOURS` in `lib/utils.ts` and `private.party_visible_until` in the
-  migrations are the same 24 hours written twice, and a separate rule from the pair
-  above: they decide when a party leaves every map and list, not when its address is
-  blanked. Change one, change the other. The two pairs stay separate until step 12 of
-  the redesign, when `get_party_by_invite_code` and `isPartyOver` switch to the 24-hour
-  rule and the six-hour pair is deleted — until then, changing one pair must never touch
-  the other.
+  migrations are the same 24 hours written twice. Change one, change the other —
+  together they decide when a party leaves every map and list, when requests close, and
+  when nobody but the host gets its address any more.
 - `MAX_PARTY_DAYS` in `features/create-party/draft.ts` and the two `interval '30 days'`
   checks in `create_party` and `update_party` are the same cap written twice. Change one,
-  change the other. It is a third, separate rule from the two pairs above: it decides how
-  long a party may be declared to run, not when its address is blanked or when it leaves
-  the map.
+  change the other. It is a separate rule from the pair above: it decides how long a
+  party may be declared to run, not when it is over.
 - Colours, sizes, spacing, durations and curves come from the variables in `app/globals.css`. If no variable fits, ask before adding one.
 - The look in `DESIGN.md` is locked: container width, glass tiers, header rule, motion.
   Never change a value in it and never add a new surface style or animation without
