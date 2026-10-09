@@ -403,6 +403,47 @@ html:has([data-runway]) {
         .radar-pulse { animation: none; transform: none; opacity: 0.5; }
     }
 
+    /* The detail's pages (step 11d), an iOS push: a page slides in from the right over
+       the one underneath, which moves a quarter to the left, and back is the exact
+       reverse. Pages are see-through over the glass, so the one underneath fades out
+       entirely rather than dimming, or both would read at once. PartyDetail sets
+       data-state, and drops a leaving page on its transitionend. */
+    .page-layer {
+        transition:
+            transform var(--duration-move) var(--ease-ios),
+            opacity var(--duration-move) var(--ease-ios);
+    }
+    .page-layer[data-state='under'] {
+        transform: translateX(-25%);
+        opacity: 0;
+    }
+    .page-layer[data-state='leaving'] {
+        transform: translateX(100%);
+    }
+    @starting-style {
+        .page-layer[data-pushed][data-state='top'] {
+            transform: translateX(100%);
+        }
+    }
+    @media (prefers-reduced-motion: reduce) {
+        /* No travel, only the fade. --duration-move is near zero here, so the fade
+           takes the enter duration instead. */
+        .page-layer {
+            transition: opacity var(--duration-enter) var(--ease-ios);
+        }
+        .page-layer[data-state] {
+            transform: none;
+        }
+        .page-layer[data-state='leaving'] {
+            opacity: 0;
+        }
+        @starting-style {
+            .page-layer[data-pushed][data-state='top'] {
+                opacity: 0;
+            }
+        }
+    }
+
     .scrollbar-none {
         scrollbar-width: none;
         -ms-overflow-style: none;

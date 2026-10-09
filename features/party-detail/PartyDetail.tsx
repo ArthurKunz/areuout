@@ -31,6 +31,9 @@ const RSVP_STATUSES: readonly string[] = ['going', 'maybe', 'not_going'] satisfi
 export const isRsvpStatus = (status: string | null): status is RsvpStatus =>
   status !== null && RSVP_STATUSES.includes(status)
 
+// One open page and whether it is on its way out.
+type PageEntry = { id: number; page: DetailPage; leaving: boolean }
+
 type Loaded = {
   party: PartyDetailRow
   polls: DetailPoll[]
@@ -82,8 +85,10 @@ export default function PartyDetail({
   // The answer being written from the invite bar: the spinner sits on that button.
   const [answering, setAnswering] = useState<RsvpStatus | null>(null)
   // The pages opened from the cards, newest last: back returns to the one underneath,
-  // the detail itself when none is left.
-  const [pages, setPages] = useState<DetailPage[]>([])
+  // the detail itself when none is left. A page that was left stays in the list until
+  // its slide out has played (step 11d), then drops on its transitionend.
+  const [pages, setPages] = useState<PageEntry[]>([])
+  const nextPageId = useRef(0)
   // Bumped by every vote and answer: a re-read that started before the latest one would
   // otherwise overwrite what the viewer just tapped.
   const pollVersion = useRef(0)
@@ -199,11 +204,17 @@ export default function PartyDetail({
   const over = isPartyOver(party.event_date, party.ends_at)
 
   // With the last request answered the page `Anfragen` has nothing left to show: it
-  // drops out, and the detail underneath has lost its card too.
-  const stack = requests.length === 0 ? pages.filter((item) => item.kind !== 'requests') : pages
-  const page = stack.at(-1)
-  const open = (next: DetailPage) => setPages([...stack, next])
-  const back = () => setPages(stack.slice(0, -1))
+  // leaves the way back would, and the detail underneath has lost its card too.
+  const gone = (entry: PageEntry) => entry.leaving || (requests.length === 0 && entry.page.kind === 'requests')
+  const stack = pages.filter((entry) => !gone(entry))
+  const top = stack.at(-1)
+  const open = (next: DetailPage) => {
+    const id = nextPageId.current++
+    setPages((current) => [...current, { id, page: next, leaving: false }])
+  }
+  const back = () => {
+    if (top) setPages((current) => current.map((entry) => (entry.id === top.id ? { ...entry, leaving: true } : entry)))
+  }
   const openProfile = (user: ProfileUser) => open({ kind: 'profile', user })
 
   // A request answered on the page `Anfragen` leaves the list the card counts too. From
@@ -303,91 +314,115 @@ export default function PartyDetail({
       </BigButton>
     )
 
-  if (page) {
+  const renderPage = (page: DetailPage) => {
     const poll = page.kind === 'poll' ? polls.find((item) => item.pool_id === page.id) : undefined
     const question = page.kind === 'question' ? questions.find((item) => item.pool_id === page.id) : undefined
     return (
-      <div className='flex min-h-0 flex-1 flex-col'>
-        <PageHeader
-          title={
-            // The profile has no title, only the back button (mockup User Profile 01).
-            page.kind === 'guests'
-              ? 'Teilnehmer'
-              : page.kind === 'requests'
-                ? 'Anfragen'
-                : page.kind === 'poll'
-                  ? 'Umfrage'
-                  : page.kind === 'question'
-                    ? 'Frage'
-                    : ''
-          }
-          actions={page.kind === 'guests' ? rsvp : undefined}
-          onBack={back}
-        >
-          {page.kind === 'guests' && (
-            <GuestsPage
-              partyId={party.id}
-              maxGuests={party.max_guests}
-              userId={userId}
-              myStatus={myStatus}
-              canRemove={viewer === 'host'}
-              onProfile={openProfile}
-            />
-          )}
-          {page.kind === 'requests' && (
-            <RequestsPage partyId={party.id} requests={requests} onAnswered={answered} onProfile={openProfile} />
-          )}
-          {poll && <PollPage poll={poll} userId={userId} onProfile={openProfile} />}
-          {question && <QuestionPage question={question} host={host} userId={userId} onProfile={openProfile} />}
-          {page.kind === 'profile' && <ProfilePage user={page.user} />}
-        </PageHeader>
-      </div>
+      <PageHeader
+        title={
+          // The profile has no title, only the back button (mockup User Profile 01).
+          page.kind === 'guests'
+            ? 'Teilnehmer'
+            : page.kind === 'requests'
+              ? 'Anfragen'
+              : page.kind === 'poll'
+                ? 'Umfrage'
+                : page.kind === 'question'
+                  ? 'Frage'
+                  : ''
+        }
+        actions={page.kind === 'guests' ? rsvp : undefined}
+        onBack={back}
+      >
+        {page.kind === 'guests' && (
+          <GuestsPage
+            partyId={party.id}
+            maxGuests={party.max_guests}
+            userId={userId}
+            myStatus={myStatus}
+            canRemove={viewer === 'host'}
+            onProfile={openProfile}
+          />
+        )}
+        {page.kind === 'requests' && (
+          <RequestsPage partyId={party.id} requests={requests} onAnswered={answered} onProfile={openProfile} />
+        )}
+        {poll && <PollPage poll={poll} userId={userId} onProfile={openProfile} />}
+        {question && <QuestionPage question={question} host={host} userId={userId} onProfile={openProfile} />}
+        {page.kind === 'profile' && <ProfilePage user={page.user} />}
+      </PageHeader>
     )
   }
 
+  // The detail and every open page are layers of one stack (step 11d): the top one
+  // shows, the ones underneath wait a quarter to the left, faded out and inert, and keep
+  // their scroll and search for the way back. The detail itself stays in the flow and
+  // gives the container its height; the pages lie on top of it.
   return (
-    <div className='flex min-h-0 flex-1 flex-col'>
-      <DetailHeader
-        title={party.title}
-        hostName={hostName}
-        isPublic={party.is_public}
-        onClose={onClose}
-        onHost={party.host_id === userId ? undefined : () => openProfile(host)}
-        actions={
-          viewer === 'host' && inviteCode ? (
-            <HostActions
-              partyId={party.id}
-              hostId={party.host_id}
-              title={party.title}
-              inviteCode={inviteCode}
-              onInviteCode={(code) => setLoaded({ ...loaded, inviteCode: code })}
-              onDeleted={() => onDeleted?.()}
-            />
-          ) : (
-            rsvp || undefined
-          )
-        }
-      >
-        {invite && over && (
-          <div className='pb-2.5'>
-            <WarningBanner message='Diese Party ist vorbei.' />
+    <div className='relative flex min-h-0 flex-1 flex-col'>
+      <div data-state={top ? 'under' : 'top'} inert={Boolean(top)} className='page-layer flex min-h-0 flex-1 flex-col'>
+        <DetailHeader
+          title={party.title}
+          hostName={hostName}
+          isPublic={party.is_public}
+          onClose={onClose}
+          onHost={party.host_id === userId ? undefined : () => openProfile(host)}
+          actions={
+            viewer === 'host' && inviteCode ? (
+              <HostActions
+                partyId={party.id}
+                hostId={party.host_id}
+                title={party.title}
+                inviteCode={inviteCode}
+                onInviteCode={(code) => setLoaded({ ...loaded, inviteCode: code })}
+                onDeleted={() => onDeleted?.()}
+              />
+            ) : (
+              rsvp || undefined
+            )
+          }
+        >
+          {invite && over && (
+            <div className='pb-2.5'>
+              <WarningBanner message='Diese Party ist vorbei.' />
+            </div>
+          )}
+          <DetailCards
+            // Someone's home address: the invite page stops showing it to guests once the
+            // party is over, as the old invite page did.
+            party={invite && over && viewer !== 'host' ? { ...party, location: '' } : party}
+            polls={polls}
+            questions={questions}
+            userId={userId}
+            canAnswer={canAnswer}
+            requestCount={viewer === 'host' ? requests.length : 0}
+            onPollChange={changePoll}
+            onPollSaved={reloadPolls}
+            onOpen={open}
+          />
+        </DetailHeader>
+        {bar && <div className='flex shrink-0 justify-center px-5 pt-3 pb-5'>{bar}</div>}
+      </div>
+      {pages.map((entry) => {
+        const state = gone(entry) ? 'leaving' : entry.id === top?.id ? 'top' : 'under'
+        return (
+          <div
+            key={entry.id}
+            data-pushed
+            data-state={state}
+            inert={state !== 'top'}
+            // Only the layer's own slide counts, not a button transition bubbling up.
+            onTransitionEnd={(event) => {
+              if (event.target === event.currentTarget && gone(entry)) {
+                setPages((current) => current.filter((item) => item.id !== entry.id))
+              }
+            }}
+            className='page-layer absolute inset-0 flex min-h-0 flex-col'
+          >
+            {renderPage(entry.page)}
           </div>
-        )}
-        <DetailCards
-          // Someone's home address: the invite page stops showing it to guests once the
-          // party is over, as the old invite page did.
-          party={invite && over && viewer !== 'host' ? { ...party, location: '' } : party}
-          polls={polls}
-          questions={questions}
-          userId={userId}
-          canAnswer={canAnswer}
-          requestCount={viewer === 'host' ? requests.length : 0}
-          onPollChange={changePoll}
-          onPollSaved={reloadPolls}
-          onOpen={open}
-        />
-      </DetailHeader>
-      {bar && <div className='flex shrink-0 justify-center px-5 pt-3 pb-5'>{bar}</div>}
+        )
+      })}
     </div>
   )
 }

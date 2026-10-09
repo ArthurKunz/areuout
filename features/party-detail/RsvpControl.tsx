@@ -26,6 +26,14 @@ export default function RsvpControl({
   onStatusChange?: (status: RsvpStatus) => void
 }) {
   const [status, setStatus] = useState(initialStatus)
+  // The same answer can be on screen twice: the detail stays mounted under its pages
+  // (step 11d), so the header's button sits under the one on Teilnehmer. Whichever was
+  // tapped, the other follows the shared answer.
+  const [shared, setShared] = useState(initialStatus)
+  if (initialStatus !== shared) {
+    setShared(initialStatus)
+    setStatus(initialStatus)
+  }
   const [open, setOpen] = useState(false)
   const [writing, setWriting] = useState(false)
   const ref = useRef<HTMLDivElement>(null)
