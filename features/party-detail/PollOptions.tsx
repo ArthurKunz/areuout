@@ -88,18 +88,21 @@ export default function PollOptions({
               className='flex w-full items-center gap-3 text-left'
             >
               <span
-                className={`flex size-5 shrink-0 items-center justify-center rounded-full ${
+                className={`flex size-5 shrink-0 items-center justify-center rounded-full transition-colors duration-(--duration-press) ease-ios ${
                   selected ? 'bg-brand' : 'border border-main-white'
                 }`}
               >
-                {selected && <Check size={12} strokeWidth={3} className='text-main-white' />}
+                {selected && <Check size={12} strokeWidth={3} className='icon-in text-main-white' />}
               </span>
               <span className='flex min-w-0 flex-1 flex-col gap-1.5'>
                 <span className='break-words text-text-3 text-heading'>{option.label}</span>
-                <span className='h-1.5 w-full rounded-full bg-progress-track'>
+                {/* The fill is always full width and slides in from the left, clipped by the
+                    track: a transform, never width (step 11d). It moves only when a vote
+                    changes it, not when the card appears. */}
+                <span className='block h-1.5 w-full overflow-hidden rounded-full bg-progress-track'>
                   <span
-                    className='block h-full rounded-full bg-brand transition-[width] duration-300'
-                    style={{ width: `${total ? (votes / total) * 100 : 0}%` }}
+                    className='block h-full w-full rounded-full bg-brand transition-transform duration-(--duration-move) ease-ios'
+                    style={{ transform: `translateX(-${100 - (total ? (votes / total) * 100 : 0)}%)` }}
                   />
                 </span>
               </span>

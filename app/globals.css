@@ -382,9 +382,11 @@ html:has([data-runway]) {
         .animate-nav-icon-pop { animation: none; }
     }
 
-    /* Enter animation for content that swaps in place (e.g. the parties tab list). */
+    /* Enter animation for content that swaps in place (e.g. the parties tab list).
+       Opacity on an ancestor flattens any glass inside it for the animation's length
+       (Collapse.tsx), so it goes only on content without glass. */
     .animate-fade-in-up {
-        animation: fade-in-up 0.3s cubic-bezier(0.32, 0.72, 0, 1) both;
+        animation: fade-in-up var(--duration-enter) var(--ease-out-soft) both;
     }
     @media (prefers-reduced-motion: reduce) {
         .animate-fade-in-up { animation: none; }

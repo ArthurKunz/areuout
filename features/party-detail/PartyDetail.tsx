@@ -387,19 +387,23 @@ export default function PartyDetail({
               <WarningBanner message='Diese Party ist vorbei.' />
             </div>
           )}
-          <DetailCards
-            // Someone's home address: the invite page stops showing it to guests once the
-            // party is over, as the old invite page did.
-            party={invite && over && viewer !== 'host' ? { ...party, location: '' } : party}
-            polls={polls}
-            questions={questions}
-            userId={userId}
-            canAnswer={canAnswer}
-            requestCount={viewer === 'host' ? requests.length : 0}
-            onPollChange={changePoll}
-            onPollSaved={reloadPolls}
-            onOpen={open}
-          />
+          {/* Fades in where the skeleton's tiles were. The header was already there, and
+              nothing in the cards is glass, which a fade would leave flat (Collapse.tsx). */}
+          <div className='animate-fade-in-up'>
+            <DetailCards
+              // Someone's home address: the invite page stops showing it to guests once the
+              // party is over, as the old invite page did.
+              party={invite && over && viewer !== 'host' ? { ...party, location: '' } : party}
+              polls={polls}
+              questions={questions}
+              userId={userId}
+              canAnswer={canAnswer}
+              requestCount={viewer === 'host' ? requests.length : 0}
+              onPollChange={changePoll}
+              onPollSaved={reloadPolls}
+              onOpen={open}
+            />
+          </div>
         </DetailHeader>
         {bar && <div className='flex shrink-0 justify-center px-5 pt-3 pb-5'>{bar}</div>}
       </div>

@@ -57,11 +57,12 @@ export default function HostingList({
   }
 
   if (parties.length === 0) {
-    return <p className='text-text-2 text-text'>{emptyText}</p>
+    return <p className='animate-fade-in-up text-text-2 text-text'>{emptyText}</p>
   }
 
   return (
-    <ul className='flex flex-col'>
+    // Fades in where the skeleton rows were; nothing in a row is glass.
+    <ul className='animate-fade-in-up flex flex-col'>
       {parties.map((party, i) => (
         <li key={party.id}>
           {i > 0 && divider}
