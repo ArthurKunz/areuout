@@ -22,7 +22,6 @@ export type PartyDetail = {
   dresscode: string | null
   event_date: string
   ends_at: string | null
-  location: string
   invite_code: string
   background_url?: string | null
   max_guests: number | null

@@ -102,7 +102,7 @@ const SECTIONS: LegalSection[] = [
     heading: '5. Der Einladungslink',
     paragraphs: [
       'Jede Party bekommt einen Link mit einem zufälligen Code. Dieser Code ist der einzige Schutz der Party: Wer ihn hat, kommt an sie heran, und wir prüfen dabei nicht, ob er eingeladen war.',
-      'Wer den Link öffnet, sieht auch ohne Konto Titel, Beschreibung, Datum, Uhrzeit, Hintergrundbild und die Adresse. Die Gästeliste zeigt die App nur angemeldeten Gästen — sie wird nicht bloß ausgeblendet, der Server beantwortet die Anfrage ohne Konto gar nicht erst.',
+      'Wer den Link öffnet, sieht auch ohne Konto Titel, Beschreibung, Datum, Uhrzeit und Hintergrundbild. Die Adresse und die Gästeliste zeigt die App nur angemeldeten Gästen — sie werden nicht bloß ausgeblendet, der Server gibt sie ohne Konto gar nicht erst heraus.',
       'Bist du angemeldet und noch nicht eingetragen, musst du zuerst zu- oder absagen; die Party-Seite öffnet sich danach.',
       'Wird der Link in einem Chat geteilt, erzeugt der Messenger daraus eine Vorschau mit Titel, Beschreibung und Hintergrundbild. Die Adresse steht bewusst nicht darin, weil sie sonst in fremden Chatverläufen und auf gesperrten Bildschirmen auftauchen würde.',
       'Ist eine Party vorbei, blendet die App die Adresse aus und nimmt keine Antworten mehr an. Der Link bleibt gültig und zeigt die Party weiterhin als vergangen.',

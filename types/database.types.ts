@@ -503,7 +503,6 @@ export type Database = {
           host_id: string
           id: string
           invite_code: string
-          location: string
           max_guests: number
           motto: string
           price: number

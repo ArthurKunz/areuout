@@ -84,10 +84,11 @@ It carries the brake. Thirty failed lookups per IP per calendar minute, counted 
 off and is still unreachable, because neither `anon` nor `authenticated` holds USAGE on
 the `private` schema — the schema is the boundary, not the policy.
 
-And it blanks the address. Once the party is over and the caller is not the host,
-`location` comes back as `''`, not NULL, because both screens call `lastIndexOf(',')` on
-it unconditionally. The six hours it assumes mirror `ASSUMED_PARTY_HOURS` in
-`lib/utils.ts` — change one, change the other.
+And it hands out no address. Until step 12 it returned `location` to anyone holding the
+code, logged out included; since `20261009180100_stop_handing_out_the_address_with_the_invite_code.sql`
+the column is gone from its result. A signed-in guest gets the address from
+`get_party_detail` once this function has recorded the invite open (section 8). It is
+granted to `anon` and `authenticated`, no longer to PUBLIC.
 
 ## 5. Storage: public means public
 
@@ -448,7 +449,7 @@ with its own migrations.
    `Users can read their own profile` and so on, where every other table uses
    `table_cmd_who`. (That `profiles` has no DELETE policy is deliberate — deletion goes
    through `delete_self()` and the cascade.)
-4. **`get_party_by_invite_code` is granted to PUBLIC as well as `anon`.** PUBLIC is
-   wider than needed and includes any role added later.
+4. ~~**`get_party_by_invite_code` is granted to PUBLIC as well as `anon`.**~~ Closed in
+   step 12: granted to `anon` and `authenticated` only.
 5. **`delete_self` runs with `search_path = ''`, every other function with
    `search_path = public`.** The empty one is the hardened form.
