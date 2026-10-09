@@ -5,11 +5,9 @@ import { createPortal } from 'react-dom'
 import BigButton from '@/components/shared/BigButton'
 import Spinner from '@/components/shared/Spinner'
 
-// A yes-or-cancel question over the whole screen, in the redesign's dark style. Same
-// behaviour as components/shared/ConfirmDialog (held while the write runs, tap beside
-// it cancels, page scroll locked); that one still uses colour tokens the redesign
-// removed from globals.css, so it stays with the old screens. Rendered at the body: the
-// container's transform would otherwise trap `position: fixed` inside it.
+// A yes-or-cancel question over the whole screen, in the redesign's dark style: held
+// while the write runs, tap beside it cancels, page scroll locked. Rendered at the body:
+// the container's transform would otherwise trap `position: fixed` inside it.
 export default function ConfirmPrompt({
   open,
   title,

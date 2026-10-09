@@ -58,11 +58,9 @@
     --text-hint-1: 10px;
     --text-hint-2: 8px;
 
-    /* RESTORED: removed in 08b45bf while WarningBanner, ConfirmDialog and the old
-       screens still use them; values as they were before. */
+    /* RESTORED: removed in 08b45bf while WarningBanner and other screens still use
+       them; values as they were before. */
     --color-secondary: rgba(118, 118, 128, 0.25);
-    --color-tertiary: rgba(255, 255, 255, 0.25);
-    --color-quaternary: rgba(29, 29, 29, 0.9);
     --color-warning: #FF453A;
     --color-sheet: #FFFFFF;
     --color-subheading: rgba(148, 148, 148, 0.9);
@@ -300,13 +298,6 @@ html:has([data-runway]) {
     100% { opacity: 0.15; }
 }
 
-/* BottomNav: the icon that just became active swells while the capsule slides under it. */
-@keyframes nav-icon-pop {
-    0%   { transform: scale(1); }
-    45%  { transform: scale(1.22); }
-    100% { transform: scale(1); }
-}
-
 @keyframes fade-in-up {
     from { opacity: 0; transform: translateY(8px); }
     to   { opacity: 1; transform: none; }
@@ -372,14 +363,6 @@ html:has([data-runway]) {
     }
     @media (prefers-reduced-motion: reduce) {
         .spinner-blade { animation: none; opacity: 0.5; }
-    }
-
-    /* Replayed by remounting the icon on a key change, so it fires on every switch. */
-    .animate-nav-icon-pop {
-        animation: nav-icon-pop 0.3s cubic-bezier(0.32, 0.72, 0, 1);
-    }
-    @media (prefers-reduced-motion: reduce) {
-        .animate-nav-icon-pop { animation: none; }
     }
 
     /* Enter animation for content that swaps in place (e.g. the parties tab list).
@@ -553,16 +536,6 @@ html:has([data-runway]) {
         height: 0;
     }
 
-    /* BottomNav sits flush with the bottom edge, per Arthur */
-    .bottom-safe-nav {
-        bottom: 0;
-    }
-
-    /* Content bottom padding: clears BottomNav + safe area */
-    .pb-safe-nav {
-        padding-bottom: calc(6rem + env(safe-area-inset-bottom, 0px));
-    }
-
     /* Invite page RSVP bar: sits above the iPhone home indicator */
     .pb-safe-rsvp {
         padding-bottom: calc(2rem + env(safe-area-inset-bottom, 0px));
@@ -571,11 +544,5 @@ html:has([data-runway]) {
     /* Content bottom padding: clears the RSVP bar (50px buttons + its own 2rem) */
     .pb-safe-rsvp-content {
         padding-bottom: calc(5.5rem + env(safe-area-inset-bottom, 0px));
-    }
-
-    /* Create-flow content: clears the fixed weiter button (50px), its 1.5rem gap,
-       the step dots (8px) and the 2rem those sit on. */
-    .pb-safe-step {
-        padding-bottom: calc(8.5rem + env(safe-area-inset-bottom, 0px));
     }
 }

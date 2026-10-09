@@ -18,12 +18,13 @@ import LegalTextScreen, { type LegalSection } from '@/features/profile/LegalText
 //                         Auth-Sperre über die ganze Seite
 //   Antwortzwang          InviteScreen.tsx:117 — ein angemeldeter Gast ohne Antwort
 //                         sieht die Party erst, nachdem er geantwortet hat
-//   Party vorbei          isPartyOver in lib/utils.ts:65; InviteScreen und
-//                         PartyDetailScreen blenden dann Adresse und RSVP-Zeile aus
+//   Party vorbei          isPartyOver in lib/utils.ts; PartyDetail blendet dann auf der
+//                         Einladungsseite Adresse und Antwortleiste aus
 //   Chat-Vorschau         app/e/[invite_code]/page.tsx:41 — bewusst OHNE Adresse
 //   Gästezahl             events.max_guests, RLS-Policy party_has_room plus Trigger
 //                         rsvps_enforce_capacity, Ablehnung mit "Diese Party ist voll."
-//   Gast entfernen        PartyGuestsScreen.tsx:64 — der Link funktioniert danach weiter
+//   Gast entfernen        features/party-detail/GuestsPage.tsx (deleteRsvp) — der Link
+//                         funktioniert danach weiter
 //   Umfrageantworten      pool_responses: Mitglieder derselben Party lesen ALLE Antworten,
 //                         auch die Freitexte
 //   Bildbearbeitung       lib/image.ts — EXIF raus, verkleinert, als JPEG neu kodiert
@@ -36,7 +37,7 @@ import LegalTextScreen, { type LegalSection } from '@/features/profile/LegalText
 //                         wahlweise Google. Eine Möglichkeit, die E-Mail-Adresse in der
 //                         App zu ändern, gibt es nicht — es gibt keinen Screen dafür
 //   Hintergrundmotive     public/backgrounds/bg-1..8.jpg, ausgewählt statt hochgeladen
-//                         (CreatePartyScreen.tsx:40)
+//                         (COVER_PRESETS, features/create-party/steps/CoverStep.tsx)
 //
 // Was der Text bewusst NICHT sagt:
 //

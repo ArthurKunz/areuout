@@ -28,12 +28,6 @@ export async function updateProfileAvatar(userId: string, avatarUrl: string) {
   return supabase.from('profiles').update({ avatar_url: avatarUrl }).eq('id', userId)
 }
 
-// Choosing initials means dropping the photo: the two are alternatives, and the
-// avatar components fall back to initials exactly when avatar_url is null.
-export async function updateProfileAvatarColor(userId: string, avatarColor: string) {
-  return supabase.from('profiles').update({ avatar_url: null, avatar_color: avatarColor }).eq('id', userId)
-}
-
 // Uploads a new profile picture and points the row at it. The picked file never reaches
 // the bucket unchanged (metadata stripped, resized, as in onboarding), and the old file
 // goes only once the row points at the new one, so a failed update cannot leave the
