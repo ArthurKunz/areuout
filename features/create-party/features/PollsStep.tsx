@@ -4,6 +4,7 @@ import { useState } from 'react'
 import { Plus } from 'lucide-react'
 import StepFrame from '../StepFrame'
 import AddButton from '@/components/shared/AddButton'
+import Collapse from '@/components/shared/Collapse'
 import ToggleInput from '@/components/shared/ToggleInput'
 import SwipeToRemove from '@/components/shared/SwipeToRemove'
 import { InputRow } from '@/components/shared/Input'
@@ -33,7 +34,8 @@ export default function PollsStep({
 }) {
   const [polls, setPolls] = useState<Listed[]>(() => draft.polls.map((poll) => ({ ...poll, key: newBlockKey() })))
   // The poll on the form screen; key null for a new one. null: the list is shown.
-  const [form, setForm] = useState<{ key: number | null; poll: PollDraft } | null>(null)
+  // `opened`: how many options it came with. Only options added after that unfold.
+  const [form, setForm] = useState<{ key: number | null; poll: PollDraft; opened: number } | null>(null)
 
   if (form) {
     const { poll } = form
@@ -66,7 +68,7 @@ export default function PollsStep({
           />
           {poll.options.map((option, i) => (
             // Options are only ever appended, so the index is a stable key.
-            <div key={i}>
+            <Collapse key={i} open appear={i >= form.opened}>
               {previewDivider}
               <InputRow
                 label={`Option ${i + 1}`}
@@ -75,7 +77,7 @@ export default function PollsStep({
                 placeholder={OPTION_PLACEHOLDERS[i]}
                 maxLength={LIMITS.option}
               />
-            </div>
+            </Collapse>
           ))}
           {poll.options.length < LIMITS.maxOptions && (
             <>
@@ -113,13 +115,13 @@ export default function PollsStep({
       {polls.length < LIMITS.polls && (
         <AddButton
           label='Umfrage hinzufügen'
-          onClick={() => setForm({ key: null, poll: { question: '', options: ['', ''], allowMultiple: false } })}
+          onClick={() => setForm({ key: null, poll: { question: '', options: ['', ''], allowMultiple: false }, opened: 2 })}
         />
       )}
       {polls.map(({ key, ...poll }) => (
         <SwipeToRemove
           key={key}
-          onTap={() => setForm({ key, poll })}
+          onTap={() => setForm({ key, poll, opened: poll.options.length })}
           onRemove={() => setPolls((current) => current.filter((p) => p.key !== key))}
         >
           <div className={previewSurface}>
