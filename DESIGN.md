@@ -46,6 +46,73 @@ toolbar returns, set it to `0 0 #0000`. The buttons, above all the small round o
 are never made subtler. The detail's info cards and the guest list are intentionally
 not glass.
 
+## Motion
+
+Added in step 11d. Same lock as the rest of this page: no new duration, curve or
+animation without asking Arthur. The tokens live in the `MOTION` block of `globals.css`;
+no component writes a number of its own.
+
+| Token | Value | For |
+|---|---|---|
+| `--ease-ios` | `cubic-bezier(0.32, 0.72, 0, 1)` | everything that moves on screen or leaves it |
+| `--ease-out-soft` | `cubic-bezier(0.23, 1, 0.32, 1)` | only things that appear |
+| `--duration-press` | 150ms | press and release, a selected tick, colour on a toggle of state |
+| `--duration-exit` | 160ms | a menu or prompt leaving |
+| `--duration-enter` | 220ms | a menu or prompt appearing, loaded content fading in, the switch |
+| `--duration-move` | 300ms | something changing place: the page push, the TabNav selector, the swipe settle, the poll bar, `Collapse`, `WheelSheet` |
+
+In Tailwind: `ease-ios`, and `duration-(--duration-press)` (there is no duration
+namespace). `CLOSE_MS` in `WheelSheet.tsx` is `--duration-move` written twice.
+
+**Rules**
+
+- Only `transform`, `translate`, `scale` and `opacity` animate. Tailwind v4 writes
+  `scale-*` and `translate-*` as their own properties, so a transition list names
+  `scale` or `translate`, not just `transform`.
+- The finger gets physics, everything else a curve. `Sheet.tsx` is the one spring
+  (critically damped, response 0.35, Apple's momentum projection, rubber band); it is
+  not to be rebuilt. `SwipeToRemove` uses the same projection to decide open or closed.
+- Enter and exit along the same path: a page leaves to the right it came from, a menu
+  shrinks back into its trigger (`transform-origin` at the trigger; a modal grows from
+  its centre).
+- Exits without JavaScript: popups stay rendered and switch with `data-open`, closed is
+  `display: none`, and `display` is part of the transition (`allow-discrete`), so the
+  exit plays first. iOS 17.4 and newer; older ones show and hide without motion.
+- Reduced motion always: `--duration-move` collapses to nothing, travel is dropped, the
+  fades stay.
+- **Never fade or move an element that has glass inside it.** Opacity on an ancestor
+  makes it the glass's backdrop root and leaves the glass flat until the animation
+  ends. Glass that has to appear is revealed by height through `Collapse` — the one
+  exception to the first rule, used by `WarningBanner`, new poll options and the
+  existing `Collapse`/`WheelSheet` cases.
+
+**The classes** (`globals.css`, `@layer utilities`)
+
+| Class | Does | Used by |
+|---|---|---|
+| press | `active:scale-95` (small round buttons `active:scale-90`) over `--duration-press` | every button |
+| row press | `active:bg-selector` in a card, `active:opacity-60` for a loose row or a name | `SettingsList`, `LocationResultsList`, `PickerRow` / party list, guests, requests, voters, answers, host name, card links |
+| `.page-layer` | the iOS push: in from the right, the one underneath a quarter left and faded out | the detail and its pages (`PartyDetail`) |
+| `.pop` / `.pop-fade` | grow from 0.95 with a fade / only fade, on `data-open` | the ⋯ menu, the RSVP menu, `ConfirmPrompt` and its backdrop |
+| `.pop-rise` | fade and an 8px drop by `translate` (`Sheet` owns the bar's `transform`) | `TabNav` |
+| `.icon-in` | a glyph grows in from 0.6 when it is inserted | the share tick, the RSVP and poll ticks |
+| `animate-fade-in-up` | fade and an 8px rise on mount | the detail's cards, the three party lists and their empty text |
+
+**Left without motion on purpose**
+
+- The map camera (maplibre's own) and the map markers: the circle becomes a pin by
+  being destroyed and recreated, a morph needs the marker rebuilt.
+- Switching tabs: tapped many times a day, and the container, handle and bar persist.
+- Steps in create, edit, auth and onboarding, and the loaded Teilnehmer, Anfragen,
+  profile and Edit Party: full of glass (see the last rule).
+- Removing a row, the invite bar disappearing after the first answer, the detail's
+  card grid reflowing, the fitted container changing height: each needs a height
+  animation on exit.
+- `Chip`, `ImageUploadCircle`: they swap whole elements, not classes.
+- Avatars and list pictures loading.
+- `SwipeToRemove`'s red button still grows by `width` (shipped; the rows are
+  see-through, so a full-width button would shine through them).
+
 ## Header rule
 
 Every header inside the container is the first child of the scrolling body, at the top

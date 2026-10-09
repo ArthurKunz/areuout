@@ -129,9 +129,10 @@ actually protects the data.
   change the other. It is a third, separate rule from the two pairs above: it decides how
   long a party may be declared to run, not when its address is blanked or when it leaves
   the map.
-- Colours, sizes and spacing come from the variables in `app/globals.css`. If no variable fits, ask before adding one.
-- The look in `DESIGN.md` is locked: container width, glass tiers, header rule. Never
-  change a value in it and never add a new surface style without asking Arthur.
+- Colours, sizes, spacing, durations and curves come from the variables in `app/globals.css`. If no variable fits, ask before adding one.
+- The look in `DESIGN.md` is locked: container width, glass tiers, header rule, motion.
+  Never change a value in it and never add a new surface style or animation without
+  asking Arthur.
 - Icons come from `lucide-react`. Never hand-roll an `<svg>` for an icon.
 - No monetisation. Not ads, not paid tiers, not a payment provider, not an affiliate
   link. If a change would push past a free tier, say so before writing it.
