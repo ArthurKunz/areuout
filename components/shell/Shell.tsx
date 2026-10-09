@@ -52,8 +52,10 @@ export default function Shell({ children }: { children: ReactNode }) {
     <HideContext value={setHidden}>
       <FitContext value={setFit}>
         {/* Before Sheet on purpose: React attaches refs in tree order, and Sheet measures
-            the bar in its layout effect. Stacking comes from z-index, not from order. */}
-        {showChrome && <TabNav ref={navRef} pathname={pathname} onSelect={() => setOpen(true)} />}
+            the bar in its layout effect. Stacking comes from z-index, not from order.
+            Always mounted, so it can fade away rather than vanish (step 11d); a hidden
+            bar never makes the container draggable, that is `draggable` below. */}
+        <TabNav ref={navRef} shown={showChrome} pathname={pathname} onSelect={() => setOpen(true)} />
         <Sheet open={open || !showChrome} onOpenChange={setOpen} draggable={showChrome} fit={fit > 0} navRef={navRef}>
           {children}
         </Sheet>

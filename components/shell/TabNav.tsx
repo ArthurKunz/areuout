@@ -15,10 +15,13 @@ export const TABS = [
 // collapsed container is set by Sheet through the ref, frame by frame.
 export default function TabNav({
   ref,
+  shown,
   pathname,
   onSelect,
 }: {
   ref: Ref<HTMLElement>
+  // Off on screens without navigation: the bar stays mounted and fades away (step 11d).
+  shown: boolean
   pathname: string
   // Every tap opens the container: on another tab after navigating, on the active
   // tab instead of navigating.
@@ -29,7 +32,8 @@ export default function TabNav({
   return (
     <nav
       ref={ref}
-      className='fixed inset-x-0 bottom-nav-bottom z-20 mx-auto h-nav-height w-shell-width origin-bottom md:left-sheet-gutter md:mx-0 rounded-full bg-main p-2 glass-surface [--glass-blur:var(--blur-nav)] [--glass-shadow:var(--glass-nav-shadow)] will-change-transform'
+      data-open={shown || undefined}
+      className='pop-rise fixed inset-x-0 bottom-nav-bottom z-20 mx-auto h-nav-height w-shell-width origin-bottom md:left-sheet-gutter md:mx-0 rounded-full bg-main p-2 glass-surface [--glass-blur:var(--blur-nav)] [--glass-shadow:var(--glass-nav-shadow)] will-change-transform'
     >
       <div className='relative flex h-full'>
         {/* The selector slides between items instead of jumping per item */}

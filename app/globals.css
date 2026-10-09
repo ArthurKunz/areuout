@@ -487,6 +487,41 @@ html:has([data-runway]) {
         }
     }
 
+    /* The navbar coming and going with the screens that have it (step 11d): a fade and
+       an 8px drop, like .pop but without scale. It moves by translate, not transform:
+       Sheet writes the bar's inline transform (its scale) on every frame, and the two
+       properties compose. Hidden, it takes no touches while it fades. */
+    .pop-rise {
+        transition-property: opacity, translate, display;
+        transition-behavior: allow-discrete;
+        transition-duration: var(--duration-enter);
+        transition-timing-function: var(--ease-out-soft);
+    }
+    .pop-rise:not([data-open]) {
+        display: none;
+        opacity: 0;
+        translate: 0 8px;
+        pointer-events: none;
+        transition-duration: var(--duration-exit);
+        transition-timing-function: var(--ease-ios);
+    }
+    @starting-style {
+        .pop-rise[data-open] {
+            opacity: 0;
+            translate: 0 8px;
+        }
+    }
+    @media (prefers-reduced-motion: reduce) {
+        .pop-rise:not([data-open]) {
+            translate: none;
+        }
+        @starting-style {
+            .pop-rise[data-open] {
+                translate: none;
+            }
+        }
+    }
+
     /* A glyph that arrives as the answer to a tap (the share tick, a selected check):
        it grows in from 0.6 rather than appearing. Only on insert, never on leave. */
     .icon-in {

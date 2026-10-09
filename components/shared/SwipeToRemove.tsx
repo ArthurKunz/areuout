@@ -6,6 +6,11 @@ import { useRef, useState, type PointerEvent, type ReactNode } from 'react'
 const REVEAL = 112
 // Movement below this is still a tap.
 const SLOP = 6
+// Apple's momentum projection, as in Sheet.tsx: where a flick would come to rest, so a
+// short fast swipe still opens or closes the row.
+const DECELERATION = 0.998
+const project = (pxPerSecond: number) => ((pxPerSecond / 1000) * DECELERATION) / (1 - DECELERATION)
+const VELOCITY_WINDOW_MS = 100
 
 // A row that slides left to reveal a red Entfernen button behind it, the way iOS lists
 // remove an entry (also meant for the guest list, App Redesign 3.6). A tap on the
@@ -24,9 +29,12 @@ export default function SwipeToRemove({
   const [offset, setOffset] = useState(0)
   const [dragging, setDragging] = useState(false)
   const start = useRef<{ x: number; y: number; offset: number; moved: boolean } | null>(null)
+  // The last moves, for the velocity at release.
+  const samples = useRef<{ x: number; t: number }[]>([])
 
   const onPointerDown = (event: PointerEvent<HTMLDivElement>) => {
     start.current = { x: event.clientX, y: event.clientY, offset, moved: false }
+    samples.current = [{ x: event.clientX, t: event.timeStamp }]
   }
 
   const onPointerMove = (event: PointerEvent<HTMLDivElement>) => {
@@ -41,6 +49,17 @@ export default function SwipeToRemove({
       event.currentTarget.setPointerCapture(event.pointerId)
     }
     setOffset(Math.min(0, Math.max(-REVEAL, s.offset + dx)))
+    samples.current.push({ x: event.clientX, t: event.timeStamp })
+    while (samples.current.length > 2 && event.timeStamp - samples.current[0].t > VELOCITY_WINDOW_MS) samples.current.shift()
+  }
+
+  // Open or closed, by where the release would carry the row rather than where it is.
+  const settle = (current: number) => {
+    const first = samples.current[0]
+    const last = samples.current[samples.current.length - 1]
+    const elapsed = last.t - first.t
+    const pxPerSecond = elapsed > 0 ? ((last.x - first.x) / elapsed) * 1000 : 0
+    return current + project(pxPerSecond) < -REVEAL / 2 ? -REVEAL : 0
   }
 
   const onPointerUp = () => {
@@ -49,7 +68,7 @@ export default function SwipeToRemove({
     if (!s) return
     if (s.moved) {
       setDragging(false)
-      setOffset((current) => (current < -REVEAL / 2 ? -REVEAL : 0))
+      setOffset(settle(offset))
     } else if (offset !== 0) {
       setOffset(0)
     } else {

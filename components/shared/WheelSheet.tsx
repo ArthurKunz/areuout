@@ -138,18 +138,21 @@ export default function WheelSheet({
   const closeTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined)
   useEffect(() => () => clearTimeout(closeTimer.current), [])
 
-  const handleClose = () => {
+  // `before` runs once the exit has played, right before the parent unmounts the sheet.
+  const leave = (before?: () => void) => {
     // A second tap while it is already leaving must not queue another close.
     if (closeTimer.current) return
     setShown(false)
-    closeTimer.current = setTimeout(onClose, CLOSE_MS)
+    closeTimer.current = setTimeout(() => {
+      before?.()
+      onClose()
+    }, CLOSE_MS)
   }
+  const handleClose = () => leave()
 
-  const handleCancel = () => {
-    if (closeTimer.current) return
-    onCancel()
-    handleClose()
-  }
+  // The value goes back once the sheet is gone, not while it slides away: put back
+  // first, the wheels would visibly jump to the old value on their way out (step 11d).
+  const handleCancel = () => leave(onCancel)
 
   // The document must not scroll behind the sheet.
   useEffect(() => {
