@@ -149,74 +149,6 @@ export type Database = {
           },
         ]
       }
-      mitbring_claims: {
-        Row: {
-          claimed_by: string
-          created_at: string
-          event_id: string
-          id: string
-          item_id: string
-        }
-        Insert: {
-          claimed_by: string
-          created_at?: string
-          event_id: string
-          id?: string
-          item_id: string
-        }
-        Update: {
-          claimed_by?: string
-          created_at?: string
-          event_id?: string
-          id?: string
-          item_id?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "mitbring_claims_claimed_by_fkey"
-            columns: ["claimed_by"]
-            isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "mitbring_claims_item_fkey"
-            columns: ["item_id", "event_id"]
-            isOneToOne: false
-            referencedRelation: "mitbring_items"
-            referencedColumns: ["id", "event_id"]
-          },
-        ]
-      }
-      mitbring_items: {
-        Row: {
-          created_at: string
-          event_id: string
-          id: string
-          label: string
-        }
-        Insert: {
-          created_at?: string
-          event_id: string
-          id?: string
-          label: string
-        }
-        Update: {
-          created_at?: string
-          event_id?: string
-          id?: string
-          label?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "mitbring_items_event_id_fkey"
-            columns: ["event_id"]
-            isOneToOne: false
-            referencedRelation: "events"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
       pool_options: {
         Row: {
           created_at: string | null
@@ -540,17 +472,6 @@ export type Database = {
           title: string
         }[]
       }
-      get_mitbring_claims_by_event: {
-        Args: { p_event_id: string }
-        Returns: {
-          avatar_color: string
-          avatar_url: string
-          claimed_by: string
-          firstname: string
-          item_id: string
-          lastname: string
-        }[]
-      }
       get_my_parties: {
         Args: never
         Returns: {
@@ -647,10 +568,6 @@ export type Database = {
           lastname: string
           user_id: string
         }[]
-      }
-      get_party_mitbring_by_invite_code: {
-        Args: { p_invite_code: string }
-        Returns: Json
       }
       get_party_poll_data: {
         Args: { p_event_id: string }

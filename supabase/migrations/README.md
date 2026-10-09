@@ -101,6 +101,14 @@ und im Typfilter in `pools.service.ts`.
 
 ## Die beiden Mitbring-Migrationen
 
+**Entfernt in Schritt 12 des Redesigns.** `20261009170000_drop_the_mitbring_list.sql`
+löscht beide Tabellen und beide RPCs wieder. Sie läuft erst nach dem Merge in `main`,
+wenn das Vercel-Deployment auf Ready steht, weil die alte App bis dahin daraus liest.
+Bis sie angewendet ist, trägt ihr Dateiname einen Platzhalter; danach wird er auf die
+Version umbenannt, unter der sie tatsächlich lief, so wie es die Regel oben verlangt.
+Die beiden Dateien unten bleiben als Geschichte stehen. Ein erneutes Abspielen in
+Namensreihenfolge legt die Tabellen an und löscht sie wieder.
+
 `20260919132250_create_the_mitbring_list.sql` und
 `20260919132303_hand_out_the_mitbring_list_and_its_claims.sql` (Version 1.5.0) legen
 `mitbring_items` und `mitbring_claims` an, samt RLS und den beiden RPCs. Die

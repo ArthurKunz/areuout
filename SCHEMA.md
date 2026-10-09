@@ -16,7 +16,7 @@ Verified against the live database on 2026-09-01; section 8 added and verified 2
 
 ## 1. How security works here, in four sentences
 
-RLS is on for all eight tables in `public`, and every policy is written for the
+RLS is on for all seven tables in `public`, and every policy is written for the
 `authenticated` role. A signed-in person reaches their own rows and the rows of parties
 they belong to — nothing else. Everything an anonymous visitor sees comes from
 `SECURITY DEFINER` functions, never from a table. Host and guest are not stored
@@ -26,8 +26,9 @@ session.
 
 ## 2. The anon trap
 
-**`anon` holds SELECT, INSERT, UPDATE and DELETE on all eight tables.** That is the
-Supabase default and it has never been revoked.
+**`anon` holds SELECT, INSERT, UPDATE and DELETE on six of the seven tables** — all
+but `join_requests` (section 9b). That is the Supabase default and it has never been
+revoked.
 
 What stops it is that **no policy for the `anon` role exists**. RLS denies whatever no
 policy allows, so anon gets zero rows and zero writes. The protection is an absence, not
@@ -115,9 +116,7 @@ brake returns a 429 instead of a 500.
 `delete_self()` deletes exactly one row — from `auth.users`. Everything else follows,
 because every foreign key in `public` is ON DELETE CASCADE, with one exception:
 `pool_responses.option_id` is SET NULL. `profiles.id` is `auth.users.id` and cascades
-from it, and every other table cascades from `profiles` or `events` —
-`mitbring_claims.claimed_by` is in that chain for exactly this reason, and
-`mitbring_items` hangs off `events`.
+from it, and every other table cascades from `profiles` or `events`.
 
 That chain is the whole reason account deletion is complete. A new table holding
 anything personal has to join it — an FK without CASCADE makes the erasure silently
