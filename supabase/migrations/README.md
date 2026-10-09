@@ -287,10 +287,11 @@ in diesem Ordner als Migration abspielen würde.
 | `20261009180000_hide_the_address_24_hours_after_a_party_ends.sql` | `get_party_detail`: ab `party_visible_until` für Nicht-Hosts keine Adresse, verwischter Punkt | jederzeit, `main` ruft sie nicht auf | `apply_migration` |
 | `20261009180100_stop_handing_out_the_address_with_the_invite_code.sql` | `get_party_by_invite_code` ohne `location`, ohne `c_assumed_hours`, nicht mehr für PUBLIC | nach dem Merge, Deployment auf Ready | SQL-Editor (der Rumpf enthält ein DELETE) |
 | `20261009180200_hide_the_address_columns_of_events.sql` | `events`: SELECT nur noch spaltenweise, ohne `location`, `lat`, `lng` | nach dem Merge, Deployment auf Ready | `apply_migration` |
+| `20261009180300_drop_a_removed_guests_votes_and_answers.sql` | Trigger `rsvps_drop_pool_responses`: ein entfernter Gast verliert Stimmen und Antworten | jederzeit, für `main` unschädlich | SQL-Editor (DELETE) |
 
 `20261009180000` und `20261009180100` prüfen vorher per md5, dass der Funktionsrumpf auf
 der Datenbank noch der vom 09.10.2026 ist, und brechen sonst ab. Getestet in
 zurückgerollten Transaktionen auf der Live-Datenbank: 24-Stunden-Grenze für Gast, Host
 und Fremden; Einladungscode als anon und als Fremder; Anlegen, Bearbeiten,
 Link-Zurücksetzen, RSVP und Abstimmen mit den neuen Spaltenrechten. Warum es so gebaut
-ist, steht in `SCHEMA.md`, Abschnitte 2, 4 und 8.
+ist, steht in `SCHEMA.md`, Abschnitte 2, 4, 8 und 9a.

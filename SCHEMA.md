@@ -324,7 +324,10 @@ their own party. Answers are capped at 25 characters by `pool_responses_text_max
 that party. The host never has a row of their own (`rsvps_insert_authenticated` and
 `rsvps_update_own` refuse one), so there is nothing of theirs to delete.
 `rsvps_delete_own` lets a guest delete their own row; the old app uses it. Removing is
-not a ban: the invite link keeps working.
+not a ban: the invite link keeps working. Since step 12 a removed guest also loses their
+votes and answers on that party: the AFTER DELETE trigger `rsvps_drop_pool_responses`
+(`private.drop_pool_responses_on_rsvp_delete()`, SECURITY DEFINER) deletes them, because
+the host cannot delete other people's `pool_responses` under RLS.
 
 **Step 8 kept the gate.** A join request lives in its own table (section 9b), never in
 `rsvps`, so `is_party_member` does not count a pending request as a member and
