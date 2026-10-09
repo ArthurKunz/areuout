@@ -36,7 +36,7 @@ export default function DetailHeader({
           <span className='text-text-3 text-text'>
             von{' '}
             {onHost ? (
-              <button type='button' onClick={onHost}>
+              <button type='button' onClick={onHost} className='transition-opacity duration-(--duration-press) ease-ios active:opacity-60'>
                 {hostName}
               </button>
             ) : (

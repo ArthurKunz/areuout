@@ -33,7 +33,7 @@ export default function ColorSwatchPicker({
           type='button'
           onClick={() => onChange(color)}
           aria-label={color}
-          className={`flex h-[25px] w-[25px] shrink-0 items-center justify-center rounded-full ${COLOR_CLASS[color]}`}
+          className={`flex h-[25px] w-[25px] shrink-0 items-center justify-center rounded-full transition-transform duration-(--duration-press) ease-ios active:scale-90 ${COLOR_CLASS[color]}`}
         >
           {value === color && <Check size={14} strokeWidth={3} className='text-main-white' />}
         </button>

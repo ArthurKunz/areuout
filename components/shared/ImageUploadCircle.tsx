@@ -27,14 +27,14 @@ export default function ImageUploadCircle({
         type='button'
         onClick={onClick}
         aria-label={label}
-        className='flex h-[120px] w-[120px] shrink-0 items-center justify-center rounded-full bg-main glass-control'
+        className='flex h-[120px] w-[120px] shrink-0 items-center justify-center rounded-full bg-main glass-control transition-transform duration-(--duration-press) ease-ios active:scale-95'
       >
         <ImageUp size={36} className='text-heading' />
       </button>
     )
   }
   return (
-    <button type='button' onClick={onClick} aria-label={label} className='relative h-[120px] w-[120px] shrink-0'>
+    <button type='button' onClick={onClick} aria-label={label} className='relative h-[120px] w-[120px] shrink-0 transition-transform duration-(--duration-press) ease-ios active:scale-95'>
       {children ?? <img src={imageUrl ?? undefined} alt='' className='h-full w-full rounded-full object-cover' />}
       <span className='absolute -bottom-1 -right-1 flex h-[45px] w-[45px] items-center justify-center rounded-full bg-button-circle text-main-white glass-control'>
         <Pencil size={24} />

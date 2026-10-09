@@ -35,7 +35,7 @@ export default function Collapse({
 
   return (
     <div
-      className={`grid transition-[grid-template-rows] duration-300 ease-[cubic-bezier(0.32,0.72,0,1)] ${
+      className={`grid transition-[grid-template-rows] duration-(--duration-move) ease-ios ${
         open && entered ? 'grid-rows-[1fr]' : 'grid-rows-[0fr]'
       } ${className}`}
     >

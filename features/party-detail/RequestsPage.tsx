@@ -16,7 +16,7 @@ const fullName = (request: JoinRequest) => [request.firstname, request.lastname]
 
 // A 44px tap area around a 30px circle: the circle is what shows, the box is what the
 // finger hits.
-const tap = 'flex size-11 shrink-0 items-center justify-center transition-opacity duration-200 disabled:opacity-40'
+const tap = 'flex size-11 shrink-0 items-center justify-center transition-[opacity,scale] duration-(--duration-press) ease-ios enabled:active:scale-90 disabled:opacity-40'
 const circle = 'flex size-[30px] items-center justify-center rounded-full text-main-white glass-control'
 
 // The host's page `Anfragen` (App Redesign 6.3, mockup Hosting 10): two tiles with the
@@ -106,7 +106,7 @@ export default function RequestsPage({
                       avatarColor: request.avatar_color,
                     })
                   }
-                  className='flex min-w-0 flex-1 items-center gap-3 text-left'
+                  className='flex min-w-0 flex-1 items-center gap-3 text-left transition-opacity duration-(--duration-press) ease-ios active:opacity-60'
                 >
                   <Avatar
                     size={30}

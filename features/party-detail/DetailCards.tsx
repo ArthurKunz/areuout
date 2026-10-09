@@ -69,7 +69,7 @@ const ICON_CLASS = {
   slate: 'bg-slate',
 } as const
 
-const linkRow = 'flex h-11 w-full items-center justify-between text-text-2 text-blue'
+const linkRow = 'flex h-11 w-full items-center justify-between text-text-2 text-blue transition-opacity duration-(--duration-press) ease-ios active:opacity-60'
 
 // One dark rounded card: a round coloured icon, the bold title, the grey value under
 // it, and below a hairline an optional link row (App Redesign 3.5).

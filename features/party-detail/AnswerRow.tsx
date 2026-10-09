@@ -74,7 +74,7 @@ export default function AnswerRow({
         type='submit'
         disabled={!canSend}
         aria-label='Antwort abschicken'
-        className='flex size-6 shrink-0 items-center justify-center rounded-full bg-brand text-main-white transition-opacity disabled:opacity-40'
+        className='flex size-6 shrink-0 items-center justify-center rounded-full bg-brand text-main-white transition-[opacity,scale] duration-(--duration-press) ease-ios enabled:active:scale-90 disabled:opacity-40'
       >
         <Send size={13} />
       </button>

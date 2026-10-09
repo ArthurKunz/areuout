@@ -89,7 +89,7 @@ function Column({ labels, index, onChange }: WheelColumn) {
           type='button'
           onClick={() => handleTap(i)}
           style={{ height: ITEM_HEIGHT }}
-          className={`flex w-full snap-center items-center justify-center text-heading-4 transition-colors duration-150 ${
+          className={`flex w-full snap-center items-center justify-center text-heading-4 transition-colors duration-(--duration-press) ease-ios ${
             i === index ? 'text-heading' : 'text-text'
           }`}
         >
@@ -100,8 +100,9 @@ function Column({ labels, index, onChange }: WheelColumn) {
   )
 }
 
-// Matches the duration on both transitions below: the sheet has to finish playing
-// its entry backwards before the parent is told to unmount it.
+// Matches --duration-move in globals.css, the duration on both transitions below: the
+// sheet has to finish playing its entry backwards before the parent is told to unmount
+// it. Change one, change the other.
 const CLOSE_MS = 300
 
 // Both controls belong to the PAGE, not to the sheet: the same 45px circle in the
@@ -110,7 +111,7 @@ const CLOSE_MS = 300
 // is open the top corners are its two answers, not the page's way back. Styled as
 // IconButton, but not rendered through it: these need `fixed` and the fade-in.
 const cornerButtonClass =
-  'fixed top-0 z-50 mt-7.5 flex h-11.25 w-11.25 items-center justify-center rounded-full bg-button-circle glass-control transition-[transform,opacity] duration-300 ease-[cubic-bezier(0.32,0.72,0,1)] active:scale-95'
+  'fixed top-0 z-50 mt-7.5 flex h-11.25 w-11.25 items-center justify-center rounded-full bg-button-circle glass-control transition-[scale,opacity] duration-(--duration-move) ease-ios active:scale-95'
 
 export default function WheelSheet({
   columns,
@@ -161,7 +162,7 @@ export default function WheelSheet({
     <>
       <div
         onClick={handleClose}
-        className={`fixed inset-0 z-40 bg-main/50 backdrop-blur-xs touch-none transition-opacity duration-300 ${
+        className={`fixed inset-0 z-40 bg-main/50 backdrop-blur-xs touch-none transition-opacity duration-(--duration-move) ease-ios ${
           shown ? 'opacity-100' : 'opacity-0'
         }`}
       />
@@ -191,7 +192,7 @@ export default function WheelSheet({
           sheet would sit there flat and grey until the animation finished. The surface is
           the shell container's dark glass: translucent bg-main over the dimmed scrim. */}
       <div
-        className={`fixed inset-x-0 bottom-0 z-50 grid transition-[grid-template-rows] duration-300 ease-[cubic-bezier(0.32,0.72,0,1)] ${
+        className={`fixed inset-x-0 bottom-0 z-50 grid transition-[grid-template-rows] duration-(--duration-move) ease-ios ${
           shown ? 'grid-rows-[1fr]' : 'grid-rows-[0fr]'
         }`}
       >

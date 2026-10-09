@@ -9,14 +9,14 @@ export default function LocationResultsList({
   results: { id: string; label: string; onClick?: () => void }[]
 }) {
   return (
-    <div className='flex w-full max-w-[350px] flex-col rounded-[25px] bg-main glass-field'>
+    <div className='flex w-full max-w-[350px] flex-col overflow-hidden rounded-[25px] bg-main glass-field'>
       {results.map((result, i) => (
         <div key={result.id}>
           {i > 0 && <div className='mx-4 h-px rounded-full bg-divider' />}
           <button
             type='button'
             onClick={result.onClick}
-            className='flex h-[50px] w-full items-center px-4 text-left text-text-2 font-semibold text-heading'
+            className='flex h-[50px] w-full items-center px-4 text-left text-text-2 font-semibold text-heading transition-colors duration-(--duration-press) ease-ios active:bg-selector'
           >
             {result.label}
           </button>

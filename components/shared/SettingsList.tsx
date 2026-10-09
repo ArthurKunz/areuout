@@ -29,7 +29,7 @@ type SettingsRow =
 // the same way as InputGroup.
 export default function SettingsList({ rows }: { rows: SettingsRow[] }) {
   return (
-    <div className='flex w-[350px] flex-col justify-center rounded-[25px] bg-main py-[5px] glass-field'>
+    <div className='flex w-[350px] flex-col justify-center overflow-hidden rounded-[25px] bg-main py-[5px] glass-field'>
       {rows.map((row, i) => (
         <div key={row.label}>
           {i > 0 && <div className='mx-4 h-px rounded-full bg-divider' />}
@@ -51,7 +51,7 @@ export default function SettingsList({ rows }: { rows: SettingsRow[] }) {
             <button
               type='button'
               onClick={row.onClick}
-              className='flex h-[50px] w-full items-center justify-between px-4 text-left'
+              className='flex h-[50px] w-full items-center justify-between px-4 text-left transition-colors duration-(--duration-press) ease-ios active:bg-selector'
             >
               <span className='text-text-2 font-semibold text-heading'>{row.label}</span>
               <ChevronRight size={20} className='text-text' />

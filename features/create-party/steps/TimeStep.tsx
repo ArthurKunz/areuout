@@ -36,7 +36,7 @@ const minutes = (t: PartyTime) => t.hour * 60 + t.minute
 // included.
 export function PickerRow({ label, value, onClick }: { label: string; value: string; onClick: () => void }) {
   return (
-    <button type='button' onClick={onClick} className='flex h-[50px] w-full items-center gap-3 px-4'>
+    <button type='button' onClick={onClick} className='flex h-[50px] w-full items-center gap-3 px-4 transition-colors duration-(--duration-press) ease-ios active:bg-selector'>
       <span className='shrink-0 text-text-3 font-semibold text-heading'>{label}</span>
       <input
         type='text'
@@ -50,7 +50,7 @@ export function PickerRow({ label, value, onClick }: { label: string; value: str
   )
 }
 
-export const cardClass = 'w-full max-w-[350px] rounded-[25px] bg-main glass-field'
+export const cardClass = 'w-full max-w-[350px] overflow-hidden rounded-[25px] bg-main glass-field'
 
 // Startdatum and Startzeit with their wheels, and an optional end that has its own date
 // as well as its own time. Each end row joins its start's card when the switch below is

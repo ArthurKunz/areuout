@@ -144,6 +144,23 @@
     --glass-overlay-shadow: 0 16px 48px rgb(0 0 0 / 0.23);
 }
 
+/* MOTION (step 11d): the one set of curves and durations. No component writes a number
+   of its own; see DESIGN.md, "Motion". Static, so every token is emitted even when it is
+   only read through duration-(--duration-*), which Tailwind cannot see. */
+@theme static {
+    /* The iOS sheet curve: everything that moves on screen or leaves it. */
+    --ease-ios: cubic-bezier(0.32, 0.72, 0, 1);
+    /* A strong ease-out, only for things that appear. */
+    --ease-out-soft: cubic-bezier(0.23, 1, 0.32, 1);
+
+    --duration-press: 150ms;  /* press down and release */
+    --duration-exit: 160ms;   /* something leaves */
+    --duration-enter: 220ms;  /* something appears */
+    /* Something changes place: the page push, the TabNav selector, the swipe settle,
+       Collapse, WheelSheet. 300ms is what all of them shipped with in step 11b. */
+    --duration-move: 300ms;
+}
+
 /* One glass look, four strengths. Components layer on purpose: a position utility on
    the element (fixed, absolute) still wins over the `relative` the rim needs. The
    background stays the element's own class. An element can override one value with an
@@ -259,6 +276,12 @@ html:has([data-runway]) {
    loads last. */
 .maplibregl-map .maplibregl-ctrl-top-right {
     top: calc(var(--spacing-runway-top) + env(safe-area-inset-top, 0px));
+}
+
+/* Reduced motion: anything that changes place collapses to an instant; presses, fades
+   and colour changes keep their duration. Unlayered, so it wins over the theme's :root. */
+@media (prefers-reduced-motion: reduce) {
+    :root { --duration-move: 0.01ms; }
 }
 
 @keyframes skeleton-shimmer {

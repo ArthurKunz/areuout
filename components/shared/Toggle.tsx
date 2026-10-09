@@ -17,13 +17,13 @@ export default function Toggle({
       aria-checked={checked}
       aria-label={label}
       onClick={() => onChange(!checked)}
-      className={`relative h-[27px] w-[64px] shrink-0 rounded-full transition-colors duration-200 ${
+      className={`relative h-[27px] w-[64px] shrink-0 rounded-full transition-colors duration-(--duration-enter) ease-ios ${
         checked ? 'bg-green' : 'bg-button-toggle-off'
       }`}
     >
       <span
-        className={`absolute top-[1.5px] h-[24px] w-[38px] rounded-full bg-main-white transition-[left] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)] ${
-          checked ? 'left-[24.5px]' : 'left-[1.5px]'
+        className={`absolute top-[1.5px] left-[1.5px] h-[24px] w-[38px] rounded-full bg-main-white transition-transform duration-(--duration-enter) ease-ios ${
+          checked ? 'translate-x-[23px]' : 'translate-x-0'
         }`}
       />
     </button>

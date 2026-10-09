@@ -65,7 +65,7 @@ export default function HostingList({
       {parties.map((party, i) => (
         <li key={party.id}>
           {i > 0 && divider}
-          <button type='button' onClick={() => onSelect(party)} className='flex h-13 w-full items-center gap-3 text-left'>
+          <button type='button' onClick={() => onSelect(party)} className='flex h-13 w-full items-center gap-3 text-left transition-opacity duration-(--duration-press) ease-ios active:opacity-60'>
             {/* Uploaded covers are absolute Storage URLs, presets relative paths into
                 /public; both work as src. */}
             <img src={party.background_url} alt='' className='size-10 shrink-0 rounded-full object-cover' />

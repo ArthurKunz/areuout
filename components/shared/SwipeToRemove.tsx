@@ -64,7 +64,7 @@ export default function SwipeToRemove({
   }
 
   // Follows the finger directly while dragging, settles with the shell's easing after.
-  const motion = dragging ? '' : 'transition-[transform,width] duration-300 ease-[cubic-bezier(0.32,0.72,0,1)]'
+  const motion = dragging ? '' : 'transition-[transform,width] duration-(--duration-move) ease-ios'
 
   return (
     <div className='relative w-full max-w-[350px] overflow-hidden rounded-[25px]'>

@@ -41,7 +41,7 @@ export default function PollOptionResults({
           <div key={voter.id} className='flex flex-col'>
             <div className='flex h-[50px] items-center gap-3'>
               {onOpen && voter.id !== userId ? (
-                <button type='button' onClick={() => onOpen(voter)} className='flex min-w-0 flex-1 items-center gap-3 text-left'>
+                <button type='button' onClick={() => onOpen(voter)} className='flex min-w-0 flex-1 items-center gap-3 text-left transition-opacity duration-(--duration-press) ease-ios active:opacity-60'>
                   {person}
                 </button>
               ) : (

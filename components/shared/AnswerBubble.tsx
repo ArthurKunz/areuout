@@ -27,7 +27,7 @@ export default function AnswerBubble({
         }`}
       >
         {onName ? (
-          <button type='button' onClick={onName} className='block text-left text-text-3 text-text'>
+          <button type='button' onClick={onName} className='block text-left text-text-3 text-text transition-opacity duration-(--duration-press) ease-ios active:opacity-60'>
             {name}
           </button>
         ) : (

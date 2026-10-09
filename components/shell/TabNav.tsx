@@ -36,7 +36,7 @@ export default function TabNav({
         {activeIndex >= 0 && (
           <span
             aria-hidden
-            className='absolute inset-y-0 left-0 w-1/4 rounded-full bg-nav-selector transition-transform duration-300 ease-[cubic-bezier(0.32,0.72,0,1)]'
+            className='absolute inset-y-0 left-0 w-1/4 rounded-full bg-nav-selector transition-transform duration-(--duration-move) ease-ios'
             style={{ transform: `translateX(${activeIndex * 100}%)` }}
           />
         )}
@@ -52,7 +52,7 @@ export default function TabNav({
                 if (active) event.preventDefault()
                 onSelect()
               }}
-              className={`relative flex flex-1 flex-col items-center justify-center gap-1 transition-[color,transform] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)] active:scale-95 ${
+              className={`relative flex flex-1 flex-col items-center justify-center gap-1 transition-[color,scale] duration-(--duration-press) ease-ios active:scale-95 ${
                 active ? 'text-brand' : 'text-main-white'
               }`}
             >

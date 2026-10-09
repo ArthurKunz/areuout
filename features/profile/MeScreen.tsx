@@ -110,7 +110,7 @@ export default function MeScreen() {
               onClick={() => fileRef.current?.click()}
               disabled={uploading}
               aria-label='Profilbild ändern'
-              className='relative shrink-0 rounded-full'
+              className='relative shrink-0 rounded-full transition-transform duration-(--duration-press) ease-ios active:scale-95'
             >
               <Avatar
                 size={AVATAR_SIZE}

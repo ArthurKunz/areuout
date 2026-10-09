@@ -84,11 +84,13 @@ export default function CoverStep({
                 setError(null)
                 update({ cover: { kind: 'preset', url } })
               }}
-              className='flex flex-col items-center gap-1'
+              className='flex flex-col items-center gap-1 transition-transform duration-(--duration-press) ease-ios active:scale-95'
             >
               <img src={url} alt='' className='size-18 rounded-full object-cover' />
               <span className='flex size-4.5 items-center justify-center rounded-full border border-heading'>
-                {selected && <span className='size-2.5 rounded-full bg-heading' />}
+                <span
+                  className={`size-2.5 rounded-full bg-heading transition-[opacity,scale] duration-(--duration-press) ease-ios ${selected ? '' : 'scale-50 opacity-0'}`}
+                />
               </span>
             </button>
           )

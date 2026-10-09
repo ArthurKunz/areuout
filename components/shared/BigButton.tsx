@@ -29,7 +29,7 @@ export default function BigButton({
       type={type}
       onClick={onClick}
       disabled={disabled}
-      className={`flex h-[50px] w-full max-w-[350px] items-center justify-center rounded-full text-text-1 font-semibold glass-control transition-opacity duration-200 disabled:opacity-40 ${VARIANT_CLASS[variant]}`}
+      className={`flex h-[50px] w-full max-w-[350px] items-center justify-center rounded-full text-text-1 font-semibold glass-control transition-[opacity,scale] duration-(--duration-press) ease-ios enabled:active:scale-95 disabled:opacity-40 ${VARIANT_CLASS[variant]}`}
     >
       {children}
     </button>

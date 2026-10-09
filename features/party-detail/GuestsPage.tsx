@@ -131,7 +131,7 @@ export default function GuestsPage({
                 {swipeable || guest.user_id === userId ? (
                   person
                 ) : (
-                  <button type='button' onClick={() => onProfile(toUser(guest))} className='flex min-w-0 flex-1 items-center gap-3 text-left'>
+                  <button type='button' onClick={() => onProfile(toUser(guest))} className='flex min-w-0 flex-1 items-center gap-3 text-left transition-opacity duration-(--duration-press) ease-ios active:opacity-60'>
                     {person}
                   </button>
                 )}
