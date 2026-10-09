@@ -35,7 +35,7 @@ export default function ProfilePictureForm({ onSuccess, onClose, firstname, last
   const onPickFile = (picked: File | null) => {
     if (!picked) return
     if (!picked.type.startsWith('image/')) {
-      setWarning('Bitte ein Bild auswählen')
+      setWarning('Wähle ein Bild aus')
       return
     }
     if (picked.size > MAX_BYTES) {

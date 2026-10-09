@@ -77,7 +77,7 @@ export default function HostActions({
     const { error } = await deleteParty(partyId, hostId)
     if (error) {
       setPending(false)
-      alertError('Party konnte nicht gelöscht werden.', error.message)
+      alertError('Die Party konnte nicht gelöscht werden.', error.message)
       return
     }
     onDeleted()

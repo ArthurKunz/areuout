@@ -147,24 +147,7 @@ export default function PartyDetail({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [partyId, viewer])
 
-  if (!loaded) {
-    return (
-      <div className='flex min-h-0 flex-1 flex-col'>
-        <div className='flex shrink-0 items-start justify-between gap-3 px-5'>
-          <div className='flex flex-col gap-2 pt-1'>
-            <div className='h-6 w-40 rounded-full skeleton' />
-            <div className='h-3.5 w-24 rounded-full skeleton' />
-          </div>
-          <IconButton icon={X} label='Schließen' onClick={onClose} />
-        </div>
-        <div className='grid grid-cols-2 gap-2.5 px-5 pt-4'>
-          <div className='h-28 rounded-[25px] skeleton' />
-          <div className='h-28 rounded-[25px] skeleton' />
-          <div className='col-span-2 h-28 rounded-[25px] skeleton' />
-        </div>
-      </div>
-    )
-  }
+  if (!loaded) return <DetailSkeleton onClose={onClose} />
 
   const { party, polls, questions, inviteCode, userId, requested, full, requests } = loaded
   const hostName = `${party.host_firstname} ${party.host_lastname}`
@@ -427,6 +410,27 @@ export default function PartyDetail({
           </div>
         )
       })}
+    </div>
+  )
+}
+
+// The detail while it loads: header and the first cards as placeholders. Also shown by
+// the invite page while it resolves the code, before it knows which party to load.
+export function DetailSkeleton({ onClose }: { onClose: () => void }) {
+  return (
+    <div className='flex min-h-0 flex-1 flex-col'>
+      <div className='flex shrink-0 items-start justify-between gap-3 px-5'>
+        <div className='flex flex-col gap-2 pt-1'>
+          <div className='h-6 w-40 rounded-full skeleton' />
+          <div className='h-3.5 w-24 rounded-full skeleton' />
+        </div>
+        <IconButton icon={X} label='Schließen' onClick={onClose} />
+      </div>
+      <div className='grid grid-cols-2 gap-2.5 px-5 pt-4'>
+        <div className='h-28 rounded-[25px] skeleton' />
+        <div className='h-28 rounded-[25px] skeleton' />
+        <div className='col-span-2 h-28 rounded-[25px] skeleton' />
+      </div>
     </div>
   )
 }

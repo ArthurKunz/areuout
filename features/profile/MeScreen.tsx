@@ -75,7 +75,7 @@ export default function MeScreen() {
   const onPickFile = async (file: File | null) => {
     if (!file || !profile) return
     if (!file.type.startsWith('image/')) {
-      alertError('Bitte ein Bild auswählen (JPG, PNG, …).')
+      alertError('Wähle ein Bild aus (JPG, PNG, …).')
       return
     }
     if (file.size > MAX_BYTES) {

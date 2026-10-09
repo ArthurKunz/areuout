@@ -35,7 +35,7 @@ export default function CoverStep({
     setError(null)
     if (!picked) return
     if (!picked.type.startsWith('image/')) {
-      setError('Bitte ein Bild (JPG, PNG, …) auswählen.')
+      setError('Wähle ein Bild aus (JPG, PNG, …).')
       return
     }
     if (picked.size > BG_MAX_BYTES) {

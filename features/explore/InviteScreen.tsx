@@ -7,7 +7,7 @@ import { useShellMap } from '@/components/shell/MapContext'
 import AuthSheet from '@/features/auth/components/AuthSheet'
 import PartyMarkers, { type MarkerParty } from '@/features/hosting/PartyMarkers'
 import { getPartyByInviteCode } from '@/features/parties/services/parties.service'
-import PartyDetail from '@/features/party-detail/PartyDetail'
+import PartyDetail, { DetailSkeleton } from '@/features/party-detail/PartyDetail'
 import { supabase } from '@/lib/supabase/client'
 
 type State =
@@ -49,6 +49,7 @@ export default function InviteScreen({ inviteCode }: { inviteCode: string }) {
     <>
       <HideShell />
       {pin && <PartyMarkers parties={[pin]} selectedId={pin.id} onSelect={() => {}} />}
+      {state.kind === 'loading' && <DetailSkeleton onClose={() => router.push('/my-parties')} />}
       {state.kind === 'missing' && (
         <p className='px-5 pt-4 text-text-2 text-text'>Diese Party existiert nicht (mehr).</p>
       )}
