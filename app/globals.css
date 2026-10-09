@@ -444,6 +444,68 @@ html:has([data-runway]) {
         }
     }
 
+    /* Menus and prompts (step 11d). They stay rendered and switch with data-open: closed
+       is display none, and display is part of the transition (allow-discrete), so the
+       exit plays before the element goes. In: --duration-enter on the soft ease-out;
+       out: --duration-exit on the iOS curve. .pop grows out of its trigger from 0.95
+       (set transform-origin on the element); .pop-fade only fades, for a prompt's
+       backdrop, which must not show the screen's edges by shrinking. */
+    .pop, .pop-fade {
+        transition-property: opacity, transform, display;
+        transition-behavior: allow-discrete;
+        transition-duration: var(--duration-enter);
+        transition-timing-function: var(--ease-out-soft);
+    }
+    .pop:not([data-open]), .pop-fade:not([data-open]) {
+        display: none;
+        opacity: 0;
+        transition-duration: var(--duration-exit);
+        transition-timing-function: var(--ease-ios);
+    }
+    .pop:not([data-open]) {
+        transform: scale(0.95);
+    }
+    @starting-style {
+        .pop[data-open], .pop-fade[data-open] {
+            opacity: 0;
+        }
+        .pop[data-open] {
+            transform: scale(0.95);
+        }
+    }
+    @media (prefers-reduced-motion: reduce) {
+        /* The fade stays, the growing goes. */
+        .pop:not([data-open]) {
+            transform: none;
+        }
+        @starting-style {
+            .pop[data-open] {
+                transform: none;
+            }
+        }
+    }
+
+    /* A glyph that arrives as the answer to a tap (the share tick, a selected check):
+       it grows in from 0.6 rather than appearing. Only on insert, never on leave. */
+    .icon-in {
+        transition:
+            opacity var(--duration-press) var(--ease-out-soft),
+            transform var(--duration-press) var(--ease-out-soft);
+    }
+    @starting-style {
+        .icon-in {
+            opacity: 0;
+            transform: scale(0.6);
+        }
+    }
+    @media (prefers-reduced-motion: reduce) {
+        @starting-style {
+            .icon-in {
+                transform: none;
+            }
+        }
+    }
+
     .scrollbar-none {
         scrollbar-width: none;
         -ms-overflow-style: none;

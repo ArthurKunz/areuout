@@ -51,6 +51,9 @@ export default function GuestsPage({
 }) {
   const [guests, setGuests] = useState<Guest[] | null>(null)
   const [confirm, setConfirm] = useState<Guest | null>(null)
+  // The guest last asked about: the prompt keeps their name while it fades out.
+  const [asked, setAsked] = useState<Guest | null>(null)
+  if (confirm && confirm !== asked) setAsked(confirm)
   const [removing, setRemoving] = useState(false)
   const [query, setQuery] = useState('')
 
@@ -158,9 +161,10 @@ export default function GuestsPage({
         </ul>
       )}
 
-      {confirm && (
+      {asked && (
         <ConfirmPrompt
-          title={`${fullName(confirm)} aus der Party entfernen?`}
+          open={confirm !== null}
+          title={`${fullName(asked)} aus der Party entfernen?`}
           message='Der Einladungslink funktioniert weiter — die Person könnte erneut zusagen.'
           confirmLabel='Entfernen'
           pending={removing}

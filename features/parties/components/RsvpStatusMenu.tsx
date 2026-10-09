@@ -10,7 +10,8 @@ const OPTIONS: { status: RsvpStatus; label: string }[] = [
 ]
 
 // The dropdown opened by RsvpStatusButton: one row per status, a check next
-// to the current one, divided the same way as InputGroup.
+// to the current one, divided the same way as InputGroup. Every row keeps the check's
+// column, as in an iOS menu, so a new choice moves the tick and never the labels.
 export default function RsvpStatusMenu({
   status,
   onSelect,
@@ -28,7 +29,9 @@ export default function RsvpStatusMenu({
             onClick={() => onSelect(option.status)}
             className='flex flex-1 items-center gap-2 px-3 text-left text-text-3 font-medium text-heading'
           >
-            {status === option.status && <Check size={20} className='shrink-0' />}
+            <span className='flex size-5 shrink-0 items-center'>
+              {status === option.status && <Check size={20} className='icon-in' />}
+            </span>
             <span>{option.label}</span>
           </button>
         </div>

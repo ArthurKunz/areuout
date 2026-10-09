@@ -92,52 +92,56 @@ export default function HostActions({
     <>
       <div ref={menuRef} className='relative'>
         <IconButton icon={Ellipsis} label='Mehr' onClick={() => setMenuOpen((open) => !open)} />
-        {menuOpen && (
-          <div role='menu' className='absolute top-full right-0 z-20 mt-2 w-max overflow-hidden rounded-[20px] bg-main py-1 glass-overlay animate-fade-in-up'>
-            <button type='button' role='menuitem' onClick={pick(() => setConfirm('reset'))} className={`${menuItem} text-heading`}>
-              <Link size={22} />
-              Link-reset
-            </button>
-            <div className='mx-4 h-px rounded-full bg-divider' />
-            <button
-              type='button'
-              role='menuitem'
-              onClick={pick(() => router.push(`/hosting/${partyId}/edit`))}
-              className={`${menuItem} text-heading`}
-            >
-              <Pencil size={22} />
-              bearbeiten
-            </button>
-            <div className='mx-4 h-px rounded-full bg-divider' />
-            <button type='button' role='menuitem' onClick={pick(() => setConfirm('delete'))} className={`${menuItem} text-red`}>
-              <Trash2 size={22} />
-              löschen
-            </button>
-          </div>
-        )}
+        {/* Grows out of the ⋯ above its right edge. */}
+        <div
+          role='menu'
+          data-open={menuOpen || undefined}
+          className='pop absolute top-full right-0 z-20 mt-2 w-max origin-top-right overflow-hidden rounded-[20px] bg-main py-1 glass-overlay'
+        >
+          <button type='button' role='menuitem' onClick={pick(() => setConfirm('reset'))} className={`${menuItem} text-heading`}>
+            <Link size={22} />
+            Link-reset
+          </button>
+          <div className='mx-4 h-px rounded-full bg-divider' />
+          <button
+            type='button'
+            role='menuitem'
+            onClick={pick(() => router.push(`/hosting/${partyId}/edit`))}
+            className={`${menuItem} text-heading`}
+          >
+            <Pencil size={22} />
+            bearbeiten
+          </button>
+          <div className='mx-4 h-px rounded-full bg-divider' />
+          <button type='button' role='menuitem' onClick={pick(() => setConfirm('delete'))} className={`${menuItem} text-red`}>
+            <Trash2 size={22} />
+            löschen
+          </button>
+        </div>
       </div>
-      <IconButton icon={shared ? Check : Share} label='Teilen' onClick={share} />
+      {/* The tick grows in as the answer to the tap; the arrow comes back quietly. */}
+      <IconButton icon={shared ? Check : Share} iconClassName={shared ? 'icon-in' : undefined} label='Teilen' onClick={share} />
 
-      {confirm === 'reset' && (
-        <ConfirmPrompt
-          title='Link wirklich zurücksetzen?'
-          message='Der alte Link funktioniert danach nicht mehr. Wer ihn schon hat, kommt nicht mehr rein.'
-          confirmLabel='Zurücksetzen'
-          pending={pending}
-          onConfirm={resetLink}
-          onCancel={() => setConfirm(null)}
-        />
-      )}
-      {confirm === 'delete' && (
-        <ConfirmPrompt
-          title='Party wirklich löschen?'
-          message='Das kann nicht rückgängig gemacht werden.'
-          confirmLabel='löschen'
-          pending={pending}
-          onConfirm={remove}
-          onCancel={() => setConfirm(null)}
-        />
-      )}
+      {/* Both stay rendered, each with its own text, so the one closing keeps its words
+          while it fades. */}
+      <ConfirmPrompt
+        open={confirm === 'reset'}
+        title='Link wirklich zurücksetzen?'
+        message='Der alte Link funktioniert danach nicht mehr. Wer ihn schon hat, kommt nicht mehr rein.'
+        confirmLabel='Zurücksetzen'
+        pending={pending}
+        onConfirm={resetLink}
+        onCancel={() => setConfirm(null)}
+      />
+      <ConfirmPrompt
+        open={confirm === 'delete'}
+        title='Party wirklich löschen?'
+        message='Das kann nicht rückgängig gemacht werden.'
+        confirmLabel='löschen'
+        pending={pending}
+        onConfirm={remove}
+        onCancel={() => setConfirm(null)}
+      />
     </>
   )
 }

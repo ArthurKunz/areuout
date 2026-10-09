@@ -72,11 +72,10 @@ export default function RsvpControl({
   return (
     <div ref={ref} className='relative'>
       <RsvpStatusButton status={status} onClick={over ? undefined : () => setOpen((current) => !current)} />
-      {open && (
-        <div className='absolute top-0 right-full mr-2'>
-          <RsvpStatusMenu status={status} onSelect={choose} />
-        </div>
-      )}
+      {/* Grows out of the button at its top right, and plays its exit on close. */}
+      <div data-open={open || undefined} className='pop absolute top-0 right-full mr-2 origin-top-right'>
+        <RsvpStatusMenu status={status} onSelect={choose} />
+      </div>
     </div>
   )
 }

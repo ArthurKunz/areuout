@@ -9,11 +9,14 @@ export default function IconButton({
   label,
   onClick,
   type = 'button',
+  iconClassName,
 }: {
   icon: LucideIcon
   label: string
   onClick?: () => void
   type?: 'button' | 'submit'
+  // For a glyph that should arrive with motion, e.g. 'icon-in' (globals.css).
+  iconClassName?: string
 }) {
   return (
     <button
@@ -22,7 +25,7 @@ export default function IconButton({
       aria-label={label}
       className='flex h-[45px] w-[45px] shrink-0 items-center justify-center rounded-full bg-button-circle text-main-white glass-control transition-transform duration-(--duration-press) ease-ios active:scale-90'
     >
-      <Icon size={24} />
+      <Icon size={24} className={iconClassName} />
     </button>
   )
 }
