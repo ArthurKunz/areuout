@@ -15,6 +15,11 @@ uses them.
 - Wide screen (`md` and up): container and navbar sit together in the bottom left
   corner, `left: --spacing-sheet-gutter`, same bottom spacing as on a phone. The map
   stays full screen behind them.
+- The two popups rendered outside the container follow it into that column on a wide
+  screen (step 12, approved by Arthur): `ConfirmPrompt` sits centred over the
+  container's width (its backdrop still covers the whole window), and the time
+  `WheelSheet`'s panel and its ✗ and ✓ take the container's width and left edge. On a
+  phone both are unchanged.
 - `MapContext.containerInset()` writes the same breakpoint as `48rem` for the map's
   padding. Change one, change the other.
 

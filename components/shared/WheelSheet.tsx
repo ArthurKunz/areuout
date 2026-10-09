@@ -107,11 +107,11 @@ const CLOSE_MS = 300
 
 // Both controls belong to the PAGE, not to the sheet: the same 45px circle in the
 // same top corners as every other back button in the app. They sit ABOVE the scrim,
-// unlike SheetLayout's chevron, which deliberately hides under it — while the wheel
-// is open the top corners are its two answers, not the page's way back. Styled as
-// IconButton, but not rendered through it: these need `fixed` and the fade-in.
+// so while the wheel is open the top corners are its two answers, not the page's way
+// back. Styled as IconButton, but not rendered through it: these need their own
+// position in the column and the fade-in.
 const cornerButtonClass =
-  'fixed top-0 z-50 mt-7.5 flex h-11.25 w-11.25 items-center justify-center rounded-full bg-button-circle glass-control transition-[scale,opacity] duration-(--duration-move) ease-ios active:scale-95'
+  'pointer-events-auto absolute top-0 mt-7.5 flex h-11.25 w-11.25 items-center justify-center rounded-full bg-button-circle glass-control transition-[scale,opacity] duration-(--duration-move) ease-ios active:scale-95'
 
 export default function WheelSheet({
   columns,
@@ -170,32 +170,37 @@ export default function WheelSheet({
         }`}
       />
 
-      {/* The way out, spelled out. Tapping the dimmed backdrop was the only exit
-          before, and an exit nobody can see is one nobody finds. */}
-      <button
-        type='button'
-        onClick={handleCancel}
-        aria-label='Abbrechen'
-        className={`left-4 ${cornerButtonClass} ${shown ? 'opacity-100' : 'opacity-0'}`}
-      >
-        <X size={24} strokeWidth={3} className='text-main-white' />
-      </button>
+      {/* The container's column: the whole width on a phone, the container's on a wide
+          screen (DESIGN.md, "Width and position"). Takes no touches itself, so a tap
+          beside the buttons still reaches the backdrop. */}
+      <div className='pointer-events-none fixed inset-x-0 top-0 z-50 md:right-auto md:left-sheet-gutter md:w-shell-width'>
+        {/* The way out, spelled out. Tapping the dimmed backdrop was the only exit
+            before, and an exit nobody can see is one nobody finds. */}
+        <button
+          type='button'
+          onClick={handleCancel}
+          aria-label='Abbrechen'
+          className={`left-4 ${cornerButtonClass} ${shown ? 'opacity-100' : 'opacity-0'}`}
+        >
+          <X size={24} strokeWidth={3} className='text-main-white' />
+        </button>
 
-      <button
-        type='button'
-        onClick={handleClose}
-        aria-label='Übernehmen'
-        className={`right-4 ${cornerButtonClass} ${shown ? 'opacity-100' : 'opacity-0'}`}
-      >
-        <Check size={24} strokeWidth={3} className='text-main-white' />
-      </button>
+        <button
+          type='button'
+          onClick={handleClose}
+          aria-label='Übernehmen'
+          className={`right-4 ${cornerButtonClass} ${shown ? 'opacity-100' : 'opacity-0'}`}
+        >
+          <Check size={24} strokeWidth={3} className='text-main-white' />
+        </button>
+      </div>
 
       {/* Grown by height rather than slid in with a transform: a transform on this
           element would put its backdrop-blur in its own compositing group, and the
           sheet would sit there flat and grey until the animation finished. The surface is
           the shell container's dark glass: translucent bg-main over the dimmed scrim. */}
       <div
-        className={`fixed inset-x-0 bottom-0 z-50 grid transition-[grid-template-rows] duration-(--duration-move) ease-ios ${
+        className={`fixed inset-x-0 bottom-0 z-50 grid md:right-auto md:left-sheet-gutter md:w-shell-width transition-[grid-template-rows] duration-(--duration-move) ease-ios ${
           shown ? 'grid-rows-[1fr]' : 'grid-rows-[0fr]'
         }`}
       >

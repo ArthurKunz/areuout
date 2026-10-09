@@ -40,7 +40,7 @@ export default function ConfirmPrompt({
 
   return createPortal(
     // The layer itself takes no touches: closed, only it is left on the page.
-    <div className='pointer-events-none fixed inset-0 z-50 flex items-center justify-center px-7.5'>
+    <div className='pointer-events-none fixed inset-0 z-50 flex items-center justify-center px-7.5 md:justify-start md:px-0 md:pl-sheet-gutter'>
       <button
         type='button'
         aria-label='Abbrechen'
@@ -49,27 +49,31 @@ export default function ConfirmPrompt({
         data-open={open || undefined}
         className='pop-fade pointer-events-auto absolute inset-0 bg-main backdrop-blur-sm'
       />
-      {/* A modal is not anchored to a trigger, so it grows from its centre. */}
-      <div
-        role='dialog'
-        aria-modal='true'
-        aria-labelledby={titleId}
-        data-open={open || undefined}
-        className='pop pointer-events-auto relative flex w-full max-w-80 flex-col items-center gap-5 rounded-[25px] bg-main p-5 glass-overlay'
-      >
-        <div className='flex flex-col gap-1.5 text-center'>
-          <span id={titleId} className='text-heading-4 font-bold text-heading'>
-            {title}
-          </span>
-          <span className='text-text-3 text-text'>{message}</span>
-        </div>
-        <div className='flex w-full flex-col items-center gap-2'>
-          <BigButton variant='red' onClick={onConfirm} disabled={pending}>
-            {pending ? <Spinner /> : confirmLabel}
-          </BigButton>
-          <BigButton variant='main' onClick={onCancel} disabled={pending}>
-            Abbrechen
-          </BigButton>
+      {/* The container's column: the whole width on a phone, over the container on a
+          wide screen (DESIGN.md, "Width and position"). */}
+      <div className='relative flex w-full justify-center md:w-shell-width md:px-7.5'>
+        {/* A modal is not anchored to a trigger, so it grows from its centre. */}
+        <div
+          role='dialog'
+          aria-modal='true'
+          aria-labelledby={titleId}
+          data-open={open || undefined}
+          className='pop pointer-events-auto relative flex w-full max-w-80 flex-col items-center gap-5 rounded-[25px] bg-main p-5 glass-overlay'
+        >
+          <div className='flex flex-col gap-1.5 text-center'>
+            <span id={titleId} className='text-heading-4 font-bold text-heading'>
+              {title}
+            </span>
+            <span className='text-text-3 text-text'>{message}</span>
+          </div>
+          <div className='flex w-full flex-col items-center gap-2'>
+            <BigButton variant='red' onClick={onConfirm} disabled={pending}>
+              {pending ? <Spinner /> : confirmLabel}
+            </BigButton>
+            <BigButton variant='main' onClick={onCancel} disabled={pending}>
+              Abbrechen
+            </BigButton>
+          </div>
         </div>
       </div>
     </div>,
