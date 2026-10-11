@@ -40,7 +40,6 @@ template and the only `.env` file in version control.
 |---|---|
 | `NEXT_PUBLIC_SUPABASE_URL` | The Supabase project |
 | `NEXT_PUBLIC_SUPABASE_ANON_KEY` | The Supabase project. It ships in the browser bundle by design — what protects the data is Row Level Security, not keeping this secret |
-| `NEXT_PUBLIC_GOOGLE_MAPS_KEY` | The map preview (Static Maps API). Restrict it to your own domain in the Google Cloud Console |
 | `NEXT_PUBLIC_SITE_URL` | Your own domain, once there is one. Without it `lib/site.ts` falls back to the Vercel production domain, then to localhost |
 
 `SUPABASE_SERVICE_ROLE_KEY` appears nowhere in the source and belongs in neither
