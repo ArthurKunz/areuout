@@ -1,4 +1,4 @@
--- Rollback zu supabase/migrations/20261009180200_hide_the_address_columns_of_events.sql:
+-- Rollback zu supabase/migrations/20261009173733_hide_the_address_columns_of_events.sql:
 -- SELECT auf die ganze Tabelle wieder fuer anon und authenticated, wie bis zum 09.10.2026.
 -- Die Spaltenrechte werden zuerst entfernt, sonst blieben sie neben dem Tabellenrecht
 -- stehen.

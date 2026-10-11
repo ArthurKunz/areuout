@@ -46,7 +46,7 @@ holds SELECT on the table. `authenticated` holds it per column, on every column 
 `location`, `lat` and `lng`, so a host or guest reading the table directly cannot get
 past the rules in section 8. Address and exact point come only from the functions.
 **A new column on `events` is unreadable until it gets its own `GRANT SELECT (...)`.**
-Migration `20261009180200_hide_the_address_columns_of_events.sql`.
+Migration `20261009173733_hide_the_address_columns_of_events.sql`.
 
 ## 3. What RLS cannot do
 

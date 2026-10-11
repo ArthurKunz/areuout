@@ -101,13 +101,12 @@ und im Typfilter in `pools.service.ts`.
 
 ## Die beiden Mitbring-Migrationen
 
-**Entfernt in Schritt 12 des Redesigns.** `20261009170000_drop_the_mitbring_list.sql`
-löscht beide Tabellen und beide RPCs wieder. Sie läuft erst nach dem Merge in `main`,
-wenn das Vercel-Deployment auf Ready steht, weil die alte App bis dahin daraus liest.
-Bis sie angewendet ist, trägt ihr Dateiname einen Platzhalter; danach wird er auf die
-Version umbenannt, unter der sie tatsächlich lief, so wie es die Regel oben verlangt.
-Die beiden Dateien unten bleiben als Geschichte stehen. Ein erneutes Abspielen in
-Namensreihenfolge legt die Tabellen an und löscht sie wieder.
+**Entfernt in Schritt 12 des Redesigns.** `20261011114515_drop_the_mitbring_list.sql`
+löscht beide Tabellen und beide RPCs wieder. Sie lief am 11.10.2026 im SQL-Editor, nach
+dem Merge in `main` und erst, als das Vercel-Deployment auf Ready stand, weil die alte
+App bis dahin daraus las. Details im Abschnitt zu Schritt 12 unten. Die beiden Dateien
+unten bleiben als Geschichte stehen. Ein erneutes Abspielen in Namensreihenfolge legt
+die Tabellen an und löscht sie wieder.
 
 `20260919132250_create_the_mitbring_list.sql` und
 `20260919132303_hand_out_the_mitbring_list_and_its_claims.sql` (Version 1.5.0) legen
@@ -275,21 +274,36 @@ Gleiche Signatur, Sprache und `search_path`, Rechte und Policies bleiben. Alle A
 
 ## Die Migrationen zu Schritt 12 (Aufräumen)
 
-Geschrieben am 09.10.2026, **noch nicht angewendet**. Bis dahin tragen die Dateinamen
-Platzhalter-Versionen; nach dem Anwenden werden sie auf die echte Version umbenannt.
-Zu jeder Datei außer der Mitbring-Löschung liegt ein Rollback in `supabase/rollbacks/`
-mit demselben Namen. Er liegt bewusst nicht hier, weil die Supabase CLI jede `.sql`-Datei
-in diesem Ordner als Migration abspielen würde.
+Geschrieben am 09.10.2026, angewendet zwischen dem 09.10. und dem 11.10.2026. Die
+Dateinamen tragen seither die Version, unter der jede in
+`supabase_migrations.schema_migrations` steht. Zu jeder Datei außer der Mitbring-Löschung
+liegt ein Rollback in `supabase/rollbacks/` mit demselben Namen. Er liegt bewusst nicht
+hier, weil die Supabase CLI jede `.sql`-Datei in diesem Ordner als Migration abspielen
+würde.
 
-| Datei | Was sie ändert | Wann | Wie |
+| Datei | Was sie ändert | Wie angewendet | Version |
 |---|---|---|---|
-| `20261009170000_drop_the_mitbring_list.sql` | löscht `mitbring_items`, `mitbring_claims` und ihre zwei RPCs | nach dem Merge, Deployment auf Ready | `apply_migration` |
-| `20261009180000_hide_the_address_24_hours_after_a_party_ends.sql` | `get_party_detail`: ab `party_visible_until` für Nicht-Hosts keine Adresse, verwischter Punkt | jederzeit, `main` ruft sie nicht auf | `apply_migration` |
-| `20261009180100_stop_handing_out_the_address_with_the_invite_code.sql` | `get_party_by_invite_code` ohne `location`, ohne `c_assumed_hours`, nicht mehr für PUBLIC | nach dem Merge, Deployment auf Ready | SQL-Editor (der Rumpf enthält ein DELETE) |
-| `20261009180200_hide_the_address_columns_of_events.sql` | `events`: SELECT nur noch spaltenweise, ohne `location`, `lat`, `lng` | nach dem Merge, Deployment auf Ready | `apply_migration` |
-| `20261009180300_drop_a_removed_guests_votes_and_answers.sql` | Trigger `rsvps_drop_pool_responses`: ein entfernter Gast verliert Stimmen und Antworten | jederzeit, für `main` unschädlich | SQL-Editor (DELETE) |
+| `20261009173711_hide_the_address_24_hours_after_a_party_ends.sql` | `get_party_detail`: ab `party_visible_until` für Nicht-Hosts keine Adresse, verwischter Punkt | `apply_migration` | echt, von `apply_migration` vergeben |
+| `20261009173733_hide_the_address_columns_of_events.sql` | `events`: SELECT nur noch spaltenweise, ohne `location`, `lat`, `lng` | `apply_migration` | echt, von `apply_migration` vergeben |
+| `20261009180100_stop_handing_out_the_address_with_the_invite_code.sql` | `get_party_by_invite_code` ohne `location`, ohne `c_assumed_hours`, nicht mehr für PUBLIC | SQL-Editor (der Rumpf enthält ein DELETE) | von Hand gewählt, per INSERT eingetragen |
+| `20261009180300_drop_a_removed_guests_votes_and_answers.sql` | Trigger `rsvps_drop_pool_responses`: ein entfernter Gast verliert Stimmen und Antworten | SQL-Editor (DELETE) | von Hand gewählt, per INSERT eingetragen |
+| `20261011114515_drop_the_mitbring_list.sql` | löscht `mitbring_items`, `mitbring_claims` und ihre zwei RPCs | SQL-Editor, nach dem Merge, Deployment auf Ready | Uhrzeit der Datenbank kurz nach dem Ausführen, per INSERT eingetragen |
 
-`20261009180000` und `20261009180100` prüfen vorher per md5, dass der Funktionsrumpf auf
+Die beiden `apply_migration`-Dateien trugen bis zum 11.10.2026 die Platzhalter
+`20261009180000` und `20261009180200` und sind auf ihre echten Versionen umbenannt, die
+Rollbacks mit ihnen. Der SQL-Editor trägt nichts in die Migrationshistorie ein. Für die
+drei Editor-Migrationen wurde die Version deshalb am 11.10.2026 nachträglich per INSERT
+von Version und Name in `supabase_migrations.schema_migrations` eingetragen, wie bei
+`20261005170000` und `20261005171000` oben. Wann `180100` und `180300` genau liefen, ist
+nicht festgehalten. Ihre Platzhalter liegen nach den beiden `apply_migration`-Versionen
+und bleiben deshalb als von Hand gewählte Versionen stehen. Die Mitbring-Löschung trug
+den Platzhalter `20261009170000`, der vor alle anderen sortierte, obwohl sie als letzte
+lief. Sie heißt jetzt nach der Uhrzeit der Datenbank kurz danach. Durch die Umbenennung
+läuft die Spaltensperre von `events` beim erneuten Abspielen vor
+`get_party_by_invite_code`, nicht mehr danach. Die Funktion ist SECURITY DEFINER und
+liest `events` als Owner, die Spaltenrechte treffen sie also nicht.
+
+`20261009173711` und `20261009180100` prüfen vorher per md5, dass der Funktionsrumpf auf
 der Datenbank noch der vom 09.10.2026 ist, und brechen sonst ab. Getestet in
 zurückgerollten Transaktionen auf der Live-Datenbank: 24-Stunden-Grenze für Gast, Host
 und Fremden; Einladungscode als anon und als Fremder; Anlegen, Bearbeiten,
