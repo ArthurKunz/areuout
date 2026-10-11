@@ -1,4 +1,4 @@
--- Rollback zu supabase/migrations/20261009180000_hide_the_address_24_hours_after_a_party_ends.sql:
+-- Rollback zu supabase/migrations/20261009173711_hide_the_address_24_hours_after_a_party_ends.sql:
 -- get_party_detail wieder ohne Zeitlimit, Rumpf wie am 09.10.2026 (md5 d7541dd6c01751420e9f59399af800f6).
 
 CREATE OR REPLACE FUNCTION public.get_party_detail(p_event_id uuid)

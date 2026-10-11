@@ -3,7 +3,7 @@
 -- events_select_member gibt Host und jedem Gast die ganze events-Zeile, fuer immer. Wer
 -- direkt `select location, lat, lng from events` schrieb, ging an jeder Regel der
 -- Funktionen vorbei, auch an der 24-Stunden-Regel aus
--- 20261009180000_hide_the_address_24_hours_after_a_party_ends.sql. Die Policy laesst
+-- 20261009173711_hide_the_address_24_hours_after_a_party_ends.sql. Die Policy laesst
 -- sich nicht einfach auf den Host einengen: die Policies von pool_responses schauen als
 -- Gast in events, und Abstimmen braucht diese Sicht.
 --
