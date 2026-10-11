@@ -12,14 +12,26 @@ import LegalTextScreen, { type LegalSection } from '@/features/profile/LegalText
 //
 // Belegstellen für alles, was hier über die App behauptet wird:
 //
-//   Einladungslink        get_party_by_invite_code ist für anon freigegeben,
-//                         get_event_attendees_by_invite_code NICHT — ohne Konto also
-//                         keine Gästeliste. InviteScreen.tsx:99 legt zusätzlich die
-//                         Auth-Sperre über die ganze Seite
-//   Antwortzwang          InviteScreen.tsx:117 — ein angemeldeter Gast ohne Antwort
-//                         sieht die Party erst, nachdem er geantwortet hat
-//   Party vorbei          isPartyOver in lib/utils.ts; PartyDetail blendet dann auf der
-//                         Einladungsseite Adresse und Antwortleiste aus
+// Am 11.10.2026 an das Redesign angepasst: öffentliche Partys, Explore, Anfragen, kein
+// Antwortzwang und kein „Party für dich löschen" mehr.
+//
+//   Einladungslink        get_party_by_invite_code ist für anon freigegeben, liefert aber
+//                         keine Adresse. Ohne Konto zeigt InviteScreen.tsx nur das
+//                         AuthSheet. Angemeldet trägt der Aufruf invite_opens ein, und
+//                         get_party_detail gibt danach Adresse und genauen Punkt heraus
+//   Kein Antwortzwang     PartyDetail.tsx (bar): die Party ist sofort offen, unten ✗,
+//                         Teilnehmen und ?. Umfragen einer privaten Party erst mit RSVP
+//                         (get_party_poll_data, is_party_member)
+//   Explore               get_explore_parties: alle Partys bis 24 h nach dem Ende,
+//                         öffentliche wie private, private mit verwischtem Punkt
+//   Gästeliste            get_party_guest_list ohne Zugangsprüfung — jeder Angemeldete,
+//                         auch bei privaten Partys. Bewusst so gelassen (11.10.2026)
+//   Anfragen              request_to_join: nur private Partys, höchstens 10 offene;
+//                         accept_join_request legt eine Zusage an, Ablehnen löscht
+//   Antwort ändern        RsvpControl.tsx — einen Knopf zum Verlassen gibt es nicht mehr,
+//                         deleteRsvp ruft nur der Gastgeber auf (GuestsPage.tsx)
+//   Party vorbei          isPartyOver in lib/utils.ts (Ende plus 24 Stunden); PartyDetail
+//                         blendet dann auf der Einladungsseite Adresse und Antwortleiste aus
 //   Chat-Vorschau         app/e/[invite_code]/page.tsx:41 — bewusst OHNE Adresse
 //   Gästezahl             events.max_guests, RLS-Policy party_has_room plus Trigger
 //                         rsvps_enforce_capacity, Ablehnung mit "Diese Party ist voll."
@@ -67,7 +79,7 @@ const SECTIONS: LegalSection[] = [
   {
     heading: '1. Was areuout ist',
     paragraphs: [
-      'areuout ist eine App, mit der du private Partys erstellen, per Link teilen und Zu- oder Absagen verwalten kannst. Dazu kommen Umfragen, die ein Gastgeber seinen Gästen stellen kann.',
+      'areuout ist eine App, mit der du Partys erstellen, per Link teilen und Zu- oder Absagen verwalten kannst. Eine Party ist entweder öffentlich oder privat. Dazu kommen Umfragen, die ein Gastgeber seinen Gästen stellen kann.',
       'Anbieter ist Arthur Kunz, Bretschneiderstraße 14, 04229 Leipzig. Das Angebot ist kostenlos und wird ohne Gewinnerzielungsabsicht von einer Privatperson bereitgestellt — es gibt keine Werbung, keine kostenpflichtigen Funktionen und keine Bezahlvorgänge.',
       'Wir sind nicht Veranstalter der über die App organisierten Partys und nicht Vertragspartner zwischen Gastgeber und Gästen. Wir stellen nur das Werkzeug bereit.',
     ],
@@ -101,19 +113,22 @@ const SECTIONS: LegalSection[] = [
   {
     heading: '5. Der Einladungslink',
     paragraphs: [
-      'Jede Party bekommt einen Link mit einem zufälligen Code. Dieser Code ist der einzige Schutz der Party: Wer ihn hat, kommt an sie heran, und wir prüfen dabei nicht, ob er eingeladen war.',
+      'Jede Party bekommt einen Link mit einem zufälligen Code. Bei einer privaten Party ist dieser Code der einzige Schutz der Adresse: Wer ihn hat und angemeldet ist, sieht sie, und wir prüfen dabei nicht, ob er eingeladen war.',
       'Wer den Link öffnet, sieht auch ohne Konto Titel, Beschreibung, Datum, Uhrzeit und Hintergrundbild. Die Adresse und die Gästeliste zeigt die App nur angemeldeten Gästen — sie werden nicht bloß ausgeblendet, der Server gibt sie ohne Konto gar nicht erst heraus.',
-      'Bist du angemeldet und noch nicht eingetragen, musst du zuerst zu- oder absagen; die Party-Seite öffnet sich danach.',
+      'Bist du angemeldet, öffnet der Link die Party direkt, auch eine private. Darunter kannst du zusagen, vielleicht sagen oder absagen. Die Umfragen einer privaten Party siehst du erst, nachdem du geantwortet hast.',
       'Wird der Link in einem Chat geteilt, erzeugt der Messenger daraus eine Vorschau mit Titel, Beschreibung und Hintergrundbild. Die Adresse steht bewusst nicht darin, weil sie sonst in fremden Chatverläufen und auf gesperrten Bildschirmen auftauchen würde.',
       'Ist eine Party vorbei, blendet die App die Adresse aus und nimmt keine Antworten mehr an. Der Link bleibt gültig und zeigt die Party weiterhin als vergangen.',
       'Gib den Link deshalb nur an Menschen weiter, die eingeladen sein sollen. Als Gastgeber bist du dafür verantwortlich, wem du ihn gibst; als Gast dafür, dass du ihn nicht ungefragt weiterleitest.',
+      'Angemeldete sehen in der App alle Partys, die noch nicht vorbei sind, öffentliche wie private, auf der Karte und in einer Liste, jeweils mit Titel, Hintergrundbild, Datum, Uhrzeit und dem Namen des Gastgebers.',
+      'Bei einer öffentlichen Party sieht jede angemeldete Person auch die Adresse und kann über „Teilnehmen" direkt zusagen.',
+      'Bei einer privaten Party zeigt die Karte nur einen ungefähren Punkt. Ohne Link kannst du über „Anfragen" um Zugang bitten. Nimmt der Gastgeber an, bist du zugesagt. Lehnt er ab, verschwindet die Anfrage. Du kannst höchstens zehn Anfragen gleichzeitig offen haben.',
     ],
   },
   {
     heading: '6. Wenn du eine Party erstellst',
     paragraphs: [
       'Für eine Party ist allein verantwortlich, wer sie erstellt hat — für ihren Ablauf, die Einhaltung von Hausrecht, Nachbarschaftsschutz, Jugendschutz und allen weiteren geltenden Vorschriften. Wir prüfen die Angaben zu einer Party nicht und übernehmen keine Gewähr für ihre Richtigkeit.',
-      'Gib als Adresse nur einen Ort an, über den du verfügen darfst. Ist es eine Wohnung, denk daran, dass jeder mit dem Link sie sehen kann.',
+      'Gib als Adresse nur einen Ort an, über den du verfügen darfst. Ist es eine Wohnung, denk daran, wer sie sehen kann: bei einer privaten Party jeder mit dem Link, bei einer öffentlichen Party jede angemeldete Person.',
       'Du kannst deine Party jederzeit ändern oder löschen. Mit dem Löschen verschwinden auch alle Zusagen, Umfragen, Antworten und das Hintergrundbild dieser Party — für alle Gäste, endgültig und ohne Vorwarnung an sie. Überleg dir das, wenn Leute bereits zugesagt haben.',
       'Wie viele Gäste zusagen dürfen, entscheidest du über die Gästezahl. Ist sie erreicht, lehnt die App weitere Zusagen ab.',
     ],
@@ -121,10 +136,10 @@ const SECTIONS: LegalSection[] = [
   {
     heading: '7. Wenn du auf eine Einladung antwortest',
     paragraphs: [
-      'Deine Antwort — zugesagt, vielleicht, abgesagt — sehen der Gastgeber und die übrigen Gäste derselben Party, zusammen mit deinem Vor- und Nachnamen und deinem Bild beziehungsweise deinen Initialen.',
+      'Deine Antwort (zugesagt, vielleicht, abgesagt) steht mit deinem Vor- und Nachnamen und deinem Bild beziehungsweise deinen Initialen auf der Gästeliste. Diese Liste kann jede angemeldete Person öffnen, die die Party in der App sieht, auch bei einer privaten Party.',
       'Ein Anspruch auf einen Platz besteht nicht. Hat der Gastgeber eine Gästezahl gesetzt und ist sie erreicht, wird deine Zusage abgelehnt — auch dann, wenn du sie im selben Moment abschickst wie jemand anderes.',
       'Der Gastgeber kann dich jederzeit von seiner Gästeliste entfernen. Der Einladungslink funktioniert danach weiter, du könntest also erneut zusagen — ob das gewollt ist, klärt ihr unter euch, nicht über uns.',
-      'Du kannst deine Antwort jederzeit ändern oder die Party über „Party für dich löschen" wieder verlassen. Über den Link kommst du jederzeit zurück.',
+      'Du kannst deine Antwort jederzeit über den runden Knopf in der Party ändern, bis sie vorbei ist, auch auf „abgesagt". Ganz von der Gästeliste nehmen kann dich nur der Gastgeber.',
       'Die Zeit, Zusagen und Absagen zu koordinieren, ersetzt keine Absprache: Ob eine Party stattfindet, wie sie abläuft und wer hineinkommt, entscheidet der Gastgeber, nicht die App.',
     ],
   },
@@ -132,7 +147,7 @@ const SECTIONS: LegalSection[] = [
     heading: '8. Umfragen',
     paragraphs: [
       'Als Gastgeber kannst du deinen Gästen Fragen stellen — mit vorgegebenen Antwortmöglichkeiten, als Freitext oder beides.',
-      'Antworten sind nicht anonym und nicht privat: Deine Auswahl und dein Freitext sind für den Gastgeber und für alle anderen Gäste derselben Party sichtbar, mit deinem Namen daneben. Schreib in ein Freitextfeld nichts, was nicht die ganze Party lesen soll.',
+      'Antworten sind nicht anonym und nicht privat: Deine Auswahl und dein Freitext stehen mit deinem Namen daneben. Bei einer privaten Party sehen sie der Gastgeber und alle, die auf die Einladung geantwortet haben. Bei einer öffentlichen Party sieht sie jede angemeldete Person. Schreib in ein Freitextfeld nichts, was nicht alle diese Menschen lesen sollen.',
       'Als Gastgeber darfst du über eine Umfrage keine Angaben abfragen, die besonders geschützt sind — Gesundheit, Herkunft, Religion, politische Meinung, sexuelle Orientierung oder Ähnliches. Auch nicht scherzhaft, und auch nicht als Antwortmöglichkeit zum Anklicken.',
     ],
   },
@@ -147,7 +162,7 @@ const SECTIONS: LegalSection[] = [
   {
     heading: '10. Deine Inhalte',
     paragraphs: [
-      'Titel, Beschreibungen, Adressen, Bilder und Umfragen, die du einstellst, bleiben deine Inhalte. Du räumst uns nur das Recht ein, sie im Rahmen der App zu speichern, technisch zu verarbeiten und den anderen Gästen deiner Party anzuzeigen. Dieses Recht endet, wenn du den Inhalt oder dein Konto löschst.',
+      'Titel, Beschreibungen, Adressen, Bilder und Umfragen, die du einstellst, bleiben deine Inhalte. Du räumst uns nur das Recht ein, sie im Rahmen der App zu speichern, technisch zu verarbeiten und den Personen anzuzeigen, die sie nach diesen Bedingungen sehen dürfen. Dieses Recht endet, wenn du den Inhalt oder dein Konto löschst.',
       'Ein Bild, das du hochlädst, verändern wir dabei: Es wird verkleinert, als JPEG neu gespeichert und von den Angaben der Kamera befreit — insbesondere von GPS-Koordinaten, Gerätemodell und Aufnahmezeitpunkt. Gespeichert wird nur diese bereinigte Fassung, nicht deine Originaldatei. Erlaubt sind Bilddateien bis 5 MB.',
       'Du sicherst zu, dass du die nötigen Rechte an dem hast, was du hochlädst. Lade keine Bilder hoch, an denen andere Rechte haben, und keine Fotos von Personen ohne deren Einverständnis.',
     ],
@@ -255,5 +270,5 @@ const SECTIONS: LegalSection[] = [
 ]
 
 export default function NutzungsbedingungenPage() {
-  return <LegalTextScreen title='Nutzungsbedingungen' sections={SECTIONS} updated='26. August 2026' />
+  return <LegalTextScreen title='Nutzungsbedingungen' sections={SECTIONS} updated='11. Oktober 2026' />
 }
