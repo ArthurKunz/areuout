@@ -5,7 +5,7 @@ import { useState } from 'react'
 import StepFrame from '@/features/create-party/StepFrame'
 import InputGroup from '@/components/shared/InputGroup'
 import Spinner from '@/components/shared/Spinner'
-import { CircleAlert } from 'lucide-react'
+import { CircleAlert, Info } from 'lucide-react'
 import { Alert, AlertDescription, AlertTitle } from '@/components/shared/Alert'
 import { alertError } from '@/lib/utils'
 import type { SignUpProps } from '../types/auth.types'
@@ -29,6 +29,8 @@ export default function SignUpForm({ onSuccess, onClose, onSignIn, initialEmail 
   // typing more, and the password may well be fine already.
   const showPasswordWarning = password.length > 0 && !isPasswordValid
   const warning = serverWarning ?? (showPasswordWarning ? passwordWarning : null)
+  // The password rule while typing is guidance, not a failure: neutral, without a title.
+  const rule = !serverWarning
   const canContinue = email.trim().length > 0 && isPasswordValid
 
   const handleSignUp = async () => {
@@ -106,13 +108,18 @@ export default function SignUpForm({ onSuccess, onClose, onSignIn, initialEmail 
         ]}
       />
 
-      {warning && (
-        <Alert>
-          <CircleAlert />
-          <AlertTitle>{serverWarning ? 'Account nicht erstellt' : 'Passwort zu schwach'}</AlertTitle>
+      {warning && (rule ? (
+        <Alert tone='notice'>
+          <Info />
           <AlertDescription>{warning}</AlertDescription>
         </Alert>
-      )}
+      ) : (
+        <Alert>
+          <CircleAlert />
+          <AlertTitle>Account nicht erstellt</AlertTitle>
+          <AlertDescription>{warning}</AlertDescription>
+        </Alert>
+      ))}
 
       {/* The address is taken — possibly by this very user, coming back around from a
           half-finished sign-up. Either way the only move left is to sign in, so the

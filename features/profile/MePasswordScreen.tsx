@@ -6,7 +6,7 @@ import { supabase } from '@/lib/supabase/client'
 import { FitSheet } from '@/components/shell/Shell'
 import StepFrame from '@/features/create-party/StepFrame'
 import InputGroup from '@/components/shared/InputGroup'
-import { CircleAlert } from 'lucide-react'
+import { CircleAlert, Info } from 'lucide-react'
 import { Alert, AlertDescription, AlertTitle } from '@/components/shared/Alert'
 import { alertError } from '@/lib/utils'
 import { usePasswordValidation } from '@/features/auth/hooks/usePasswordValidation'
@@ -26,6 +26,8 @@ export default function MePasswordScreen() {
     : password.length > 0 && passwordWarning
       ? passwordWarning
       : null
+  // The password rule while typing is guidance, not a failure: neutral, without a title.
+  const rule = !mismatch
   const canSave = password.length > 0 && confirm.length > 0 && !mismatch
 
   const handleSave = async () => {
@@ -65,13 +67,18 @@ export default function MePasswordScreen() {
             { label: 'Password wiederholen', value: confirm, onChange: setConfirm, type: 'password', placeholder: '••••••••' },
           ]}
         />
-        {warning && (
-          <Alert>
-            <CircleAlert />
-            <AlertTitle>{mismatch ? 'Eingabe prüfen' : 'Passwort zu schwach'}</AlertTitle>
+        {warning && (rule ? (
+          <Alert tone='notice'>
+            <Info />
             <AlertDescription>{warning}</AlertDescription>
           </Alert>
-        )}
+        ) : (
+          <Alert>
+            <CircleAlert />
+            <AlertTitle>Eingabe prüfen</AlertTitle>
+            <AlertDescription>{warning}</AlertDescription>
+          </Alert>
+        ))}
       </StepFrame>
     </>
   )

@@ -6,7 +6,7 @@ import { supabase } from '@/lib/supabase/client'
 import StepFrame from '@/features/create-party/StepFrame'
 import InputGroup from '@/components/shared/InputGroup'
 import Spinner from '@/components/shared/Spinner'
-import { CircleAlert } from 'lucide-react'
+import { CircleAlert, Info } from 'lucide-react'
 import { Alert, AlertDescription, AlertTitle } from '@/components/shared/Alert'
 import { alertError } from '@/lib/utils'
 import { usePasswordValidation } from '@/features/auth/hooks/usePasswordValidation'
@@ -36,6 +36,8 @@ export default function ChangePasswordForm({ onSuccess }: ChangePasswordFormProp
       : password.length > 0 && passwordWarning
         ? passwordWarning
         : null)
+  // The password rule while typing is guidance, not a failure: neutral, without a title.
+  const rule = !serverWarning && !mismatch
   const canSave = password.length > 0 && confirm.length > 0 && !mismatch && isPasswordValid
 
   const handleSave = async () => {
@@ -89,13 +91,18 @@ export default function ChangePasswordForm({ onSuccess }: ChangePasswordFormProp
         ]}
       />
 
-      {warning && (
-        <Alert>
-          <CircleAlert />
-          <AlertTitle>{serverWarning ? 'Nicht gespeichert' : mismatch ? 'Eingabe prüfen' : 'Passwort zu schwach'}</AlertTitle>
+      {warning && (rule ? (
+        <Alert tone='notice'>
+          <Info />
           <AlertDescription>{warning}</AlertDescription>
         </Alert>
-      )}
+      ) : (
+        <Alert>
+          <CircleAlert />
+          <AlertTitle>{serverWarning ? 'Nicht gespeichert' : 'Eingabe prüfen'}</AlertTitle>
+          <AlertDescription>{warning}</AlertDescription>
+        </Alert>
+      ))}
     </StepFrame>
   )
 }
