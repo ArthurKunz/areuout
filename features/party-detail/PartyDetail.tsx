@@ -107,9 +107,9 @@ export default function PartyDetail({
         ? supabase.rpc('get_party_join_requests', { p_event_id: partyId })
         : Promise.resolve({ data: null, error: null }),
       supabase.auth.getSession(),
-    ]).then(async ([detail, polls, invite, requests, session]) => {
+    ]).then(async ([detail, polls, code, requests, session]) => {
       if (cancelled) return
-      const error = detail.error ?? polls.error ?? invite.error ?? requests.error
+      const error = detail.error ?? polls.error ?? code.error ?? requests.error
       if (error || !detail.data) {
         alertError('Die Party konnte nicht geladen werden.', error?.message)
         onClose()
@@ -132,7 +132,7 @@ export default function PartyDetail({
         party,
         polls: polls.data?.polls ?? [],
         questions: polls.data?.questions ?? [],
-        inviteCode: invite.data ?? null,
+        inviteCode: code.data ?? null,
         userId,
         requested: party.my_status === 'requested',
         full,
