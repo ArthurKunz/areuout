@@ -1,6 +1,7 @@
 import type { AuthError } from '@supabase/supabase-js'
 
-// Which failures get the inline WarningBanner and which get the blocking alert.
+// Which failures get the inline red Alert (components/shared/Alert) and which get the
+// blocking alertError.
 //
 // The test is NOT whose fault it is — it is whether the user can do something about it
 // on the screen they are standing on. A wrong password, an expired code or a rate limit
@@ -8,8 +9,8 @@ import type { AuthError } from '@supabase/supabase-js'
 // cannot act on (a degraded service, a misconfigured provider, a failed write) stays an
 // alert, where it is unmissable and carries the raw detail worth screenshotting.
 //
-// Every message has to fit ONE line beside the banner's icon — about 35 characters at
-// text-subheading-1 in the narrowest place it renders, the auth sheet.
+// Every message is the Alert's description under its title and should fit ONE line in
+// the narrowest place it renders, the auth sheet.
 const BANNER_MESSAGES: Record<string, string> = {
   invalid_credentials: 'Email oder Passwort stimmt nicht',
   email_not_confirmed: 'Bestätige zuerst deine Email',

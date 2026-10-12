@@ -58,10 +58,9 @@
     --text-hint-1: 10px;
     --text-hint-2: 8px;
 
-    /* RESTORED: removed in 08b45bf while WarningBanner and other screens still use
-       them; values as they were before. */
+    /* RESTORED: removed in 08b45bf while other screens still used them; values as
+       they were before. */
     --color-secondary: rgba(118, 118, 128, 0.25);
-    --color-warning: #FF453A;
     --color-sheet: #FFFFFF;
     --color-subheading: rgba(148, 148, 148, 0.9);
     --color-label-large: rgba(255, 255, 255, 0.9);
