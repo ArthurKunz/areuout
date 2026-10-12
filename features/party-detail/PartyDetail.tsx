@@ -99,7 +99,7 @@ export default function PartyDetail({
       supabase.rpc('get_party_detail', { p_event_id: partyId }).maybeSingle(),
       getDetailPolls(partyId),
       // Only the host gets the invite code, and only through this function: the column
-      // itself is not readable for guests (20261012180000_hide_the_invite_code_of_events.sql).
+      // itself is not readable for guests (20261012173022_hide_the_invite_code_of_events.sql).
       viewer === 'host'
         ? supabase.rpc('get_party_invite_code', { p_event_id: partyId })
         : Promise.resolve({ data: null, error: null }),
