@@ -2,6 +2,7 @@
 
 import StepFrame from '../StepFrame'
 import Chip from '@/components/shared/Chip'
+import Spinner from '@/components/shared/Spinner'
 import { FEATURES, type Feature } from '../features/FeatureChip'
 import type { PartyDraft } from '../draft'
 
@@ -77,7 +78,7 @@ export default function FeaturesStep({
       title='Features'
       onClose={onClose}
       onBack={onBack}
-      button={{ label: 'Erstellen', onClick: onCreate, disabled: saving }}
+      button={{ label: saving ? <Spinner /> : 'Erstellen', onClick: onCreate, disabled: saving }}
     >
       <FeatureChips draft={draft} update={update} onOpen={onOpen} />
     </StepFrame>
