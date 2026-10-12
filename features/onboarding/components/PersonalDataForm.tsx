@@ -3,7 +3,8 @@
 import { useState } from 'react'
 import StepFrame from '@/features/create-party/StepFrame'
 import InputGroup from '@/components/shared/InputGroup'
-import WarningBanner from '@/components/shared/WarningBanner'
+import { Info } from 'lucide-react'
+import { Alert, AlertDescription } from '@/components/shared/Alert'
 import { NAME_MAX } from '../constants/onboarding.constants'
 import type { NameFormProps } from '../types/onboarding.types'
 
@@ -43,7 +44,12 @@ export default function PersonalDataForm({ onSuccess }: NameFormProps) {
         ]}
       />
 
-      {atLimit && <WarningBanner message={`Maximal ${NAME_MAX} Zeichen`} />}
+      {atLimit && (
+        <Alert tone='notice'>
+          <Info />
+          <AlertDescription>{`Maximal ${NAME_MAX} Zeichen`}</AlertDescription>
+        </Alert>
+      )}
     </StepFrame>
   )
 }

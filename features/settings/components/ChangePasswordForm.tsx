@@ -6,7 +6,8 @@ import { supabase } from '@/lib/supabase/client'
 import StepFrame from '@/features/create-party/StepFrame'
 import InputGroup from '@/components/shared/InputGroup'
 import Spinner from '@/components/shared/Spinner'
-import WarningBanner from '@/components/shared/WarningBanner'
+import { CircleAlert } from 'lucide-react'
+import { Alert, AlertDescription, AlertTitle } from '@/components/shared/Alert'
 import { alertError } from '@/lib/utils'
 import { usePasswordValidation } from '@/features/auth/hooks/usePasswordValidation'
 import { authBannerMessage } from '@/features/auth/services/auth-errors'
@@ -88,7 +89,13 @@ export default function ChangePasswordForm({ onSuccess }: ChangePasswordFormProp
         ]}
       />
 
-      {warning && <WarningBanner message={warning} />}
+      {warning && (
+        <Alert>
+          <CircleAlert />
+          <AlertTitle>{serverWarning ? 'Nicht gespeichert' : mismatch ? 'Eingabe prüfen' : 'Passwort zu schwach'}</AlertTitle>
+          <AlertDescription>{warning}</AlertDescription>
+        </Alert>
+      )}
     </StepFrame>
   )
 }

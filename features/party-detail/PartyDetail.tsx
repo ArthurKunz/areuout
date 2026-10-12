@@ -1,11 +1,11 @@
 'use client'
 
 import { useEffect, useRef, useState } from 'react'
-import { UserPlus, X } from 'lucide-react'
+import { CalendarX, UserPlus, X } from 'lucide-react'
 import BigButton from '@/components/shared/BigButton'
 import IconButton from '@/components/shared/IconButton'
 import Spinner from '@/components/shared/Spinner'
-import WarningBanner from '@/components/shared/WarningBanner'
+import { Alert, AlertDescription } from '@/components/shared/Alert'
 import { setRsvp } from '@/features/parties/services/parties.service'
 import { getDetailPolls, type DetailPoll } from '@/features/parties/services/pools.service'
 import { supabase } from '@/lib/supabase/client'
@@ -367,7 +367,10 @@ export default function PartyDetail({
         >
           {invite && over && (
             <div className='pb-2.5'>
-              <WarningBanner message='Diese Party ist vorbei.' />
+              <Alert tone='notice'>
+                <CalendarX />
+                <AlertDescription>Diese Party ist vorbei.</AlertDescription>
+              </Alert>
             </div>
           )}
           {/* Fades in where the skeleton's tiles were. The header was already there, and

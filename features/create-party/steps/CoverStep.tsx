@@ -3,7 +3,8 @@
 import { useRef, useState } from 'react'
 import StepFrame from '../StepFrame'
 import ImageUploadCircle from '@/components/shared/ImageUploadCircle'
-import WarningBanner from '@/components/shared/WarningBanner'
+import { CircleAlert } from 'lucide-react'
+import { Alert, AlertDescription, AlertTitle } from '@/components/shared/Alert'
 import { BG_MAX_BYTES, COVER_PRESETS } from '@/features/parties/constants/background.constants'
 import { canLeaveCover, type PartyDraft } from '../draft'
 
@@ -68,7 +69,13 @@ export default function CoverStep({
           e.target.value = ''
         }}
       />
-      {error && <WarningBanner message={error} />}
+      {error && (
+        <Alert>
+          <CircleAlert />
+          <AlertTitle>Das ging nicht</AlertTitle>
+          <AlertDescription>{error}</AlertDescription>
+        </Alert>
+      )}
 
       <div role='radiogroup' aria-label='Vorlagen' className='mt-5 grid grid-cols-3 gap-x-6 gap-y-3'>
         {COVER_PRESETS.map((url, i) => {

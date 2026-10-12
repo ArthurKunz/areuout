@@ -6,7 +6,8 @@ import { supabase } from '@/lib/supabase/client'
 import { FitSheet } from '@/components/shell/Shell'
 import StepFrame from '@/features/create-party/StepFrame'
 import InputGroup from '@/components/shared/InputGroup'
-import WarningBanner from '@/components/shared/WarningBanner'
+import { CircleAlert } from 'lucide-react'
+import { Alert, AlertDescription, AlertTitle } from '@/components/shared/Alert'
 import { alertError } from '@/lib/utils'
 import { usePasswordValidation } from '@/features/auth/hooks/usePasswordValidation'
 
@@ -64,7 +65,13 @@ export default function MePasswordScreen() {
             { label: 'Password wiederholen', value: confirm, onChange: setConfirm, type: 'password', placeholder: '••••••••' },
           ]}
         />
-        {warning && <WarningBanner message={warning} />}
+        {warning && (
+          <Alert>
+            <CircleAlert />
+            <AlertTitle>{mismatch ? 'Eingabe prüfen' : 'Passwort zu schwach'}</AlertTitle>
+            <AlertDescription>{warning}</AlertDescription>
+          </Alert>
+        )}
       </StepFrame>
     </>
   )

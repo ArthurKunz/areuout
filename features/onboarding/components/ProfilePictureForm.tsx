@@ -7,7 +7,8 @@ import Avatar from '@/components/shared/Avatar'
 import ColorSwatchPicker, { type SwatchColor } from '@/components/shared/ColorSwatchPicker'
 import ImageUploadCircle from '@/components/shared/ImageUploadCircle'
 import Spinner from '@/components/shared/Spinner'
-import WarningBanner from '@/components/shared/WarningBanner'
+import { CircleAlert } from 'lucide-react'
+import { Alert, AlertDescription, AlertTitle } from '@/components/shared/Alert'
 import { alertError } from '@/lib/utils'
 import type { ProfilePictureFormProps } from '../types/onboarding.types'
 import { MAX_BYTES, BUCKET, AVATAR_SWATCHES, pickRandomAvatarColor } from '../constants/onboarding.constants'
@@ -139,7 +140,13 @@ export default function ProfilePictureForm({ onSuccess, onClose, firstname, last
 
       <ColorSwatchPicker value={color} onChange={selectColor} />
 
-      {warning && <WarningBanner message={warning} />}
+      {warning && (
+        <Alert>
+          <CircleAlert />
+          <AlertTitle>Das ging nicht</AlertTitle>
+          <AlertDescription>{warning}</AlertDescription>
+        </Alert>
+      )}
     </StepFrame>
   )
 }

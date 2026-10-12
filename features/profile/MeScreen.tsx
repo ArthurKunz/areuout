@@ -2,12 +2,12 @@
 
 import { useEffect, useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { Pencil } from 'lucide-react'
+import { CircleAlert, Pencil } from 'lucide-react'
 import { supabase } from '@/lib/supabase/client'
 import Avatar from '@/components/shared/Avatar'
 import SettingsList from '@/components/shared/SettingsList'
 import Spinner from '@/components/shared/Spinner'
-import WarningBanner from '@/components/shared/WarningBanner'
+import { Alert, AlertDescription, AlertTitle } from '@/components/shared/Alert'
 import { NAME_MAX, MAX_BYTES } from '@/features/onboarding/constants/onboarding.constants'
 import { alertError } from '@/lib/utils'
 import { getMyProfile, updateProfileName, uploadAvatar, type Profile } from './services/profile.service'
@@ -158,7 +158,13 @@ export default function MeScreen() {
                   { label: 'Rechtliches', onClick: () => router.push('/me/legal') },
                 ]}
               />
-              {warning && <WarningBanner message={warning} />}
+              {warning && (
+                <Alert>
+                  <CircleAlert />
+                  <AlertTitle>Nicht gespeichert</AlertTitle>
+                  <AlertDescription>{warning}</AlertDescription>
+                </Alert>
+              )}
             </div>
           </>
         )}

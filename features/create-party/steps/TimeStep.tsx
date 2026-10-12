@@ -4,7 +4,8 @@ import { useState } from 'react'
 import { createPortal } from 'react-dom'
 import StepFrame from '../StepFrame'
 import Collapse from '@/components/shared/Collapse'
-import WarningBanner from '@/components/shared/WarningBanner'
+import { CircleAlert } from 'lucide-react'
+import { Alert, AlertDescription, AlertTitle } from '@/components/shared/Alert'
 import ToggleInput from '@/components/shared/ToggleInput'
 import PartyDateSheet, { type PartyDate } from '@/features/parties/components/PartyDateSheet'
 import PartyTimeSheet, { type PartyTime } from '@/features/parties/components/PartyTimeSheet'
@@ -128,7 +129,13 @@ export function TimeFields({ draft, update }: { draft: PartyDraft; update: (patc
 
       <ToggleInput label='Endzeit' checked={draft.endEnabled} onChange={toggleEnd} />
 
-      {problem && <WarningBanner message={problem} />}
+      {problem && (
+        <Alert>
+          <CircleAlert />
+          <AlertTitle>Zeit prüfen</AlertTitle>
+          <AlertDescription>{problem}</AlertDescription>
+        </Alert>
+      )}
 
       {sheet && createPortal(sheet, document.body)}
     </>
