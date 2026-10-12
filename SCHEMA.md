@@ -47,6 +47,10 @@ holds SELECT on the table. `authenticated` holds it per column, on every column 
 past the rules in section 8. Address and exact point come only from the functions.
 **A new column on `events` is unreadable until it gets its own `GRANT SELECT (...)`.**
 Migration `20261009173733_hide_the_address_columns_of_events.sql`.
+`invite_code` leaves that grant too (`20261012180000_hide_the_invite_code_of_events.sql`):
+column rights are per role, not per row, so the grant gave every guest the code. The host
+reads it through `get_party_invite_code` (`20261012171505_add_get_party_invite_code.sql`),
+which answers only for the caller's own party.
 
 ## 3. What RLS cannot do
 
