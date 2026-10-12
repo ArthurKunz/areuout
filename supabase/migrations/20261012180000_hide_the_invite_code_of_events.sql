@@ -1,0 +1,21 @@
+-- invite_code ist fuer authenticated nicht mehr direkt lesbar (Final Review von
+-- Schritt 12, Befund A2). Den Code liest nur noch der Host, ueber
+-- get_party_invite_code (20261012171505_add_get_party_invite_code.sql).
+--
+-- Bisher gab der Spalten-Grant aus 20261009173733_hide_the_address_columns_of_events.sql
+-- jedem Gast mit RSVP den Code, und mit ihm jeden neuen Code nach einem Link-Reset.
+--
+-- Geprueft vor dem Entziehen (12.10.2026): Keine RLS-Policy liest aus events mehr als
+-- id und host_id; keine View liest events; die einzigen SECURITY INVOKER-Funktionen auf
+-- events, create_party und update_party, schreiben invite_code hoechstens, lesen ihn
+-- nicht, und haben RETURNING nur auf pools.id. Link-Reset ist ein PATCH ohne RETURNING,
+-- UPDATE braucht SELECT nur auf den Spalten in WHERE und RLS (id, host_id). Die App
+-- liest invite_code nirgends mehr direkt. Getestet in einer zurueckgerollten
+-- Transaktion: Gast und Host lesen invite_code direkt nicht mehr (42501), andere
+-- Spalten schon; die Funktion gibt dem Host seinen Code, dem Gast null, anon gar nichts;
+-- Link-Reset und Bearbeiten als Host gehen.
+--
+-- Erst NACH dem Merge in main anwenden, wenn das Vercel-Deployment auf Ready steht:
+-- die alte App liest invite_code direkt aus der Tabelle.
+
+revoke select (invite_code) on public.events from authenticated;

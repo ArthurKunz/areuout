@@ -532,6 +532,7 @@ export type Database = {
           user_id: string
         }[]
       }
+      get_party_invite_code: { Args: { p_event_id: string }; Returns: string }
       get_party_join_requests: {
         Args: { p_event_id: string }
         Returns: {

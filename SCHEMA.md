@@ -47,6 +47,10 @@ holds SELECT on the table. `authenticated` holds it per column, on every column 
 past the rules in section 8. Address and exact point come only from the functions.
 **A new column on `events` is unreadable until it gets its own `GRANT SELECT (...)`.**
 Migration `20261009173733_hide_the_address_columns_of_events.sql`.
+`invite_code` leaves that grant too (`20261012180000_hide_the_invite_code_of_events.sql`):
+column rights are per role, not per row, so the grant gave every guest the code. The host
+reads it through `get_party_invite_code` (`20261012171505_add_get_party_invite_code.sql`),
+which answers only for the caller's own party.
 
 ## 3. What RLS cannot do
 
@@ -66,6 +70,13 @@ So a SELECT policy has to be satisfiable from the row's own columns.
 **And it never decides what is in a row, only who writes it.** The anon key ships in the
 browser bundle, so anything the interface merely declines to offer needs a CHECK, a
 UNIQUE, an FK or a trigger behind it. The UI is not a constraint.
+
+Example: the interface only ever stores a preset or an upload as a party's cover, but
+`events.background_url` took any URL until `events_background_url_check`
+(`20261012171512_check_the_background_url_of_events.sql`). A foreign URL there is a
+tracking pixel for everyone who sees the party. The CHECK pins this project's ref on
+purpose; a generic `*.supabase.co` would let another Supabase project through.
+`profiles.avatar_url` still has the generic pattern (follow-up, Google avatars to check).
 
 ## 4. The three RPCs anon can reach
 
@@ -196,6 +207,13 @@ in) without changing its `RETURNS TABLE` shape or its two call sites' behaviour 
 Like `invite_lookup_misses`, this table has RLS switched off and is still unreachable by
 `anon` or `authenticated`, because neither holds `USAGE` on the `private` schema — the
 schema is the boundary, the same trap as section 2, worked correctly this time.
+
+A row is not forever. Two triggers delete it
+(`20261012140000_drop_invite_opens_on_link_reset_and_removal.sql`):
+`events_drop_invite_opens` drops every row of a party when its `invite_code` changes
+(Link-reset), and `rsvps_drop_invite_open` drops a person's row when their RSVP is
+deleted (the host removes them, or the cascade). Guests with an RSVP keep access through
+`rsvps`; anyone else has to open the current link again.
 
 **The RSVP insert policy now checks access, not just capacity.**
 `rsvps_insert_authenticated`'s `WITH CHECK` used to accept any authenticated non-host
