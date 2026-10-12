@@ -309,3 +309,22 @@ zurückgerollten Transaktionen auf der Live-Datenbank: 24-Stunden-Grenze für Ga
 und Fremden; Einladungscode als anon und als Fremder; Anlegen, Bearbeiten,
 Link-Zurücksetzen, RSVP und Abstimmen mit den neuen Spaltenrechten. Warum es so gebaut
 ist, steht in `SCHEMA.md`, Abschnitte 2, 4, 8 und 9a.
+
+## Die Migrationen aus dem Final Review von Schritt 12
+
+Geschrieben und angewendet am 12.10.2026. Zu jeder Datei liegt ein Rollback mit demselben
+Namen in `supabase/rollbacks/`.
+
+| Datei | Was sie ändert | Wie angewendet | Version |
+|---|---|---|---|
+| `20261012140000_drop_invite_opens_on_link_reset_and_removal.sql` | Trigger `events_drop_invite_opens` und `rsvps_drop_invite_open`: Link-Reset und Entfernen eines Gasts löschen seine `invite_opens`-Zeilen | SQL-Editor (der Rumpf enthält ein DELETE) | von Hand gewählt, per INSERT eingetragen |
+
+Für Editor-Migrationen muss das INSERT in `supabase_migrations.schema_migrations` als
+zweite, eigene Anweisung ausgeführt werden; die Migrationsdatei enthält es nicht.
+
+Getestet vorher in einer zurückgerollten Transaktion auf der Live-Datenbank: Entfernen
+nimmt nur dem Entfernten den Zugang, erneutes Öffnen des Links gibt ihn zurück,
+Bearbeiten ohne neuen Code lässt `invite_opens` stehen, nach dem Link-Reset sieht ein
+Fremder die Adresse nicht mehr, ein Gast mit Zusage schon. Nach dem Ausführen per md5
+geprüft: die Funktionsrümpfe auf der Datenbank sind dieselben wie in der Datei. Warum es
+so gebaut ist, steht in `SCHEMA.md`, Abschnitt zu `private.invite_opens`.

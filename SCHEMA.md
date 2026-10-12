@@ -197,6 +197,13 @@ Like `invite_lookup_misses`, this table has RLS switched off and is still unreac
 `anon` or `authenticated`, because neither holds `USAGE` on the `private` schema — the
 schema is the boundary, the same trap as section 2, worked correctly this time.
 
+A row is not forever. Two triggers delete it
+(`20261012140000_drop_invite_opens_on_link_reset_and_removal.sql`):
+`events_drop_invite_opens` drops every row of a party when its `invite_code` changes
+(Link-reset), and `rsvps_drop_invite_open` drops a person's row when their RSVP is
+deleted (the host removes them, or the cascade). Guests with an RSVP keep access through
+`rsvps`; anyone else has to open the current link again.
+
 **The RSVP insert policy now checks access, not just capacity.**
 `rsvps_insert_authenticated`'s `WITH CHECK` used to accept any authenticated non-host
 for any event id, gated only by `party_has_room`. It now additionally requires
