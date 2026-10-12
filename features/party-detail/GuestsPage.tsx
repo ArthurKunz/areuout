@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react'
 import { Check, CircleQuestionMark, Users, X } from 'lucide-react'
 import Avatar from '@/components/shared/Avatar'
+import LoadError from '@/components/shared/LoadError'
 import SearchInput from '@/components/shared/SearchInput'
 import SwipeToRemove from '@/components/shared/SwipeToRemove'
 import { deleteRsvp } from '@/features/parties/services/parties.service'
@@ -56,14 +57,17 @@ export default function GuestsPage({
   if (confirm && confirm !== asked) setAsked(confirm)
   const [removing, setRemoving] = useState(false)
   const [query, setQuery] = useState('')
+  // A failed load shows LoadError instead of tiles and list; each retry loads again.
+  const [failed, setFailed] = useState(false)
+  const [attempt, setAttempt] = useState(0)
 
   useEffect(() => {
     let cancelled = false
     supabase.rpc('get_party_guest_list', { p_event_id: partyId }).then(({ data, error }) => {
       if (cancelled) return
       if (error) {
-        alertError('Die Gästeliste konnte nicht geladen werden.', error.message)
-        setGuests([])
+        console.error('[areuout]', error.message)
+        setFailed(true)
         return
       }
       setGuests(data)
@@ -71,7 +75,7 @@ export default function GuestsPage({
     return () => {
       cancelled = true
     }
-  }, [partyId])
+  }, [partyId, attempt])
 
   const remove = async () => {
     if (!confirm) return
@@ -84,6 +88,18 @@ export default function GuestsPage({
     }
     setGuests((current) => current?.filter((guest) => guest.user_id !== confirm.user_id) ?? null)
     setConfirm(null)
+  }
+
+  if (failed) {
+    return (
+      <LoadError
+        text='Die Gästeliste konnte nicht geladen werden.'
+        onRetry={() => {
+          setFailed(false)
+          setAttempt((n) => n + 1)
+        }}
+      />
+    )
   }
 
   if (!guests) {
