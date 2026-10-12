@@ -6,7 +6,7 @@ import { HideShell } from '@/components/shell/Shell'
 import { useShellMap } from '@/components/shell/MapContext'
 import PartyDetail from '@/features/party-detail/PartyDetail'
 import { supabase } from '@/lib/supabase/client'
-import { alertError } from '@/lib/utils'
+import LoadError from '@/components/shared/LoadError'
 import HostingList, { type HostedParty } from './HostingList'
 import PartyMarkers from './PartyMarkers'
 
@@ -25,12 +25,15 @@ export default function HostingScreen({ initialParty }: { initialParty: string |
   const { flyTo } = useShellMap()
   const [parties, setParties] = useState<HostedParty[] | null>(null)
   const [selectedId, setSelectedId] = useState<string | null>(initialParty)
+  // A failed load shows LoadError instead of the list; each retry loads again.
+  const [failed, setFailed] = useState(false)
+  const [attempt, setAttempt] = useState(0)
 
   useEffect(() => {
     supabase.rpc('get_hosting_parties').then(({ data, error }) => {
       if (error) {
-        alertError('Deine Partys konnten nicht geladen werden.', error.message)
-        setParties([])
+        console.error('[areuout]', error.message)
+        setFailed(true)
         return
       }
       const sorted = [...data].sort((a, b) => a.event_date.localeCompare(b.event_date))
@@ -44,7 +47,7 @@ export default function HostingScreen({ initialParty }: { initialParty: string |
         showInUrl(null)
       }
     })
-  }, [initialParty, flyTo])
+  }, [initialParty, flyTo, attempt])
 
   const select = (party: { id: string; lat: number; lng: number }) => {
     flyTo(party.lng, party.lat)
@@ -81,7 +84,17 @@ export default function HostingScreen({ initialParty }: { initialParty: string |
           <ListHeader title='Hosting' />
           {/* The bottom padding lets the list scroll out from under the navigation. */}
           <div className='min-h-0 flex-1 overflow-y-auto px-5 pt-4 pb-25'>
-            <HostingList parties={parties} emptyText='Du hostest gerade keine Party' onSelect={select} />
+            {failed ? (
+              <LoadError
+                text='Deine Partys konnten nicht geladen werden.'
+                onRetry={() => {
+                  setFailed(false)
+                  setAttempt((n) => n + 1)
+                }}
+              />
+            ) : (
+              <HostingList parties={parties} emptyText='Du hostest gerade keine Party' onSelect={select} />
+            )}
           </div>
         </>
       )}

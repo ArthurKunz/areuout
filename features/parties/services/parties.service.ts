@@ -6,10 +6,17 @@ import type { CreatePartyPayload, PartyDetail, RsvpStatus } from '../types/parti
 // work WITHOUT an account. Leaving `events` world-readable for its sake handed every
 // party — and every invite code — to anyone who asked. The function is keyed on the
 // code, which is the secret the link already rests on, so there is nothing to walk.
-export async function getPartyByInviteCode(inviteCode: string): Promise<PartyDetail | null> {
+// `failed` is a request that did not get through (network, too many tries); a code that
+// matches nothing is `party: null` without it, the same for every code that is not live.
+export async function getPartyByInviteCode(
+  inviteCode: string
+): Promise<{ party: PartyDetail | null; failed: boolean }> {
   const { data, error } = await supabase.rpc('get_party_by_invite_code', { p_invite_code: inviteCode })
-  if (error || !data) return null
-  return (data as PartyDetail[])[0] ?? null
+  if (error) {
+    console.error('[areuout]', error.message)
+    return { party: null, failed: true }
+  }
+  return { party: (data as PartyDetail[] | null)?.[0] ?? null, failed: false }
 }
 
 export async function setRsvp(partyId: string, userId: string, status: RsvpStatus) {

@@ -4,11 +4,11 @@ import { useEffect, useState } from 'react'
 import ListHeader from '@/components/shell/ListHeader'
 import { HideShell } from '@/components/shell/Shell'
 import { useShellMap } from '@/components/shell/MapContext'
+import LoadError from '@/components/shared/LoadError'
 import HostingList, { type HostedParty } from '@/features/hosting/HostingList'
 import PartyMarkers from '@/features/hosting/PartyMarkers'
 import PartyDetail, { isRsvpStatus, type Viewer } from '@/features/party-detail/PartyDetail'
 import { supabase } from '@/lib/supabase/client'
-import { alertError } from '@/lib/utils'
 
 // The Explore tab (App Redesign 4): every upcoming party, public and private, own and
 // answered ones included, as circles on the map and rows in the list. Works like
@@ -22,18 +22,21 @@ export default function ExploreScreen() {
   // The viewer is fixed when the party opens, so joining it does not reload the detail;
   // the detail itself follows my_status from there.
   const [selected, setSelected] = useState<{ id: string; viewer: Viewer } | null>(null)
+  // A failed load shows LoadError instead of the list; each retry loads again.
+  const [failed, setFailed] = useState(false)
+  const [attempt, setAttempt] = useState(0)
 
   useEffect(() => {
     Promise.all([supabase.rpc('get_explore_parties'), supabase.auth.getSession()]).then(([explore, session]) => {
       if (explore.error) {
-        alertError('Die Partys konnten nicht geladen werden.', explore.error.message)
-        setParties([])
+        console.error('[areuout]', explore.error.message)
+        setFailed(true)
         return
       }
       setUserId(session.data.session?.user.id ?? null)
       setParties(explore.data)
     })
-  }, [])
+  }, [attempt])
 
   // From the data: the host is whoever host_id names, a guest has an RSVP; everyone
   // else, a pending request included, is a stranger.
@@ -82,7 +85,17 @@ export default function ExploreScreen() {
           <ListHeader title='Explore' />
           {/* The bottom padding lets the list scroll out from under the navigation. */}
           <div className='min-h-0 flex-1 overflow-y-auto px-5 pt-4 pb-25'>
-            <HostingList parties={parties} emptyText='Gerade gibt es keine Party' showStatus={false} onSelect={select} />
+            {failed ? (
+              <LoadError
+                text='Die Partys konnten nicht geladen werden.'
+                onRetry={() => {
+                  setFailed(false)
+                  setAttempt((n) => n + 1)
+                }}
+              />
+            ) : (
+              <HostingList parties={parties} emptyText='Gerade gibt es keine Party' showStatus={false} onSelect={select} />
+            )}
           </div>
         </>
       )}

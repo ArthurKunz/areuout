@@ -1,9 +1,10 @@
 'use client'
 
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useRef, useState, type ReactNode } from 'react'
 import { CalendarX, UserPlus, X } from 'lucide-react'
 import BigButton from '@/components/shared/BigButton'
 import IconButton from '@/components/shared/IconButton'
+import LoadError from '@/components/shared/LoadError'
 import Spinner from '@/components/shared/Spinner'
 import { Alert, AlertDescription } from '@/components/shared/Alert'
 import { setRsvp } from '@/features/parties/services/parties.service'
@@ -92,6 +93,9 @@ export default function PartyDetail({
   // Bumped by every vote and answer: a re-read that started before the latest one would
   // otherwise overwrite what the viewer just tapped.
   const pollVersion = useRef(0)
+  // A failed load shows LoadError under the ✗ instead of closing; each retry loads again.
+  const [failed, setFailed] = useState(false)
+  const [attempt, setAttempt] = useState(0)
 
   useEffect(() => {
     let cancelled = false
@@ -107,12 +111,12 @@ export default function PartyDetail({
         ? supabase.rpc('get_party_join_requests', { p_event_id: partyId })
         : Promise.resolve({ data: null, error: null }),
       supabase.auth.getSession(),
-    ]).then(async ([detail, polls, invite, requests, session]) => {
+    ]).then(async ([detail, polls, code, requests, session]) => {
       if (cancelled) return
-      const error = detail.error ?? polls.error ?? invite.error ?? requests.error
+      const error = detail.error ?? polls.error ?? code.error ?? requests.error
       if (error || !detail.data) {
-        alertError('Die Party konnte nicht geladen werden.', error?.message)
-        onClose()
+        console.error('[areuout]', error?.message ?? 'get_party_detail returned no row')
+        setFailed(true)
         return
       }
       const party = detail.data
@@ -132,7 +136,7 @@ export default function PartyDetail({
         party,
         polls: polls.data?.polls ?? [],
         questions: polls.data?.questions ?? [],
-        inviteCode: invite.data ?? null,
+        inviteCode: code.data ?? null,
         userId,
         requested: party.my_status === 'requested',
         full,
@@ -146,9 +150,26 @@ export default function PartyDetail({
     // onClose and onLoaded change identity on every render of the caller; the load
     // depends on the party and the viewer only.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [partyId, viewer])
+  }, [partyId, viewer, attempt])
 
-  if (!loaded) return <DetailSkeleton onClose={onClose} />
+  if (!loaded) {
+    return (
+      <DetailSkeleton
+        onClose={onClose}
+        error={
+          failed ? (
+            <LoadError
+              text='Die Party konnte nicht geladen werden.'
+              onRetry={() => {
+                setFailed(false)
+                setAttempt((n) => n + 1)
+              }}
+            />
+          ) : undefined
+        }
+      />
+    )
+  }
 
   const { party, polls, questions, inviteCode, userId, requested, full, requests } = loaded
   const hostName = `${party.host_firstname} ${party.host_lastname}`
@@ -420,21 +441,30 @@ export default function PartyDetail({
 
 // The detail while it loads: header and the first cards as placeholders. Also shown by
 // the invite page while it resolves the code, before it knows which party to load.
-export function DetailSkeleton({ onClose }: { onClose: () => void }) {
+// With an error, the error takes the place of the placeholders and the ✗ stays.
+export function DetailSkeleton({ onClose, error }: { onClose: () => void; error?: ReactNode }) {
   return (
     <div className='flex min-h-0 flex-1 flex-col'>
       <div className='flex shrink-0 items-start justify-between gap-3 px-5'>
-        <div className='flex flex-col gap-2 pt-1'>
-          <div className='h-6 w-40 rounded-full skeleton' />
-          <div className='h-3.5 w-24 rounded-full skeleton' />
-        </div>
+        {error ? (
+          <div />
+        ) : (
+          <div className='flex flex-col gap-2 pt-1'>
+            <div className='h-6 w-40 rounded-full skeleton' />
+            <div className='h-3.5 w-24 rounded-full skeleton' />
+          </div>
+        )}
         <IconButton icon={X} label='Schließen' onClick={onClose} />
       </div>
-      <div className='grid grid-cols-2 gap-2.5 px-5 pt-4'>
-        <div className='h-28 rounded-[25px] skeleton' />
-        <div className='h-28 rounded-[25px] skeleton' />
-        <div className='col-span-2 h-28 rounded-[25px] skeleton' />
-      </div>
+      {error ? (
+        <div className='px-5 pt-4'>{error}</div>
+      ) : (
+        <div className='grid grid-cols-2 gap-2.5 px-5 pt-4'>
+          <div className='h-28 rounded-[25px] skeleton' />
+          <div className='h-28 rounded-[25px] skeleton' />
+          <div className='col-span-2 h-28 rounded-[25px] skeleton' />
+        </div>
+      )}
     </div>
   )
 }
