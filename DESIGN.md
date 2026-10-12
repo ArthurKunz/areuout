@@ -88,7 +88,7 @@ namespace). `CLOSE_MS` in `WheelSheet.tsx` is `--duration-move` written twice.
 - **Never fade or move an element that has glass inside it.** Opacity on an ancestor
   makes it the glass's backdrop root and leaves the glass flat until the animation
   ends. Glass that has to appear is revealed by height through `Collapse` — the one
-  exception to the first rule, used by `WarningBanner`, new poll options and the
+  exception to the first rule, used by `Alert`, new poll options and the
   existing `Collapse`/`WheelSheet` cases.
 
 **The classes** (`globals.css`, `@layer utilities`)
