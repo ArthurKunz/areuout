@@ -71,6 +71,13 @@ So a SELECT policy has to be satisfiable from the row's own columns.
 browser bundle, so anything the interface merely declines to offer needs a CHECK, a
 UNIQUE, an FK or a trigger behind it. The UI is not a constraint.
 
+Example: the interface only ever stores a preset or an upload as a party's cover, but
+`events.background_url` took any URL until `events_background_url_check`
+(`20261012171512_check_the_background_url_of_events.sql`). A foreign URL there is a
+tracking pixel for everyone who sees the party. The CHECK pins this project's ref on
+purpose; a generic `*.supabase.co` would let another Supabase project through.
+`profiles.avatar_url` still has the generic pattern (follow-up, Google avatars to check).
+
 ## 4. The three RPCs anon can reach
 
 This is the complete public attack surface:

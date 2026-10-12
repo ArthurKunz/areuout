@@ -320,6 +320,7 @@ Namen in `supabase/rollbacks/`.
 | `20261012140000_drop_invite_opens_on_link_reset_and_removal.sql` | Trigger `events_drop_invite_opens` und `rsvps_drop_invite_open`: Link-Reset und Entfernen eines Gasts löschen seine `invite_opens`-Zeilen | SQL-Editor (der Rumpf enthält ein DELETE) | von Hand gewählt, per INSERT eingetragen |
 | `20261012171505_add_get_party_invite_code.sql` | `get_party_invite_code`: der Host liest seinen Einladungscode, sonst niemand, anon gar nicht | `apply_migration` | echt, von `apply_migration` vergeben |
 | `20261012180000_hide_the_invite_code_of_events.sql` | `events`: SELECT auf `invite_code` für `authenticated` entzogen | erst nach dem Merge, Deployment auf Ready; **noch nicht angewendet** | Platzhalter, wird auf die echte Version umbenannt |
+| `20261012171512_check_the_background_url_of_events.sql` | CHECK `events_background_url_check`: `background_url` ist null, ein Preset `/backgrounds/bg-N.jpg` oder eine Datei im Bucket `event-backgrounds` dieses Projekts | `apply_migration`, NOT VALID und VALIDATE | echt, von `apply_migration` vergeben |
 
 Für Editor-Migrationen muss das INSERT in `supabase_migrations.schema_migrations` als
 zweite, eigene Anweisung ausgeführt werden; die Migrationsdatei enthält es nicht.
