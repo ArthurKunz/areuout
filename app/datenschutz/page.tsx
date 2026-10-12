@@ -113,7 +113,7 @@ const SECTIONS: LegalSection[] = [
       'Konto: deine E-Mail-Adresse, dein Passwort, der Zeitpunkt der Anmeldung und der letzten Anmeldung sowie die Information, ob deine E-Mail-Adresse bestätigt ist und ob du dich per E-Mail oder über Google anmeldest. Das Passwort wird ausschließlich als kryptografischer Hash gespeichert, niemals im Klartext — auch wir können es nicht lesen.',
       'Profil: Vorname, Nachname, eine Avatar-Farbe und, wenn du eines hochlädst, ein Profilbild.',
       'Partys, die du erstellst: Titel, Beschreibung, Motto, Dresscode, Beginn mit Datum und Uhrzeit, ein optionales Ende, das auch an einem späteren Tag liegen kann, Adresse samt Kartenposition, ob die Party öffentlich oder privat ist, optionale maximale Gästezahl, ein optionaler Preis, ein Hintergrundbild — entweder eines der vorgegebenen Motive oder ein eigenes Foto — sowie ein zufällig erzeugter Einladungscode und der Erstellzeitpunkt.',
-      'Teilnahme: deine Antwort auf eine Einladung (zugesagt, vielleicht oder abgesagt) und der Zeitpunkt, zu dem du sie gegeben hast. Öffnest du angemeldet einen Einladungslink, wird gespeichert, dass du ihn geöffnet hast. Damit wird dir die Adresse angezeigt. Fragst du bei einer privaten Party an, speichern wir die Anfrage und ihren Zeitpunkt, bis der Gastgeber sie annimmt oder ablehnt.',
+      'Teilnahme: deine Antwort auf eine Einladung (zugesagt, vielleicht oder abgesagt) und der Zeitpunkt, zu dem du sie gegeben hast. Öffnest du angemeldet einen Einladungslink, wird gespeichert, dass du ihn geöffnet hast, bis der Gastgeber den Link zurücksetzt oder dich von der Gästeliste entfernt. Damit wird dir die Adresse angezeigt. Fragst du bei einer privaten Party an, speichern wir die Anfrage und ihren Zeitpunkt, bis der Gastgeber sie annimmt oder ablehnt.',
       'Umfragen: die Fragen und Antwortmöglichkeiten, die ein Gastgeber stellt, und deine Auswahl beziehungsweise dein Freitext dazu.',
       'Technische Verbindungsdaten: Beim Aufruf der App und bei jeder Datenbankabfrage fallen bei unseren Dienstleistern IP-Adresse, Browser- und Gerätekennung, Zeitpunkt, Herkunftsland und die aufgerufene Adresse an. Die App selbst greift auf keine dieser Angaben zu und speichert sie nirgends in ihrer eigenen Datenbank.',
       'Bilder: Aus jedem Bild, das du hochlädst, werden vor dem Speichern die Kameradaten entfernt. Das betrifft insbesondere GPS-Koordinaten, Gerätemodell und Aufnahmezeitpunkt, die Handykameras in ihre Fotos schreiben. Gespeichert wird nur eine verkleinerte Fassung ohne diese Angaben.',
@@ -137,7 +137,7 @@ const SECTIONS: LegalSection[] = [
     paragraphs: [
       'Angemeldete Personen sehen in der App alle Partys, die noch nicht vorbei sind, öffentliche wie private, mit Titel, Hintergrundbild, Datum, Uhrzeit und dem Vor- und Nachnamen und Bild des Gastgebers. Öffnen sie eine Party, sehen sie zusätzlich Beschreibung, Motto, Dresscode, Preis und Gästezahl.',
       'Die Gästeliste einer Party zeigt Vorname, Nachname, Profilbild beziehungsweise Initialen und die Antwort auf die Einladung. Sie ist für jede angemeldete Person sichtbar, die die Party öffnet, auch bei einer privaten Party.',
-      'Die Adresse und den genauen Punkt auf der Karte einer öffentlichen Party sieht jede angemeldete Person. Bei einer privaten Party sehen sie nur der Gastgeber, wer auf die Einladung geantwortet hat und wer den Einladungslink angemeldet geöffnet hat. Alle anderen sehen einen ungefähren Punkt.',
+      'Die Adresse und den genauen Punkt auf der Karte einer öffentlichen Party sieht jede angemeldete Person. Bei einer privaten Party sehen sie nur der Gastgeber, wer auf die Einladung geantwortet hat und wer den Einladungslink angemeldet geöffnet hat, bis der Gastgeber den Link zurücksetzt oder die Person von der Gästeliste entfernt. Alle anderen sehen einen ungefähren Punkt.',
       'Antworten auf Umfragen stehen mit Namen und Bild daneben. Bei einer öffentlichen Party sieht sie jede angemeldete Person, bei einer privaten Party nur der Gastgeber und wer auf die Einladung geantwortet hat.',
       'Der Gastgeber kann dich von seiner Gästeliste entfernen. Deine Stimmen und Antworten in seinen Umfragen verschwinden dann mit. Eine Anfrage an eine private Party sieht nur ihr Gastgeber, mit deinem Namen und Bild.',
       'Dein Profil selbst ist nicht öffentlich, und eine Liste aller Nutzerinnen und Nutzer gibt es nicht. Andere sehen deinen Namen und dein Bild nur dort, wo du mit einer Party verbunden bist: als Gastgeber, auf einer Gästeliste, bei einer Umfrageantwort oder in einer Anfrage.',
@@ -249,5 +249,5 @@ const SECTIONS: LegalSection[] = [
 ]
 
 export default function DatenschutzPage() {
-  return <LegalTextScreen title='Datenschutz' sections={SECTIONS} updated='11. Oktober 2026' />
+  return <LegalTextScreen title='Datenschutz' sections={SECTIONS} updated='12. Oktober 2026' />
 }
