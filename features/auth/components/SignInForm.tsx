@@ -5,7 +5,8 @@ import StepFrame from '@/features/create-party/StepFrame'
 import Input from '@/components/shared/Input'
 import InputGroup from '@/components/shared/InputGroup'
 import Spinner from '@/components/shared/Spinner'
-import WarningBanner from '@/components/shared/WarningBanner'
+import { CircleAlert } from 'lucide-react'
+import { Alert, AlertDescription, AlertTitle } from '@/components/shared/Alert'
 import { alertError } from '@/lib/utils'
 import type { SignInProps } from '../types/auth.types'
 import { sendResetPasswordEmail, signInWithPassword } from '../services/auth.service'
@@ -80,7 +81,13 @@ export default function SignInForm({ onSuccess, onClose }: SignInProps) {
           onEnter={handleForgotPassword}
         />
 
-        {warning && <WarningBanner message={warning} />}
+        {warning && (
+          <Alert>
+            <CircleAlert />
+            <AlertTitle>Versand hat nicht geklappt</AlertTitle>
+            <AlertDescription>{warning}</AlertDescription>
+          </Alert>
+        )}
       </StepFrame>
     )
   }
@@ -142,7 +149,13 @@ export default function SignInForm({ onSuccess, onClose }: SignInProps) {
         </button>
       </div>
 
-      {warning && <WarningBanner message={warning} />}
+      {warning && (
+        <Alert>
+          <CircleAlert />
+          <AlertTitle>Anmelden hat nicht geklappt</AlertTitle>
+          <AlertDescription>{warning}</AlertDescription>
+        </Alert>
+      )}
     </StepFrame>
   )
 }

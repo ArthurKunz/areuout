@@ -58,10 +58,9 @@
     --text-hint-1: 10px;
     --text-hint-2: 8px;
 
-    /* RESTORED: removed in 08b45bf while WarningBanner and other screens still use
-       them; values as they were before. */
+    /* RESTORED: removed in 08b45bf while other screens still used them; values as
+       they were before. */
     --color-secondary: rgba(118, 118, 128, 0.25);
-    --color-warning: #FF453A;
     --color-sheet: #FFFFFF;
     --color-subheading: rgba(148, 148, 148, 0.9);
     --color-label-large: rgba(255, 255, 255, 0.9);
@@ -292,12 +291,6 @@ html:has([data-runway]) {
     to   { transform: translate3d(0, -25dvh, 0); }
 }
 
-/* iOS-style activity indicator: twelve blades, each fading on its own delay. */
-@keyframes spinner-blade {
-    0%   { opacity: 1; }
-    100% { opacity: 0.15; }
-}
-
 @keyframes fade-in-up {
     from { opacity: 0; transform: translateY(8px); }
     to   { opacity: 1; transform: none; }
@@ -356,13 +349,6 @@ html:has([data-runway]) {
     @media (prefers-reduced-motion: reduce) {
         /* Nothing to show without the movement — they would pile up at the top edge. */
         .animate-float-up { display: none; }
-    }
-
-    .spinner-blade {
-        animation: spinner-blade 1s linear infinite;
-    }
-    @media (prefers-reduced-motion: reduce) {
-        .spinner-blade { animation: none; opacity: 0.5; }
     }
 
     /* Enter animation for content that swaps in place (e.g. the parties tab list).

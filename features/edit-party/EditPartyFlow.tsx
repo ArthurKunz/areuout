@@ -15,6 +15,7 @@ import type { Feature } from '@/features/create-party/features/FeatureChip'
 import { LIMITS, canLeaveName, canLeaveTime, type PartyDraft } from '@/features/create-party/draft'
 import ToggleInput from '@/components/shared/ToggleInput'
 import Input from '@/components/shared/Input'
+import Spinner from '@/components/shared/Spinner'
 import { getDetailPolls } from '@/features/parties/services/pools.service'
 import { supabase } from '@/lib/supabase/client'
 import { alertError } from '@/lib/utils'
@@ -147,7 +148,7 @@ export default function EditPartyFlow({ partyId, userId }: { partyId: string; us
     <StepFrame
       title='Party bearbeiten'
       onBack={toDetail}
-      button={{ label: 'speichern', onClick: save, disabled: saving || !canLeaveName(draft) || !canLeaveTime(draft) }}
+      button={{ label: saving ? <Spinner /> : 'speichern', onClick: save, disabled: saving || !canLeaveName(draft) || !canLeaveTime(draft) }}
     >
       <ToggleInput label='Öffentlich' checked={draft.isPublic} onChange={(isPublic) => update({ isPublic })} />
       <Input

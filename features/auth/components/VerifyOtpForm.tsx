@@ -4,7 +4,8 @@ import { useState } from 'react'
 import StepFrame from '@/features/create-party/StepFrame'
 import Input from '@/components/shared/Input'
 import Spinner from '@/components/shared/Spinner'
-import WarningBanner from '@/components/shared/WarningBanner'
+import { CircleAlert } from 'lucide-react'
+import { Alert, AlertDescription, AlertTitle } from '@/components/shared/Alert'
 import { alertError } from '@/lib/utils'
 import type { VerifyProps } from '../types/auth.types'
 import { OTP_LENGTH } from '../constants/auth.constants'
@@ -91,7 +92,13 @@ export default function VerifyOtpForm({ email, onSuccess }: VerifyProps) {
         placeholder='••••••'
       />
 
-      {warning && <WarningBanner message={warning} />}
+      {warning && (
+        <Alert>
+          <CircleAlert />
+          <AlertTitle>Bestätigung hat nicht geklappt</AlertTitle>
+          <AlertDescription>{warning}</AlertDescription>
+        </Alert>
+      )}
 
       {resent && !warning && <span className='text-center text-text-3 text-text'>Wir haben dir einen neuen Code geschickt.</span>}
 
