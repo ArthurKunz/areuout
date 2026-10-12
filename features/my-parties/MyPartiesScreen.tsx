@@ -75,7 +75,7 @@ export default function MyPartiesScreen() {
           <ListHeader title='My Parties' />
           {/* The bottom padding lets the list scroll out from under the navigation. */}
           <div className='min-h-0 flex-1 overflow-y-auto px-5 pt-4 pb-25'>
-            <HostingList parties={parties} emptyText='Du bist gerade auf keiner Party' onSelect={select} />
+            <HostingList parties={parties} emptyText='Du hast gerade auf keine Party geantwortet oder angefragt' onSelect={select} />
           </div>
         </>
       )}
