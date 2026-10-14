@@ -25,6 +25,16 @@ export async function setRsvp(partyId: string, userId: string, status: RsvpStatu
     .upsert({ event_id: partyId, user_id: userId, status }, { onConflict: 'event_id,user_id' })
 }
 
+// What a failed setRsvp tells the viewer. A refusal by the policy (a block between host
+// and guest, no access, a party that is over) is the generic RLS error 42501, because a
+// policy cannot raise a sentence of its own (SCHEMA.md 9c). One sentence for all of them,
+// so it never gives away a block.
+export function rsvpErrorText(error: { code: string }) {
+  return error.code === '42501'
+    ? 'Auf diese Party kannst du gerade nicht antworten.'
+    : 'Deine Antwort konnte nicht gespeichert werden.'
+}
+
 // The host's edit screen writes the whole form at once; RLS restricts it to their
 // own party, so no host_id check is needed here.
 export async function updateParty(partyId: string, patch: Partial<CreatePartyPayload>) {

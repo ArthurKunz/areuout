@@ -61,6 +61,7 @@ export default function ExploreScreen() {
             partyId={open.id}
             viewer={open.viewer}
             onClose={() => setSelected(null)}
+            onBlocked={() => setAttempt((n) => n + 1)}
             onLoaded={(row) => {
               // An accepted request since the list loaded: the exact point replaces the
               // blurred one.

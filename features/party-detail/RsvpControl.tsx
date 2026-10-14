@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from 'react'
 import RsvpStatusButton from '@/features/parties/components/RsvpStatusButton'
 import RsvpStatusMenu from '@/features/parties/components/RsvpStatusMenu'
-import { setRsvp } from '@/features/parties/services/parties.service'
+import { rsvpErrorText, setRsvp } from '@/features/parties/services/parties.service'
 import type { RsvpStatus } from '@/features/parties/types/parties.types'
 import { supabase } from '@/lib/supabase/client'
 import { alertError } from '@/lib/utils'
@@ -62,7 +62,7 @@ export default function RsvpControl({
       setStatus(previous)
       onStatusChange?.(previous)
       setOpen(false)
-      alertError('Deine Antwort konnte nicht gespeichert werden.', error.message)
+      alertError(rsvpErrorText(error), error.message)
       return
     }
     // Held open briefly so the tick visibly lands on the row that was tapped.

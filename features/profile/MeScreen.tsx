@@ -101,7 +101,7 @@ export default function MeScreen() {
             <div className='h-31.25 w-31.25 rounded-full skeleton' />
             <div className='mt-4 h-7 w-48 rounded-full skeleton' />
             <div className='mt-2 h-4 w-56 rounded-full skeleton' />
-            <div className='mt-6 h-52.5 w-full rounded-[25px] skeleton' />
+            <div className='mt-6 h-65 w-full rounded-[25px] skeleton' />
           </>
         ) : (
           <>
@@ -155,6 +155,7 @@ export default function MeScreen() {
                   },
                   { label: 'Password', onClick: () => router.push('/me/password') },
                   { label: 'Account verwalten', onClick: () => router.push('/me/account') },
+                  { label: 'Blockierte Personen', onClick: () => router.push('/me/blocked') },
                   { label: 'Rechtliches', onClick: () => router.push('/me/legal') },
                 ]}
               />

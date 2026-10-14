@@ -23,7 +23,7 @@ type SettingsRow =
       maxLength?: never
     }
 
-// The 350x210 profile/settings list: one 50px row per item, either an
+// The 350px-wide profile/settings list: one 50px row per item, either an
 // editable label/input pair (Name) or a label with a chevron that
 // navigates further (Password, Account verwalten, Rechtliches). Divided
 // the same way as InputGroup.

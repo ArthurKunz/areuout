@@ -489,6 +489,13 @@ Verified 2026-10-14 in rolled-back transactions on the live database as blocker,
 and stranger, and for every refusal of `submit_report` (self, duplicate, 21st in 24 hours,
 unknown target, anon).
 
+The UI session is done (2026-10-15): the 42501 on an RSVP becomes one sentence in
+`rsvpErrorText` (`features/parties/services/parties.service.ts`), and the 0-row detail
+ends in `PartyDetail`'s missing state (`onMissing`, the dead link on the invite page).
+**13b is not merged or deployed before the email session is done:** the terms promise a
+look at every report within 24 hours, and until reports reach Arthur by email nothing
+tells him one has arrived.
+
 ## 10. Checking this file against the database
 
 Do not trust the above. The database answers all of it, and the Supabase MCP is the

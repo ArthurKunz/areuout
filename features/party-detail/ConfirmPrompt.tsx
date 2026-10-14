@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useId } from 'react'
+import { useEffect, useId, type ReactNode } from 'react'
 import { createPortal } from 'react-dom'
 import BigButton from '@/components/shared/BigButton'
 import Spinner from '@/components/shared/Spinner'
@@ -13,18 +13,26 @@ export default function ConfirmPrompt({
   title,
   message,
   confirmLabel,
+  confirmDisabled = false,
+  cancelLabel = 'Abbrechen',
   pending,
   onConfirm,
   onCancel,
+  children,
 }: {
   // It stays rendered and shows while open (step 11d), so closing can play its exit.
   open: boolean
   title: string
   message: string
-  confirmLabel: string
+  // Without onConfirm only the cancel button is left, e.g. `Fertig` after a report.
+  confirmLabel?: string
+  confirmDisabled?: boolean
+  cancelLabel?: string
   pending: boolean
-  onConfirm: () => void
+  onConfirm?: () => void
   onCancel: () => void
+  // Between the text and the buttons, e.g. the reasons of a report.
+  children?: ReactNode
 }) {
   // Several prompts can be on the page at once, closed, so the title's id is per prompt.
   const titleId = useId()
@@ -66,12 +74,15 @@ export default function ConfirmPrompt({
             </span>
             <span className='text-text-3 text-text'>{message}</span>
           </div>
+          {children}
           <div className='flex w-full flex-col items-center gap-2'>
-            <BigButton variant='red' onClick={onConfirm} disabled={pending}>
-              {pending ? <Spinner /> : confirmLabel}
-            </BigButton>
+            {onConfirm && (
+              <BigButton variant='red' onClick={onConfirm} disabled={pending || confirmDisabled}>
+                {pending ? <Spinner /> : confirmLabel}
+              </BigButton>
+            )}
             <BigButton variant='main' onClick={onCancel} disabled={pending}>
-              Abbrechen
+              {cancelLabel}
             </BigButton>
           </div>
         </div>

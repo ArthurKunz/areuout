@@ -70,6 +70,14 @@ import LegalTextScreen, { type LegalSection } from '@/features/profile/LegalText
 // invite_opens und join_requests hängen per ON DELETE CASCADE an Konto und Party, also
 // bleibt Abschnitt 11 wahr. Google Maps ist durch OpenFreeMap ersetzt.
 //
+// Nachtrag 15.10.2026: Melden und Blockieren (Store-Schritt 13b, SCHEMA.md 9c).
+// reports: Melder, Gemeldeter, Party (bei einer Person leer), Art, Grund, Status, bei
+// einer Antwort ihr Wortlaut zum Zeitpunkt der Meldung, Zeitpunkt. RLS ohne jede Policy
+// und ohne Rechte für anon und authenticated: lesen kann nur Arthur über Dashboard oder
+// MCP. blocks: Blockierender, Blockierter, Zeitpunkt; nur der Blockierende liest seine
+// Zeilen. Alle Fremdschlüssel beider Tabellen kaskadieren von profiles, reports auch von
+// events — Abschnitt 11 stimmt also. Die Gründe sind fest, Freitext gibt es nicht.
+//
 // Kein Analytics, kein Tracking, keine Werbe-Cookies — im ganzen Projekt kein einziger
 // Treffer. Deshalb braucht die App auch kein Cookie-Banner: die einzigen Cookies sind die
 // Auth-Cookies von Supabase, und die sind technisch notwendig (§ 25 Abs. 2 Nr. 2 TDDDG).
@@ -84,7 +92,7 @@ const SECTIONS: LegalSection[] = [
     heading: '1. Das Wichtigste in Kürze',
     paragraphs: [
       'areuout ist ein privates Projekt, kein Unternehmen. Es gibt keine Werbung, kein Tracking, keine Auswertung deines Verhaltens und keinen Verkauf von Daten.',
-      'Gespeichert wird, was die App braucht: dein Konto, deinen Namen, deine Partys, deine Antworten auf Einladungen und deine Anfragen an private Partys. Kein Geburtsdatum, kein Alter, kein Geschlecht, keine Telefonnummer, keine Wohnanschrift, kein Gerätestandort.',
+      'Gespeichert wird, was die App braucht: dein Konto, deinen Namen, deine Partys, deine Antworten auf Einladungen, deine Anfragen an private Partys, deine Meldungen und wen du blockiert hast. Kein Geburtsdatum, kein Alter, kein Geschlecht, keine Telefonnummer, keine Wohnanschrift, kein Gerätestandort.',
       'Die Datenbank steht in Frankfurt am Main. Nach außen gehen Daten nur an die wenigen Dienstleister, die in Abschnitt 7 einzeln aufgezählt sind.',
       'Du kannst dein Konto jederzeit in der App löschen. Deine Daten verschwinden dann sofort und vollständig, nicht erst nach einer Frist.',
       'Die App setzt nur ein technisch notwendiges Cookie — das, mit dem du angemeldet bleibst. Deshalb fragt dich auch kein Banner um Erlaubnis.',
@@ -115,6 +123,7 @@ const SECTIONS: LegalSection[] = [
       'Partys, die du erstellst: Titel, Beschreibung, Motto, Dresscode, Beginn mit Datum und Uhrzeit, ein optionales Ende, das auch an einem späteren Tag liegen kann, Adresse samt Kartenposition, ob die Party öffentlich oder privat ist, optionale maximale Gästezahl, ein optionaler Preis, ein Hintergrundbild — entweder eines der vorgegebenen Motive oder ein eigenes Foto — sowie ein zufällig erzeugter Einladungscode und der Erstellzeitpunkt.',
       'Teilnahme: deine Antwort auf eine Einladung (zugesagt, vielleicht oder abgesagt) und der Zeitpunkt, zu dem du sie gegeben hast. Öffnest du angemeldet einen Einladungslink, wird gespeichert, dass du ihn geöffnet hast, bis der Gastgeber den Link zurücksetzt oder dich von der Gästeliste entfernt. Damit wird dir die Adresse angezeigt. Fragst du bei einer privaten Party an, speichern wir die Anfrage und ihren Zeitpunkt, bis der Gastgeber sie annimmt oder ablehnt.',
       'Umfragen: die Fragen und Antwortmöglichkeiten, die ein Gastgeber stellt, und deine Auswahl beziehungsweise dein Freitext dazu.',
+      'Meldungen und Blockierungen: Meldest du eine Party, eine Antwort oder eine Person, speichern wir, wer wen gemeldet hat, die Party, den gewählten Grund, den Zeitpunkt, ob die Meldung erledigt ist, und bei einer Antwort ihren Wortlaut zum Zeitpunkt der Meldung. Blockierst du jemanden, speichern wir, wen du blockiert hast, und seit wann.',
       'Technische Verbindungsdaten: Beim Aufruf der App und bei jeder Datenbankabfrage fallen bei unseren Dienstleistern IP-Adresse, Browser- und Gerätekennung, Zeitpunkt, Herkunftsland und die aufgerufene Adresse an. Die App selbst greift auf keine dieser Angaben zu und speichert sie nirgends in ihrer eigenen Datenbank.',
       'Bilder: Aus jedem Bild, das du hochlädst, werden vor dem Speichern die Kameradaten entfernt. Das betrifft insbesondere GPS-Koordinaten, Gerätemodell und Aufnahmezeitpunkt, die Handykameras in ihre Fotos schreiben. Gespeichert wird nur eine verkleinerte Fassung ohne diese Angaben.',
       'Nicht erhoben werden: Geburtsdatum, Alter, Geschlecht, Telefonnummer, deine eigene Wohnanschrift und der Standort deines Geräts. Die App fragt nichts davon ab und hat für nichts davon ein Feld.',
@@ -128,6 +137,7 @@ const SECTIONS: LegalSection[] = [
       'Ein Profil- oder Hintergrundbild hochzuladen ist freiwillig und beruht auf deiner Einwilligung nach Art. 6 Abs. 1 lit. a DSGVO. Du kannst sie jederzeit widerrufen, indem du das Bild entfernst; die Verarbeitung bis dahin bleibt rechtmäßig.',
       'E-Mails, die die App dir schickt — der Bestätigungscode bei der Anmeldung, das Zurücksetzen des Passworts und Hinweise zu Partys, zu denen du gehörst —, sind Teil dieser Bereitstellung und beruhen ebenfalls auf Art. 6 Abs. 1 lit. b DSGVO. Werbe-E-Mails verschicken wir nicht.',
       'Die Karte der App und die Adresssuche beim Erstellen einer Party beruhen auf unserem berechtigten Interesse nach Art. 6 Abs. 1 lit. f DSGVO. Das Interesse ist, dass die App zeigt, wo Partys stattfinden, und dass ein Gastgeber die Adresse auswählen kann, statt sie fehlerfrei abtippen zu müssen. Beides ließe sich ohne diese Dienste nicht sinnvoll bauen.',
+      'Meldungen und Blockierungen verarbeiten wir, um die Nutzungsbedingungen durchzusetzen und Nutzerinnen und Nutzer voreinander zu schützen — für dich Art. 6 Abs. 1 lit. b DSGVO, für die gemeldete oder blockierte Person Art. 6 Abs. 1 lit. f DSGVO: unser berechtigtes Interesse an einer App, in der niemand belästigt wird.',
       'Den technisch sicheren Betrieb — Server-Protokolle, Abwehr von Missbrauch, Verfügbarkeit — stützen wir ebenfalls auf Art. 6 Abs. 1 lit. f DSGVO.',
       'Müssen wir gesetzlichen Pflichten nachkommen, etwa einer Auskunft gegenüber einer Behörde, ist die Grundlage Art. 6 Abs. 1 lit. c DSGVO.',
     ],
@@ -145,6 +155,7 @@ const SECTIONS: LegalSection[] = [
       'Ist eine Party vorbei, blendet die App die Adresse aus. Der Link bleibt gültig, die Anschrift steht dann aber nicht mehr darin.',
       'Wird ein Einladungslink in einem Chat geteilt, erzeugt der Messenger daraus eine Vorschau und lädt dafür Titel, Beschreibung und Hintergrundbild von unserem Server. Die Adresse steht bewusst nicht in dieser Vorschau, weil sie sonst in fremden Chatverläufen und auf gesperrten Bildschirmen auftauchen würde.',
       'Profilbilder und Party-Hintergründe liegen in einem öffentlichen Dateispeicher. Wer die Adresse einer solchen Datei kennt, kann das Bild auch ohne Konto abrufen, solange es dort liegt. Lädst du ein neues Bild hoch oder wechselst du zurück zu den Initialen, wird das alte gelöscht und seine Adresse ungültig.',
+      'Meldungen liest nur der Betreiber, niemand sonst in der App, auch nicht die gemeldete Person. Wen du blockiert hast, siehst nur du.',
       'Deine E-Mail-Adresse sehen andere Nutzerinnen und Nutzer nicht.',
       'Es findet kein Verkauf statt und keine Weitergabe zu Werbezwecken. Außerhalb der App bekommen deine Daten nur die Dienstleister aus dem nächsten Abschnitt zu sehen, und die nur, soweit sie sie für ihre Aufgabe brauchen.',
     ],
@@ -195,6 +206,7 @@ const SECTIONS: LegalSection[] = [
     paragraphs: [
       'Deine Daten bleiben gespeichert, solange dein Konto besteht. Eine darüber hinausgehende Frist gibt es nicht: Wir sind kein Unternehmen und unterliegen keinen steuer- oder handelsrechtlichen Aufbewahrungspflichten.',
       'Löschst du dein Konto unter „Profil → Account", werden dein Profil, deine Partys, deine Zu- und Absagen, deine Umfrageantworten und deine hochgeladenen Bilder unwiderruflich entfernt — auch die Antworten, die du bei Partys anderer gegeben hast. Das geschieht sofort und vollständig, nicht als Markierung zum späteren Löschen. Automatische Sicherungskopien der Datenbank gibt es in unserem Tarif nicht, aus denen etwas zurückkehren könnte.',
+      'Deine Meldungen, Meldungen über dich und deine Liste blockierter Personen werden mit deinem Konto gelöscht, Meldungen zu einer Party mit der Party.',
       'Löschst du eine einzelne Party, verschwinden damit auch die Zusagen, Umfragen und Antworten zu dieser Party sowie ihr Hintergrundbild.',
       'Für die Protokolle der Dienstleister gilt Abschnitt 10.',
     ],
@@ -211,7 +223,7 @@ const SECTIONS: LegalSection[] = [
   {
     heading: '13. Widerspruchsrecht nach Art. 21 DSGVO',
     paragraphs: [
-      'Soweit wir Daten auf Grundlage eines berechtigten Interesses nach Art. 6 Abs. 1 lit. f DSGVO verarbeiten — das betrifft die Karte, die Adresssuche und die Server-Protokolle —, hast du das Recht, aus Gründen, die sich aus deiner besonderen Situation ergeben, jederzeit Widerspruch gegen diese Verarbeitung einzulegen.',
+      'Soweit wir Daten auf Grundlage eines berechtigten Interesses nach Art. 6 Abs. 1 lit. f DSGVO verarbeiten — das betrifft die Karte, die Adresssuche, die Server-Protokolle sowie Meldungen und Blockierungen —, hast du das Recht, aus Gründen, die sich aus deiner besonderen Situation ergeben, jederzeit Widerspruch gegen diese Verarbeitung einzulegen.',
       'Legst du Widerspruch ein, verarbeiten wir die betroffenen Daten nicht mehr, es sei denn, wir können zwingende schutzwürdige Gründe nachweisen, die deine Interessen, Rechte und Freiheiten überwiegen, oder die Verarbeitung dient der Geltendmachung, Ausübung oder Verteidigung von Rechtsansprüchen.',
       'Ein Widerspruch genügt formlos an die in Abschnitt 2 genannte Adresse.',
       'Direktwerbung betreiben wir nicht, weder per E-Mail noch in der App. Ein Widerspruch dagegen geht deshalb ins Leere — es gibt nichts, dem zu widersprechen wäre.',
@@ -249,5 +261,5 @@ const SECTIONS: LegalSection[] = [
 ]
 
 export default function DatenschutzPage() {
-  return <LegalTextScreen title='Datenschutz' sections={SECTIONS} updated='12. Oktober 2026' />
+  return <LegalTextScreen title='Datenschutz' sections={SECTIONS} updated='15. Oktober 2026' />
 }
