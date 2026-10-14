@@ -331,3 +331,25 @@ Bearbeiten ohne neuen Code lässt `invite_opens` stehen, nach dem Link-Reset sie
 Fremder die Adresse nicht mehr, ein Gast mit Zusage schon. Nach dem Ausführen per md5
 geprüft: die Funktionsrümpfe auf der Datenbank sind dieselben wie in der Datei. Warum es
 so gebaut ist, steht in `SCHEMA.md`, Abschnitt zu `private.invite_opens`.
+
+## Die Migrationen zu Schritt 13b (Melden und Blockieren)
+
+Geschrieben und angewendet am 14.10.2026. Zu jeder Datei liegt ein Rollback mit demselben
+Namen in `supabase/rollbacks/`. Zurückrollen in umgekehrter Reihenfolge: `201200`,
+`200600`, `200539`, `200517`.
+
+| Datei | Was sie ändert | Wie angewendet | Version |
+|---|---|---|---|
+| `20261014200517_create_blocks.sql` | Tabelle `blocks` (RLS, SELECT und DELETE der eigenen Zeilen, kein INSERT, nichts für anon), `private.has_blocked`, `private.is_blocked_between`, `get_my_blocked_users` | `apply_migration` | echt, von `apply_migration` vergeben |
+| `20261014200539_create_reports.sql` | Tabelle `reports` (RLS ohne Policy, keine Rechte für anon und authenticated), Trigger `reports_cap_per_day`, `submit_report` | `apply_migration` | echt, von `apply_migration` vergeben |
+| `20261014200600_add_block_and_unblock.sql` | `block_user` (räumt Anfragen, Zusagen und `invite_opens` zwischen den beiden ab) und `unblock_user` | SQL-Editor (der Rumpf enthält DELETE) | von Hand gewählt, per INSERT eingetragen |
+| `20261014201200_hide_blocked_people.sql` | `get_explore_parties`, `get_my_parties`, `get_party_detail`, `get_party_guest_list`, `get_party_poll_data` verstecken einseitig; `request_to_join`, `can_rsvp_to_event`, `private.has_party_access` sperren in beide Richtungen | `apply_migration` | echt, von `apply_migration` vergeben |
+
+`apply_migration` hat die Kommentare der Dateien nicht mitbekommen, nur die Anweisungen.
+`20261014201200` prüft vorher per md5, dass die acht Funktionsrümpfe noch die vom
+14.10.2026 sind. Danach per md5 geprüft: alle Rümpfe auf der Datenbank, auch die von
+`block_user` und `unblock_user`, sind dieselben wie in den Dateien, und der Rollback stellt
+die acht alten Rümpfe Zeichen für Zeichen wieder her. Owner, SECURITY, `search_path` und
+Rechte sind unverändert. `get_party_guests` ist übersprungen, die App ruft es nicht mehr
+auf. Getestet in zurückgerollten Transaktionen auf der Live-Datenbank als Blockierender,
+Blockierter und Fremder. Warum es so gebaut ist, steht in `SCHEMA.md`, Abschnitt 9c.

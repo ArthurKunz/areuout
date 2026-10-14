@@ -16,7 +16,7 @@ Verified against the live database on 2026-09-01; section 8 added and verified 2
 
 ## 1. How security works here, in four sentences
 
-RLS is on for all seven tables in `public`, and every policy is written for the
+RLS is on for all nine tables in `public`, and every policy is written for the
 `authenticated` role. A signed-in person reaches their own rows and the rows of parties
 they belong to — nothing else. Everything an anonymous visitor sees comes from
 `SECURITY DEFINER` functions, never from a table. Host and guest are not stored
@@ -26,8 +26,8 @@ session.
 
 ## 2. The anon trap
 
-**`anon` holds SELECT, INSERT, UPDATE and DELETE on six of the seven tables** — all
-but `join_requests` (section 9b). That is the Supabase default and it has never been
+**`anon` holds SELECT, INSERT, UPDATE and DELETE on six of the nine tables** — all
+but `join_requests` (section 9b), `blocks` and `reports` (section 9c). That is the Supabase default and it has never been
 revoked.
 
 What stops it is that **no policy for the `anon` role exists**. RLS denies whatever no
@@ -415,6 +415,79 @@ Same return shapes; position logic untouched.
 so `accept_join_request` and the cleanup triggers were run by Arthur in the SQL editor,
 with their versions recorded by hand in `supabase_migrations.schema_migrations`
 (`supabase/migrations/README.md`).
+
+## 9c. Report and block (step 13b of the stores)
+
+Apple guideline 1.2 and Google's UGC policy want both inside the app. Decided with Arthur
+on 2026-10-14: fixed report reasons, no free text; a block also stops RSVPs, not only join
+requests; reports land in a table only (email comes later); a list of blocked people so a
+block can be undone.
+
+**`public.blocks`** (`blocker_id`, `blocked_id`, primary key on the pair, CHECK against
+blocking oneself, both FKs cascade from `profiles`). `blocks_select_own` and
+`blocks_delete_own`, both `authenticated` and both on `blocker_id`, so the blocked person
+can never read that they are blocked. **No INSERT policy and no INSERT grant:** rows come
+in only through `block_user`, because a direct insert would skip its cleanup. anon holds
+nothing. `get_my_blocked_users()` hands the blocker name and picture of the people they
+blocked, since `profiles` stays own-row-only.
+
+**One rule, two directions.** `private.has_blocked(blocker, blocked)` is the only place
+that reads the table. `private.is_blocked_between(a, b)` is both directions of it. Which one
+a function calls is the design:
+
+- **Hiding is one-way**, for the blocker only, so the blocked person notices nothing:
+  `get_explore_parties`, `get_my_parties` and `get_party_detail` drop parties whose host the
+  caller blocked (`get_party_detail` returns 0 rows, the same as a deleted party);
+  `get_party_guest_list` drops the blocked person's row and returns nothing for a blocked
+  host; `get_party_poll_data` drops their votes and answers and returns nothing for a
+  blocked host. The counts in the database (`party_has_room`, `rsvps_enforce_capacity`)
+  are untouched. The UI derives its tallies from the rows, so the blocker sees one fewer.
+- **Gates are two-way**: `request_to_join` refuses with `Diese Party kannst du gerade
+  nicht anfragen.`, `can_rsvp_to_event` (so `rsvps_insert_authenticated`) refuses any
+  RSVP, public party and invite link included, and `private.has_party_access` gives
+  neither of the two access to a private party of the other's, whatever rows exist. The
+  last one matters because the blocked person can open the invite link again, which
+  writes `invite_opens` again.
+- Skipped: `get_party_guests` (nothing calls it), `get_hosting_parties` (own parties only),
+  `get_party_join_requests` and `accept_join_request` (no request can exist between the two).
+
+**`block_user`** inserts the row and, in the same transaction, deletes the join requests
+between the two (both directions), and the RSVPs and `invite_opens` between them on parties
+of either one still before `private.party_visible_until`. The blocked person is removed
+from the blocker's parties like a removed guest (the triggers in 9a and 8 take their votes,
+answers and invite row along), and the blocker leaves the blocked person's parties, rather
+than keep a seat they can neither see nor change. It takes the same per-person locks as
+`request_to_join` (`'join_requests:' || uid`, lower uuid first), so a request racing the
+block lands before the cleanup or sees the block. An RSVP racing it cannot be serialised:
+a policy takes no lock (section 3). The window is milliseconds, and the next status change
+is refused anyway. **`unblock_user`** deletes the row and restores nothing.
+
+**A's public parties stay fully visible to C**, address and exact point included, because
+a public party is exact for everyone by design (section 8). C just cannot RSVP.
+
+**`public.reports`**: `kind` party, answer or user; `reason` spam, harassment,
+inappropriate or other; `status` open or handled; `answer_text` only for an answer, at most
+25 characters, the wording at report time; `event_id` null exactly for a user report. RLS is
+on with **no policy at all**, and anon and authenticated hold no privilege: Arthur reads it
+through the dashboard or MCP (the advisor reports INFO 0008 for it, which is intended). Rows
+come only from `submit_report(kind, reported_user_id, event_id, answer_text, reason)`, which
+takes the reporter from `auth.uid()` and checks that the target exists exactly as
+described: the party's host, an answer that exists with that text and that the reporter
+may see (the `get_party_poll_data` rule, so a report cannot probe private parties), or a
+profile. A repeat is a silent no-op (`UNIQUE NULLS NOT DISTINCT` per reporter and target).
+`reports_cap_per_day` (BEFORE INSERT, advisory lock per reporter) allows 20 in 24 hours.
+All FKs cascade, so a deleted account or party takes its reports along.
+
+**For the UI session.** Two answers carry no German sentence of their own: an RSVP upsert
+by a blocked pair fails with the generic RLS error (42501, `new row violates row-level
+security policy for table "rsvps"`), because a policy cannot raise a message; and
+`get_party_detail` returns 0 rows for a party whose host the caller blocked, exactly like
+a deleted party. The UI maps both. The other refusals are German sentences from the
+functions.
+
+Verified 2026-10-14 in rolled-back transactions on the live database as blocker, blocked
+and stranger, and for every refusal of `submit_report` (self, duplicate, 21st in 24 hours,
+unknown target, anon).
 
 ## 10. Checking this file against the database
 
