@@ -60,6 +60,21 @@ export default function AuthSheet({ onCreateAccount, onSignIn, next, description
         </BigButton>
       </div>
 
+      {/* Google signs up without SignUpForm, so its consent sentence stands here too
+          (Store Launch Checklist item 10): a new Google account goes straight on to
+          onboarding and creates content from there. Same words and links as SignUpForm. */}
+      <p className='max-w-[350px] px-1 text-center text-text-4 text-text'>
+        Mit „Google“ bestätigst du, dass du mindestens 16 Jahre alt bist, und stimmst den{' '}
+        <Link href='/nutzungsbedingungen' target='_blank' rel='noopener noreferrer' className='underline text-heading'>
+          Nutzungsbedingungen
+        </Link>{' '}
+        und der{' '}
+        <Link href='/datenschutz' target='_blank' rel='noopener noreferrer' className='underline text-heading'>
+          Datenschutzerklärung
+        </Link>{' '}
+        zu.
+      </p>
+
       {/* Dieser Bildschirm ist der einzige Ort, den JEDER Fremde zu sehen bekommt: er liegt
           auf /login und auf der Einladungsseite. Damit ist es auch die Stelle, an der
           das Impressum ohne Konto erreichbar sein muss — ein Impressum muss ständig

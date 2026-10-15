@@ -1,26 +1,36 @@
 'use client'
 
+import { useState } from 'react'
 import AnswerBubble from '@/components/shared/AnswerBubble'
 import type { DetailPoll } from '@/features/parties/services/pools.service'
 import type { ProfileUser } from './ProfilePage'
+import ReportPrompt from './ReportPrompt'
 
 const fullName = (firstname: string | null, lastname: string | null) => [firstname, lastname].filter(Boolean).join(' ')
 
 // Page `Frage` (App Redesign 3.6, mockup My Parties 09), laid out like a chat: the
 // question on the left with the host's name, every answer on the right with its
 // author's. The viewer's own answer comes first and blue, the others dark.
-// Every name but the viewer's own opens its author's profile.
+// Every name but the viewer's own opens its author's profile, and every answer but the
+// viewer's own carries the flag to report it, with its text as shown (step 13b).
 export default function QuestionPage({
+  partyId,
   question,
   host,
   userId,
   onProfile,
 }: {
+  partyId: string
   question: DetailPoll
   host: ProfileUser
   userId: string | null
   onProfile: (user: ProfileUser) => void
 }) {
+  type Answer = (typeof question.responses)[number]
+  const [reporting, setReporting] = useState<Answer | null>(null)
+  // The answer last reported: the prompt keeps it while it fades out.
+  const [asked, setAsked] = useState<Answer | null>(null)
+  if (reporting && reporting !== asked) setAsked(reporting)
   const answers = question.responses.filter((response) => response.text_response)
   const ordered = [
     ...answers.filter((answer) => answer.user_id === userId),
@@ -57,8 +67,17 @@ export default function QuestionPage({
                       avatarColor: answer.avatar_color,
                     })
             }
+            onReport={answer.user_id === userId ? undefined : () => setReporting(answer)}
           />
         ))
+      )}
+      {asked && (
+        <ReportPrompt
+          open={reporting !== null}
+          title='Antwort melden'
+          target={{ kind: 'answer', reportedUserId: asked.user_id, eventId: partyId, answerText: asked.text_response ?? '' }}
+          onClose={() => setReporting(null)}
+        />
       )}
     </div>
   )

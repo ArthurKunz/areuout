@@ -100,6 +100,8 @@ export default function InviteScreen({ inviteCode }: { inviteCode: string }) {
           invite
           onClose={() => router.push('/my-parties')}
           onDeleted={() => router.push('/hosting')}
+          // A host the viewer blocked: the same dead link as a deleted party.
+          onMissing={() => setState({ kind: 'missing', signedIn: true })}
           onLoaded={(row) => {
             setPin({ id: row.id, lat: row.lat, lng: row.lng, background_url: row.background_url, title: row.title, is_exact: row.is_exact })
             flyTo(row.lng, row.lat)

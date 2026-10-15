@@ -4,7 +4,8 @@
 
 areuout — a party app for 16 to 26 year olds in Leipzig. Hosts create a party, guests
 RSVP through a shared link. Arthur runs it as a private individual: no business, no
-monetisation, every service inside its free tier.
+monetisation, running costs paid privately. Free tiers are preferred, paid plans are
+allowed where needed (see `Constraints.md` in the vault).
 
 This file holds what you cannot read off the code — how to work, and the rules that
 outlive any single change. Everything factual has a home elsewhere; see 'Where to look'.

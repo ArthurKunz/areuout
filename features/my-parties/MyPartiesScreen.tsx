@@ -54,6 +54,7 @@ export default function MyPartiesScreen() {
             partyId={selected.id}
             viewer='guest'
             onClose={() => setSelectedId(null)}
+            onBlocked={() => setAttempt((n) => n + 1)}
             onLoaded={(row) => {
               // An accepted request: the exact point and the answer replace the blurred
               // point and the clock.

@@ -7,7 +7,7 @@ import IconButton from '@/components/shared/IconButton'
 import LoadError from '@/components/shared/LoadError'
 import Spinner from '@/components/shared/Spinner'
 import { Alert, AlertDescription } from '@/components/shared/Alert'
-import { setRsvp } from '@/features/parties/services/parties.service'
+import { rsvpErrorText, setRsvp } from '@/features/parties/services/parties.service'
 import { getDetailPolls, type DetailPoll } from '@/features/parties/services/pools.service'
 import { supabase } from '@/lib/supabase/client'
 import type { RsvpStatus } from '@/features/parties/types/parties.types'
@@ -17,6 +17,7 @@ import DetailHeader from './DetailHeader'
 import GuestsPage from './GuestsPage'
 import HostActions from './HostActions'
 import PageHeader from './PageHeader'
+import PartyMenu from './PartyMenu'
 import PollPage from './PollPage'
 import ProfilePage, { type ProfileUser } from './ProfilePage'
 import QuestionPage from './QuestionPage'
@@ -60,6 +61,8 @@ export default function PartyDetail({
   onDeleted,
   onStatusChange,
   onLoaded,
+  onBlocked,
+  onMissing,
   invite = false,
 }: {
   partyId: string
@@ -77,6 +80,13 @@ export default function PartyDetail({
   // The party as just loaded: the caller takes over its position, is_exact and my_status,
   // so an accepted request turns the blurred pin exact without reloading the page.
   onLoaded?: (party: PartyDetailRow) => void
+  // Someone was blocked from a profile in here: the caller reloads its list, so nothing
+  // of theirs stays on screen.
+  onBlocked?: () => void
+  // get_party_detail found no row: deleted, or its host blocked by the viewer, which
+  // the database answers the same way (SCHEMA.md 9c). The invite page shows its dead
+  // link instead; without this the detail says the party is gone.
+  onMissing?: () => void
 }) {
   const [loaded, setLoaded] = useState<Loaded | null>(null)
   // The viewer's answer, shared by the RSVP buttons in the header and on the guest list.
@@ -96,6 +106,8 @@ export default function PartyDetail({
   // A failed load shows LoadError under the ✗ instead of closing; each retry loads again.
   const [failed, setFailed] = useState(false)
   const [attempt, setAttempt] = useState(0)
+  // No row and no error: there is nothing to retry.
+  const [missing, setMissing] = useState(false)
 
   useEffect(() => {
     let cancelled = false
@@ -114,9 +126,14 @@ export default function PartyDetail({
     ]).then(async ([detail, polls, code, requests, session]) => {
       if (cancelled) return
       const error = detail.error ?? polls.error ?? code.error ?? requests.error
-      if (error || !detail.data) {
-        console.error('[areuout]', error?.message ?? 'get_party_detail returned no row')
+      if (error) {
+        console.error('[areuout]', error.message)
         setFailed(true)
+        return
+      }
+      if (!detail.data) {
+        if (onMissing) onMissing()
+        else setMissing(true)
         return
       }
       const party = detail.data
@@ -147,7 +164,7 @@ export default function PartyDetail({
     return () => {
       cancelled = true
     }
-    // onClose and onLoaded change identity on every render of the caller; the load
+    // onClose, onLoaded and onMissing change identity on every render of the caller; the load
     // depends on the party and the viewer only.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [partyId, viewer, attempt])
@@ -165,6 +182,11 @@ export default function PartyDetail({
                 setAttempt((n) => n + 1)
               }}
             />
+          ) : missing ? (
+            <Alert tone='notice'>
+              <CalendarX />
+              <AlertDescription>Diese Party gibt es nicht mehr.</AlertDescription>
+            </Alert>
           ) : undefined
         }
       />
@@ -222,6 +244,19 @@ export default function PartyDetail({
   }
   const openProfile = (user: ProfileUser) => open({ kind: 'profile', user })
 
+  // After block_user (SCHEMA.md 9c). Blocking the host makes the whole party disappear
+  // for the viewer, so the detail closes. Anyone else: every open page slides back and
+  // the detail loads again, now without their row, votes and answers.
+  const blocked = (blockedId: string) => {
+    if (blockedId === party.host_id) {
+      onClose()
+    } else {
+      setPages((current) => current.map((entry) => ({ ...entry, leaving: true })))
+      setAttempt((n) => n + 1)
+    }
+    onBlocked?.()
+  }
+
   // A request answered on the page `Anfragen` leaves the list the card counts too. From
   // the current list, not this render's: two answers may be on their way at once.
   const answered = (requestUserId: string) =>
@@ -241,7 +276,7 @@ export default function PartyDetail({
     const { error } = await setRsvp(party.id, userId ?? '', 'going')
     setJoining(false)
     if (error) {
-      alertError('Deine Antwort konnte nicht gespeichert werden.', error.message)
+      alertError(rsvpErrorText(error), error.message)
       return
     }
     changeStatus('going')
@@ -270,7 +305,7 @@ export default function PartyDetail({
     const { error } = await setRsvp(party.id, userId ?? '', status)
     setAnswering(null)
     if (error) {
-      alertError('Deine Antwort konnte nicht gespeichert werden.', error.message)
+      alertError(rsvpErrorText(error), error.message)
       return
     }
     changeStatus(status)
@@ -353,8 +388,10 @@ export default function PartyDetail({
           <RequestsPage partyId={party.id} requests={requests} onAnswered={answered} onProfile={openProfile} />
         )}
         {poll && <PollPage poll={poll} userId={userId} onProfile={openProfile} />}
-        {question && <QuestionPage question={question} host={host} userId={userId} onProfile={openProfile} />}
-        {page.kind === 'profile' && <ProfilePage user={page.user} />}
+        {question && (
+          <QuestionPage partyId={party.id} question={question} host={host} userId={userId} onProfile={openProfile} />
+        )}
+        {page.kind === 'profile' && <ProfilePage user={page.user} onBlocked={blocked} />}
       </PageHeader>
     )
   }
@@ -382,6 +419,12 @@ export default function PartyDetail({
                 onInviteCode={(code) => setLoaded({ ...loaded, inviteCode: code })}
                 onDeleted={() => onDeleted?.()}
               />
+            ) : userId && party.host_id !== userId ? (
+              // ⋯ to report the party, left of the RSVP button (step 13b).
+              <>
+                <PartyMenu partyId={party.id} hostId={party.host_id} />
+                {rsvp}
+              </>
             ) : (
               rsvp || undefined
             )

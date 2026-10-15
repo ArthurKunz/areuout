@@ -15,6 +15,10 @@ import LegalTextScreen, { type LegalSection } from '@/features/profile/LegalText
 // Am 11.10.2026 an das Redesign angepasst: öffentliche Partys, Explore, Anfragen, kein
 // Antwortzwang und kein „Party für dich löschen" mehr.
 //
+// Am 15.10.2026 Melden und Blockieren ergänzt (Store-Schritt 13b): § 12 sagt, dass für
+// solche Inhalte kein Platz ist (Apple 1.2), § 13 beschreibt beides; die E-Mail-Absätze
+// zu rechtswidrigen Inhalten (Art. 16 DSA) stehen unverändert dahinter.
+//
 //   Einladungslink        get_party_by_invite_code ist für anon freigegeben, liefert aber
 //                         keine Adresse. Ohne Konto zeigt InviteScreen.tsx nur das
 //                         AuthSheet. Angemeldet trägt der Aufruf invite_opens ein, und
@@ -50,6 +54,17 @@ import LegalTextScreen, { type LegalSection } from '@/features/profile/LegalText
 //                         App zu ändern, gibt es nicht — es gibt keinen Screen dafür
 //   Hintergrundmotive     public/backgrounds/bg-1..8.jpg, ausgewählt statt hochgeladen
 //                         (COVER_PRESETS, features/create-party/steps/CoverStep.tsx)
+//   Melden                submit_report: Party, Antwort (Wortlaut zum Zeitpunkt der
+//                         Meldung) oder Person, vier feste Gründe, keine Freitexte;
+//                         reports_cap_per_day lässt 20 in 24 Stunden zu. Einstiege:
+//                         PartyMenu.tsx, QuestionPage.tsx, ProfilePage.tsx (ReportPrompt)
+//   Blockieren            block_user (ProfilePage.tsx): löscht Anfragen, Zusagen und
+//                         invite_opens zwischen beiden auf kommenden Partys beider;
+//                         get_explore_parties, get_party_detail, Gästeliste und Umfragen
+//                         blenden für den Blockierenden aus; can_rsvp_to_event,
+//                         request_to_join und has_party_access sperren in beide
+//                         Richtungen. Öffentliche Partys bleiben für den Blockierten
+//                         sichtbar. unblock_user (MeBlockedScreen.tsx) stellt nichts wieder her
 //
 // Was der Text bewusst NICHT sagt:
 //
@@ -178,14 +193,16 @@ const SECTIONS: LegalSection[] = [
   {
     heading: '12. Was nicht erlaubt ist',
     paragraphs: [
-      'Untersagt sind insbesondere: rechtswidrige, beleidigende, diskriminierende, gewaltverherrlichende oder jugendgefährdende Inhalte; Belästigung anderer Nutzerinnen und Nutzer; Werbung und gewerbliche Veranstaltungen; das Vortäuschen einer fremden Identität.',
+      'Untersagt sind insbesondere: rechtswidrige, beleidigende, diskriminierende, gewaltverherrlichende oder jugendgefährdende Inhalte; Belästigung anderer Nutzerinnen und Nutzer; Werbung und gewerbliche Veranstaltungen; das Vortäuschen einer fremden Identität. Für solche Inhalte und für Menschen, die andere belästigen, ist in areuout kein Platz.',
       'Ebenfalls untersagt sind automatisierte Zugriffe, das Durchprobieren von Einladungscodes, Versuche, die Zugriffsbeschränkungen der App zu umgehen, sowie das systematische Auslesen von Daten anderer Nutzerinnen und Nutzer.',
       'Nicht erlaubt ist außerdem, die App gewerblich zu nutzen, sie weiterzuverkaufen oder ihre Inhalte in einem anderen Dienst anzubieten.',
     ],
   },
   {
-    heading: '13. Rechtswidrige Inhalte melden',
+    heading: '13. Melden und Blockieren',
     paragraphs: [
+      'In der App kannst du eine Party, eine Antwort auf eine Frage und eine Person melden: über „Party melden" im Menü der Party, über die Fahne neben einer Antwort und über „Melden" im Profil der Person. Du wählst einen Grund — Spam, Belästigung, unangemessene Inhalte oder etwas anderes. Die gemeldete Person erfährt nicht, wer sie gemeldet hat. Wir sehen uns jede Meldung innerhalb von 24 Stunden an und gehen dann nach § 14 vor. Du kannst bis zu 20 Meldungen am Tag schicken.',
+      'Über „Blockieren" im Profil einer Person blockierst du sie. Ihre Partys, Zusagen und Antworten siehst du dann nicht mehr. Sie wird aus deinen kommenden Partys entfernt und kann dort weder zusagen noch anfragen; deine Zu- und Absagen zu ihren kommenden Partys werden gelöscht. Deine öffentlichen Partys kann sie weiterhin sehen. Wir benachrichtigen sie nicht. Unter „Profil → Blockierte Personen" hebst du die Blockierung auf; was dabei gelöscht wurde, kommt nicht zurück.',
       'Fällt dir in areuout ein Inhalt auf, den du für rechtswidrig hältst, melde ihn uns per E-Mail an azzuro.kunz@gmail.com. Diese Adresse ist zugleich unsere Kontaktstelle nach den Artikeln 11 und 12 der Verordnung (EU) 2022/2065 (Digital Services Act) — für Nutzerinnen und Nutzer wie für Behörden. Die Kommunikationssprache ist Deutsch.',
       'Damit wir etwas tun können, brauchen wir: eine Begründung, warum du den Inhalt für rechtswidrig hältst; den Einladungslink oder eine andere Angabe, mit der wir den Inhalt finden; deinen Namen und deine E-Mail-Adresse (außer bei Meldungen zu Straftaten gegen die sexuelle Selbstbestimmung); und die Bestätigung, dass deine Angaben nach bestem Wissen zutreffen.',
       'Wir bestätigen den Eingang deiner Meldung, prüfen sie zügig und sorgfältig und teilen dir unsere Entscheidung mit, samt einer Begründung und dem Hinweis, wie du dagegen vorgehen kannst.',
@@ -270,5 +287,5 @@ const SECTIONS: LegalSection[] = [
 ]
 
 export default function NutzungsbedingungenPage() {
-  return <LegalTextScreen title='Nutzungsbedingungen' sections={SECTIONS} updated='11. Oktober 2026' />
+  return <LegalTextScreen title='Nutzungsbedingungen' sections={SECTIONS} updated='15. Oktober 2026' />
 }

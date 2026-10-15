@@ -14,6 +14,39 @@ export type Database = {
   }
   public: {
     Tables: {
+      blocks: {
+        Row: {
+          blocked_id: string
+          blocker_id: string
+          created_at: string
+        }
+        Insert: {
+          blocked_id: string
+          blocker_id: string
+          created_at?: string
+        }
+        Update: {
+          blocked_id?: string
+          blocker_id?: string
+          created_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "blocks_blocked_id_fkey"
+            columns: ["blocked_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "blocks_blocker_id_fkey"
+            columns: ["blocker_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       events: {
         Row: {
           background_url: string | null
@@ -273,6 +306,64 @@ export type Database = {
         }
         Relationships: []
       }
+      reports: {
+        Row: {
+          answer_text: string | null
+          created_at: string
+          event_id: string | null
+          id: string
+          kind: string
+          reason: string
+          reported_user_id: string
+          reporter_id: string
+          status: string
+        }
+        Insert: {
+          answer_text?: string | null
+          created_at?: string
+          event_id?: string | null
+          id?: string
+          kind: string
+          reason: string
+          reported_user_id: string
+          reporter_id: string
+          status?: string
+        }
+        Update: {
+          answer_text?: string | null
+          created_at?: string
+          event_id?: string | null
+          id?: string
+          kind?: string
+          reason?: string
+          reported_user_id?: string
+          reporter_id?: string
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "reports_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "events"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "reports_reported_user_id_fkey"
+            columns: ["reported_user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "reports_reporter_id_fkey"
+            columns: ["reporter_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       rsvps: {
         Row: {
           event_id: string
@@ -321,6 +412,7 @@ export type Database = {
         Args: { p_event_id: string; p_user_id: string }
         Returns: undefined
       }
+      block_user: { Args: { p_user_id: string }; Returns: undefined }
       can_rsvp_to_event: { Args: { p_event_id: string }; Returns: boolean }
       create_party: {
         Args: {
@@ -445,6 +537,16 @@ export type Database = {
           lng: number
           my_status: string
           title: string
+        }[]
+      }
+      get_my_blocked_users: {
+        Args: never
+        Returns: {
+          avatar_color: string
+          avatar_url: string
+          firstname: string
+          id: string
+          lastname: string
         }[]
       }
       get_my_parties: {
@@ -622,6 +724,17 @@ export type Database = {
         }
         Returns: undefined
       }
+      submit_report: {
+        Args: {
+          p_answer_text: string
+          p_event_id: string
+          p_kind: string
+          p_reason: string
+          p_reported_user_id: string
+        }
+        Returns: undefined
+      }
+      unblock_user: { Args: { p_user_id: string }; Returns: undefined }
       update_party: {
         Args: {
           p_background_url: string

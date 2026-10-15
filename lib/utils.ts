@@ -16,7 +16,7 @@ export function cn(...inputs: ClassValue[]) {
 // "rsvps"' beantwortet nichts, verraet Tabellennamen und Regelwerk und sieht aus wie
 // ein Absturz. Die haben in einem Dialog nichts zu suchen — aber sehr wohl in der
 // Konsole, wo sie beim Suchen helfen.
-const INTERNAL_DETAIL =
+export const INTERNAL_DETAIL =
   /row-level security|violates|constraint|duplicate key|permission denied|relation "|column "|does not exist|PGRST|JWT|invalid input syntax|schema cache/i
 
 // Browser-native alerts only: readable German line + the technical detail underneath,

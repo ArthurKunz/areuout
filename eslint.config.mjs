@@ -14,6 +14,8 @@ const eslintConfig = defineConfig([
     'types/database.types.ts',
     // maplibre's worker, copied from node_modules by scripts/copy-maplibre-worker.mjs
     'public/maplibre/**',
+    // Deno code for Supabase Edge Functions, outside the Next.js build
+    'supabase/functions/**',
   ]),
   {
     rules: {

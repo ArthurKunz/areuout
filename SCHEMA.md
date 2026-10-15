@@ -16,7 +16,7 @@ Verified against the live database on 2026-09-01; section 8 added and verified 2
 
 ## 1. How security works here, in four sentences
 
-RLS is on for all seven tables in `public`, and every policy is written for the
+RLS is on for all nine tables in `public`, and every policy is written for the
 `authenticated` role. A signed-in person reaches their own rows and the rows of parties
 they belong to — nothing else. Everything an anonymous visitor sees comes from
 `SECURITY DEFINER` functions, never from a table. Host and guest are not stored
@@ -26,8 +26,8 @@ session.
 
 ## 2. The anon trap
 
-**`anon` holds SELECT, INSERT, UPDATE and DELETE on six of the seven tables** — all
-but `join_requests` (section 9b). That is the Supabase default and it has never been
+**`anon` holds SELECT, INSERT, UPDATE and DELETE on six of the nine tables** — all
+but `join_requests` (section 9b), `blocks` and `reports` (section 9c). That is the Supabase default and it has never been
 revoked.
 
 What stops it is that **no policy for the `anon` role exists**. RLS denies whatever no
@@ -415,6 +415,142 @@ Same return shapes; position logic untouched.
 so `accept_join_request` and the cleanup triggers were run by Arthur in the SQL editor,
 with their versions recorded by hand in `supabase_migrations.schema_migrations`
 (`supabase/migrations/README.md`).
+
+## 9c. Report and block (step 13b of the stores)
+
+Apple guideline 1.2 and Google's UGC policy want both inside the app. Decided with Arthur
+on 2026-10-14: fixed report reasons, no free text; a block also stops RSVPs, not only join
+requests; reports land in a table (the email to Arthur came one session later, below); a
+list of blocked people so a
+block can be undone.
+
+**`public.blocks`** (`blocker_id`, `blocked_id`, primary key on the pair, CHECK against
+blocking oneself, both FKs cascade from `profiles`). `blocks_select_own` and
+`blocks_delete_own`, both `authenticated` and both on `blocker_id`, so the blocked person
+can never read that they are blocked. **No INSERT policy and no INSERT grant:** rows come
+in only through `block_user`, because a direct insert would skip its cleanup. anon holds
+nothing. `get_my_blocked_users()` hands the blocker name and picture of the people they
+blocked, since `profiles` stays own-row-only.
+
+**One rule, two directions.** `private.has_blocked(blocker, blocked)` is the only place
+that reads the table. `private.is_blocked_between(a, b)` is both directions of it. Which one
+a function calls is the design:
+
+- **Hiding is one-way**, for the blocker only, so the blocked person notices nothing:
+  `get_explore_parties`, `get_my_parties` and `get_party_detail` drop parties whose host the
+  caller blocked (`get_party_detail` returns 0 rows, the same as a deleted party);
+  `get_party_guest_list` drops the blocked person's row and returns nothing for a blocked
+  host; `get_party_poll_data` drops their votes and answers and returns nothing for a
+  blocked host. The counts in the database (`party_has_room`, `rsvps_enforce_capacity`)
+  are untouched. The UI derives its tallies from the rows, so the blocker sees one fewer.
+- **Gates are two-way**: `request_to_join` refuses with `Diese Party kannst du gerade
+  nicht anfragen.`, `can_rsvp_to_event` (so `rsvps_insert_authenticated`) refuses any
+  RSVP, public party and invite link included, and `private.has_party_access` gives
+  neither of the two access to a private party of the other's, whatever rows exist. The
+  last one matters because the blocked person can open the invite link again, which
+  writes `invite_opens` again.
+- Skipped: `get_party_guests` (nothing calls it), `get_hosting_parties` (own parties only),
+  `get_party_join_requests` and `accept_join_request` (no request can exist between the two).
+
+**`block_user`** inserts the row and, in the same transaction, deletes the join requests
+between the two (both directions), and the RSVPs and `invite_opens` between them on parties
+of either one still before `private.party_visible_until`. The blocked person is removed
+from the blocker's parties like a removed guest (the triggers in 9a and 8 take their votes,
+answers and invite row along), and the blocker leaves the blocked person's parties, rather
+than keep a seat they can neither see nor change. It takes the same per-person locks as
+`request_to_join` (`'join_requests:' || uid`, lower uuid first), so a request racing the
+block lands before the cleanup or sees the block. An RSVP racing it cannot be serialised:
+a policy takes no lock (section 3). The window is milliseconds, and the next status change
+is refused anyway. **`unblock_user`** deletes the row and restores nothing.
+
+**A's public parties stay fully visible to C**, address and exact point included, because
+a public party is exact for everyone by design (section 8). C just cannot RSVP.
+
+**`public.reports`**: `kind` party, answer or user; `reason` spam, harassment,
+inappropriate or other; `status` open or handled; `answer_text` only for an answer, at most
+25 characters, the wording at report time; `event_id` null exactly for a user report. RLS is
+on with **no policy at all**, and anon and authenticated hold no privilege: Arthur reads it
+through the dashboard or MCP (the advisor reports INFO 0008 for it, which is intended). Rows
+come only from `submit_report(kind, reported_user_id, event_id, answer_text, reason)`, which
+takes the reporter from `auth.uid()` and checks that the target exists exactly as
+described: the party's host, an answer that exists with that text and that the reporter
+may see (the `get_party_poll_data` rule, so a report cannot probe private parties), or a
+profile. A repeat is a silent no-op (`UNIQUE NULLS NOT DISTINCT` per reporter and target).
+`reports_cap_per_day` (BEFORE INSERT, advisory lock per reporter) allows 20 in 24 hours.
+All FKs cascade, so a deleted account or party takes its reports along.
+
+**For the UI session.** Two answers carry no German sentence of their own: an RSVP upsert
+by a blocked pair fails with the generic RLS error (42501, `new row violates row-level
+security policy for table "rsvps"`), because a policy cannot raise a message; and
+`get_party_detail` returns 0 rows for a party whose host the caller blocked, exactly like
+a deleted party. The UI maps both. The other refusals are German sentences from the
+functions.
+
+Verified 2026-10-14 in rolled-back transactions on the live database as blocker, blocked
+and stranger, and for every refusal of `submit_report` (self, duplicate, 21st in 24 hours,
+unknown target, anon).
+
+The UI session is done (2026-10-15): the 42501 on an RSVP becomes one sentence in
+`rsvpErrorText` (`features/parties/services/parties.service.ts`), and the 0-row detail
+ends in `PartyDetail`'s missing state (`onMissing`, the dead link on the invite page).
+
+**Every new report emails Arthur** (migration `20261014233956`, Edge Function
+`report-email`), because the terms promise a look within 24 hours and nothing else tells him
+a report has arrived. The AFTER INSERT trigger `reports_email_new`
+(`private.email_new_report`) calls `net.http_post` (pg_net), which only queues the request;
+pg_net sends it after COMMIT. So a rolled-back report sends nothing, and the function's
+answer can never fail the insert. If queueing itself fails, an inner `exception` block turns
+it into a warning, and the report is stored anyway. Fire and forget, no retry.
+
+- **Content:** `id`, `kind`, `reason`, `created_at`, nothing else (Datenschutz section 7).
+  No names, no user ids, no party and no wording go through Resend and Gmail. The mail
+  carries the lookup query and the `update … set status = 'handled'` for the dashboard.
+- **Authentication:** `verify_jwt = false` (also in `supabase/config.toml`, so a CLI deploy
+  cannot turn it back on), because the database has no JWT to send except the public anon
+  key. Instead the header `x-report-secret` must match the function secret
+  `REPORT_EMAIL_SECRET`. The same value lives in Vault as `report_email_secret`, created
+  from random bytes inside the database and read only at call time, so it is in no file and
+  no trigger argument (unlike a Database Webhook). Anything else gets 403 before Resend is
+  touched.
+- **The comparison was fixed after the first live test.** The first "wrong secret → 403"
+  check ran before `REPORT_EMAIL_SECRET` was set, so it only proved the "no secret
+  configured" branch. Once a (deliberately wrong) secret was set, `timingSafeEqual` from
+  `@std/crypto` threw on the different lengths and the function answered 500. Both sides
+  are now hashed with SHA-256 first (always 32 bytes, no length leak). Re-tested against
+  the deployed fix with five calls, all 403: POST without header, GET, a wrong 5-character
+  header, a wrong 64-character header, and the trigger's own request with the real Vault
+  secret against the wrong function secret.
+- **At most 20 emails per reporter per day:** AFTER INSERT fires only for rows actually
+  inserted, so a repeat sends nothing, and `reports_cap_per_day` stops the 21st row.
+- **pg_net and the API roles:** `supabase_admin` owns schema `net` and grants USAGE to anon
+  and authenticated and EXECUTE to PUBLIC itself; `postgres` cannot revoke that (the
+  migration's REVOKEs are no-ops, kept because they ran). It is unreachable anyway: the Data
+  API exposes only `public` and `graphql_public` (`net` answers PGRST106), and no function
+  in `public` runs dynamic SQL or calls `net`. Keep it that way.
+
+**How a failed email shows up.** There is no alarm in this first version. Three places:
+
+```sql
+-- pg_net keeps every answer for 6 hours
+select created, status_code, content, error_msg from net._http_response
+where status_code is distinct from 200 order by created desc;
+
+-- the safety net, also for anything older: every report not yet handled
+select id, kind, reason, created_at from public.reports
+where status = 'open' order by created_at;
+```
+
+The third place is the function log (Dashboard → Edge Functions → report-email → Logs),
+which shows `Resend refused <status> <body>`. Resend's free tier sends 100 mails a day: on a
+day with more reports, the rest only appear in the open list.
+
+Verified 2026-10-15 on the live database. In rolled-back transactions: 21 reports from one
+reporter gave 20 rows and 20 queued requests, the 21st was refused, and the body held only the
+four fields; with the Vault secret missing, the report was still stored. Live, with a
+short-lived test account: a wrong function secret gave 403 and no email; an invalid Resend
+key gave 502 (`API key is invalid`) and no email; in both cases the report was stored and
+the user saw a normal success. With the right key, exactly one email with the planned
+content. The test rows and the test account were deleted afterwards, and 0 rows were left.
 
 ## 10. Checking this file against the database
 

@@ -17,7 +17,11 @@ import LegalTextScreen, { type LegalSection } from '@/features/profile/LegalText
 //                   nachgezogen werden muss — deshalb nennt Abschnitt 7 beide Wege in
 //                   einem Satz, statt heute etwas Falsches zu behaupten. Betreiber ist
 //                   Plus Five Five, Inc., San Francisco; DPF-zertifiziert nach eigener
-//                   DPA, Abschnitt 11.1, zusätzlich Standardvertragsklauseln
+//                   DPA, Abschnitt 11.1, zusätzlich Standardvertragsklauseln.
+//                   Seit 15.10.2026 angeschlossen für die Meldungs-Benachrichtigung an
+//                   Arthur: supabase/functions/report-email/index.ts, aufgerufen vom
+//                   Trigger reports_email_new. Inhalt nur id, kind, reason, created_at.
+//                   Die Auth-Mails laufen weiter über Supabase
 //   OpenFreeMap     lib/map/config.ts (Tiles, Glyphen, Sprites von tiles.openfreemap.org).
 //                   Betreiber, Löschfristen und der mögliche Cloudflare-CDN stammen aus
 //                   https://openfreemap.org/privacy/, am 11.10.2026 von den Seiten des
@@ -70,6 +74,22 @@ import LegalTextScreen, { type LegalSection } from '@/features/profile/LegalText
 // invite_opens und join_requests hängen per ON DELETE CASCADE an Konto und Party, also
 // bleibt Abschnitt 11 wahr. Google Maps ist durch OpenFreeMap ersetzt.
 //
+// Nachtrag 15.10.2026: Melden und Blockieren (Store-Schritt 13b, SCHEMA.md 9c).
+// reports: Melder, Gemeldeter, Party (bei einer Person leer), Art, Grund, Status, bei
+// einer Antwort ihr Wortlaut zum Zeitpunkt der Meldung, Zeitpunkt. RLS ohne jede Policy
+// und ohne Rechte für anon und authenticated: lesen kann nur Arthur über Dashboard oder
+// MCP. blocks: Blockierender, Blockierter, Zeitpunkt; nur der Blockierende liest seine
+// Zeilen. Alle Fremdschlüssel beider Tabellen kaskadieren von profiles, reports auch von
+// events — Abschnitt 11 stimmt also. Die Gründe sind fest, Freitext gibt es nicht.
+//
+// Nachtrag 15.10.2026 (Benachrichtigung): jede neue Meldung schickt Arthur eine Mail über
+// Resend an azzuro.kunz@gmail.com (Postfach bei Google Mail). Sie enthält nur id, kind,
+// reason und created_at, keine Namen, keine Nutzer-IDs, keine Party und keinen Wortlaut.
+// Die Meldungs-ID ist trotzdem ein pseudonymes Datum (Art. 4 Nr. 5 DSGVO): Arthur kann sie
+// in der Datenbank auflösen. Deshalb steht die Benachrichtigung in Abschnitt 7, obwohl
+// weder Resend noch Google aus ihr eine Person ablesen können. Abschnitt 8 (Resend in den
+// USA) gilt unverändert.
+//
 // Kein Analytics, kein Tracking, keine Werbe-Cookies — im ganzen Projekt kein einziger
 // Treffer. Deshalb braucht die App auch kein Cookie-Banner: die einzigen Cookies sind die
 // Auth-Cookies von Supabase, und die sind technisch notwendig (§ 25 Abs. 2 Nr. 2 TDDDG).
@@ -84,7 +104,7 @@ const SECTIONS: LegalSection[] = [
     heading: '1. Das Wichtigste in Kürze',
     paragraphs: [
       'areuout ist ein privates Projekt, kein Unternehmen. Es gibt keine Werbung, kein Tracking, keine Auswertung deines Verhaltens und keinen Verkauf von Daten.',
-      'Gespeichert wird, was die App braucht: dein Konto, deinen Namen, deine Partys, deine Antworten auf Einladungen und deine Anfragen an private Partys. Kein Geburtsdatum, kein Alter, kein Geschlecht, keine Telefonnummer, keine Wohnanschrift, kein Gerätestandort.',
+      'Gespeichert wird, was die App braucht: dein Konto, deinen Namen, deine Partys, deine Antworten auf Einladungen, deine Anfragen an private Partys, deine Meldungen und wen du blockiert hast. Kein Geburtsdatum, kein Alter, kein Geschlecht, keine Telefonnummer, keine Wohnanschrift, kein Gerätestandort.',
       'Die Datenbank steht in Frankfurt am Main. Nach außen gehen Daten nur an die wenigen Dienstleister, die in Abschnitt 7 einzeln aufgezählt sind.',
       'Du kannst dein Konto jederzeit in der App löschen. Deine Daten verschwinden dann sofort und vollständig, nicht erst nach einer Frist.',
       'Die App setzt nur ein technisch notwendiges Cookie — das, mit dem du angemeldet bleibst. Deshalb fragt dich auch kein Banner um Erlaubnis.',
@@ -115,6 +135,7 @@ const SECTIONS: LegalSection[] = [
       'Partys, die du erstellst: Titel, Beschreibung, Motto, Dresscode, Beginn mit Datum und Uhrzeit, ein optionales Ende, das auch an einem späteren Tag liegen kann, Adresse samt Kartenposition, ob die Party öffentlich oder privat ist, optionale maximale Gästezahl, ein optionaler Preis, ein Hintergrundbild — entweder eines der vorgegebenen Motive oder ein eigenes Foto — sowie ein zufällig erzeugter Einladungscode und der Erstellzeitpunkt.',
       'Teilnahme: deine Antwort auf eine Einladung (zugesagt, vielleicht oder abgesagt) und der Zeitpunkt, zu dem du sie gegeben hast. Öffnest du angemeldet einen Einladungslink, wird gespeichert, dass du ihn geöffnet hast, bis der Gastgeber den Link zurücksetzt oder dich von der Gästeliste entfernt. Damit wird dir die Adresse angezeigt. Fragst du bei einer privaten Party an, speichern wir die Anfrage und ihren Zeitpunkt, bis der Gastgeber sie annimmt oder ablehnt.',
       'Umfragen: die Fragen und Antwortmöglichkeiten, die ein Gastgeber stellt, und deine Auswahl beziehungsweise dein Freitext dazu.',
+      'Meldungen und Blockierungen: Meldest du eine Party, eine Antwort oder eine Person, speichern wir, wer wen gemeldet hat, die Party, den gewählten Grund, den Zeitpunkt, ob die Meldung erledigt ist, und bei einer Antwort ihren Wortlaut zum Zeitpunkt der Meldung. Blockierst du jemanden, speichern wir, wen du blockiert hast, und seit wann.',
       'Technische Verbindungsdaten: Beim Aufruf der App und bei jeder Datenbankabfrage fallen bei unseren Dienstleistern IP-Adresse, Browser- und Gerätekennung, Zeitpunkt, Herkunftsland und die aufgerufene Adresse an. Die App selbst greift auf keine dieser Angaben zu und speichert sie nirgends in ihrer eigenen Datenbank.',
       'Bilder: Aus jedem Bild, das du hochlädst, werden vor dem Speichern die Kameradaten entfernt. Das betrifft insbesondere GPS-Koordinaten, Gerätemodell und Aufnahmezeitpunkt, die Handykameras in ihre Fotos schreiben. Gespeichert wird nur eine verkleinerte Fassung ohne diese Angaben.',
       'Nicht erhoben werden: Geburtsdatum, Alter, Geschlecht, Telefonnummer, deine eigene Wohnanschrift und der Standort deines Geräts. Die App fragt nichts davon ab und hat für nichts davon ein Feld.',
@@ -128,6 +149,7 @@ const SECTIONS: LegalSection[] = [
       'Ein Profil- oder Hintergrundbild hochzuladen ist freiwillig und beruht auf deiner Einwilligung nach Art. 6 Abs. 1 lit. a DSGVO. Du kannst sie jederzeit widerrufen, indem du das Bild entfernst; die Verarbeitung bis dahin bleibt rechtmäßig.',
       'E-Mails, die die App dir schickt — der Bestätigungscode bei der Anmeldung, das Zurücksetzen des Passworts und Hinweise zu Partys, zu denen du gehörst —, sind Teil dieser Bereitstellung und beruhen ebenfalls auf Art. 6 Abs. 1 lit. b DSGVO. Werbe-E-Mails verschicken wir nicht.',
       'Die Karte der App und die Adresssuche beim Erstellen einer Party beruhen auf unserem berechtigten Interesse nach Art. 6 Abs. 1 lit. f DSGVO. Das Interesse ist, dass die App zeigt, wo Partys stattfinden, und dass ein Gastgeber die Adresse auswählen kann, statt sie fehlerfrei abtippen zu müssen. Beides ließe sich ohne diese Dienste nicht sinnvoll bauen.',
+      'Meldungen und Blockierungen verarbeiten wir, um die Nutzungsbedingungen durchzusetzen und Nutzerinnen und Nutzer voreinander zu schützen — für dich Art. 6 Abs. 1 lit. b DSGVO, für die gemeldete oder blockierte Person Art. 6 Abs. 1 lit. f DSGVO: unser berechtigtes Interesse an einer App, in der niemand belästigt wird.',
       'Den technisch sicheren Betrieb — Server-Protokolle, Abwehr von Missbrauch, Verfügbarkeit — stützen wir ebenfalls auf Art. 6 Abs. 1 lit. f DSGVO.',
       'Müssen wir gesetzlichen Pflichten nachkommen, etwa einer Auskunft gegenüber einer Behörde, ist die Grundlage Art. 6 Abs. 1 lit. c DSGVO.',
     ],
@@ -145,6 +167,7 @@ const SECTIONS: LegalSection[] = [
       'Ist eine Party vorbei, blendet die App die Adresse aus. Der Link bleibt gültig, die Anschrift steht dann aber nicht mehr darin.',
       'Wird ein Einladungslink in einem Chat geteilt, erzeugt der Messenger daraus eine Vorschau und lädt dafür Titel, Beschreibung und Hintergrundbild von unserem Server. Die Adresse steht bewusst nicht in dieser Vorschau, weil sie sonst in fremden Chatverläufen und auf gesperrten Bildschirmen auftauchen würde.',
       'Profilbilder und Party-Hintergründe liegen in einem öffentlichen Dateispeicher. Wer die Adresse einer solchen Datei kennt, kann das Bild auch ohne Konto abrufen, solange es dort liegt. Lädst du ein neues Bild hoch oder wechselst du zurück zu den Initialen, wird das alte gelöscht und seine Adresse ungültig.',
+      'Meldungen liest nur der Betreiber, niemand sonst in der App, auch nicht die gemeldete Person. Wen du blockiert hast, siehst nur du.',
       'Deine E-Mail-Adresse sehen andere Nutzerinnen und Nutzer nicht.',
       'Es findet kein Verkauf statt und keine Weitergabe zu Werbezwecken. Außerhalb der App bekommen deine Daten nur die Dienstleister aus dem nächsten Abschnitt zu sehen, und die nur, soweit sie sie für ihre Aufgabe brauchen.',
     ],
@@ -155,7 +178,8 @@ const SECTIONS: LegalSection[] = [
       'Supabase (Supabase Inc., USA) betreibt Datenbank, Nutzerkonten und Dateispeicher. Die Server stehen in Frankfurt am Main, AWS-Region eu-central-1, also in der EU — nachgemessen, nicht abgeschrieben. Bei jeder Abfrage protokolliert Supabase technische Angaben, darunter IP-Adresse, Herkunftsland, Browserkennung und die aufgerufene Adresse. Mit Supabase besteht ein Vertrag zur Auftragsverarbeitung nach Art. 28 DSGVO.',
       'Cloudflare (Cloudflare, Inc., USA) liegt technisch vor der Datenbank und dem Bildspeicher von Supabase und sichert die Verbindung ab. Jede Abfrage und jeder Bildabruf läuft darüber, wobei deine IP-Adresse verarbeitet wird. Die Verarbeitung erfolgt in einem weltweiten Netz, in der Regel am nächstgelegenen Standort. Wir sind bei Cloudflare nicht selbst Kunde: Der Dienst ist Supabase vorgeschaltet und über deren Vertrag als Unterauftragsverarbeiter nach Art. 28 Abs. 2 und 4 DSGVO eingebunden.',
       'Vercel (Vercel Inc., USA) hostet die Anwendung. Beim Aufruf entstehen technisch notwendige Server-Protokolle, darunter IP-Adresse, Zeitpunkt und aufgerufene Adresse. Auch mit Vercel besteht ein Vertrag zur Auftragsverarbeitung nach Art. 28 DSGVO.',
-      'Resend (Plus Five Five, Inc., 2261 Market Street #5039, San Francisco, CA 94114, USA) verschickt die E-Mails der App: den Bestätigungscode bei der Anmeldung, die Nachricht zum Zurücksetzen des Passworts und Hinweise zu deinen Partys. Übertragen werden dabei deine E-Mail-Adresse und der Inhalt der jeweiligen Nachricht; die Verarbeitung findet in den USA statt. Bis zur Umstellung auf Resend übernimmt diesen Versand der Standarddienst von Supabase. Mit Resend besteht ein Vertrag zur Auftragsverarbeitung nach Art. 28 DSGVO.',
+      'Resend (Plus Five Five, Inc., 2261 Market Street #5039, San Francisco, CA 94114, USA) verschickt die E-Mails der App: den Bestätigungscode bei der Anmeldung, die Nachricht zum Zurücksetzen des Passworts und Hinweise zu deinen Partys. Übertragen werden dabei deine E-Mail-Adresse und der Inhalt der jeweiligen Nachricht; die Verarbeitung findet in den USA statt. Bis zur Umstellung auf Resend übernimmt diesen Versand der Standarddienst von Supabase. Mit Resend besteht ein Vertrag zur Auftragsverarbeitung (Data Processing Addendum), der Teil der Nutzungsbedingungen von Resend ist.',
+      'Geht eine Meldung ein, erfährt der Betreiber das per E-Mail, ebenfalls über Resend. Diese Benachrichtigung enthält nur eine zufällige Kennnummer der Meldung, ihre Art, den gewählten Grund und den Zeitpunkt — keinen Namen, keine E-Mail-Adresse, keine Party und keinen Wortlaut. Wer gemeldet hat und wer gemeldet wurde, steht nur in unserer Datenbank. Die Benachrichtigung geht an die Adresse aus Abschnitt 2, deren Postfach Google Mail führt.',
       'OpenFreeMap (Hyperknot Software Kft., Petőfi Sándor utca 48., 2724 Újlengyel, Ungarn; Datenschutzkontakt privacy@openfreemap.org) liefert die Karte, die hinter jedem Bildschirm der App liegt. Dabei gehen deine IP-Adresse und der angezeigte Kartenausschnitt an OpenFreeMap, automatisch beim Öffnen der App. OpenFreeMap setzt keine Cookies und verlangt keine Registrierung. Die IP-Adresse speichert OpenFreeMap nur in Fehlerprotokollen und löscht sie nach 7 Tagen, bei Verdacht auf einen Sicherheitsvorfall nach bis zu 30 Tagen. Der Betreiber sitzt in Ungarn, also in der EU. Nach seinen Angaben kann Cloudflare als Auslieferungsnetz davorgeschaltet sein.',
       'Tippst du bei einer Party auf „Route anzeigen", öffnet sich Apple Karten oder Google Maps mit der Adresse als Ziel. Dann gelten deren Bestimmungen.',
       'Google Sign-In (Google Ireland Limited): nur, wenn du dich für die Anmeldung mit Google entscheidest. Wir erhalten dabei deine E-Mail-Adresse und eine Kennung deines Google-Kontos; Google erfährt, dass du dich bei areuout anmeldest. Wählst du diesen Weg nicht, wird nichts an Google übertragen.',
@@ -195,6 +219,7 @@ const SECTIONS: LegalSection[] = [
     paragraphs: [
       'Deine Daten bleiben gespeichert, solange dein Konto besteht. Eine darüber hinausgehende Frist gibt es nicht: Wir sind kein Unternehmen und unterliegen keinen steuer- oder handelsrechtlichen Aufbewahrungspflichten.',
       'Löschst du dein Konto unter „Profil → Account", werden dein Profil, deine Partys, deine Zu- und Absagen, deine Umfrageantworten und deine hochgeladenen Bilder unwiderruflich entfernt — auch die Antworten, die du bei Partys anderer gegeben hast. Das geschieht sofort und vollständig, nicht als Markierung zum späteren Löschen. Automatische Sicherungskopien der Datenbank gibt es in unserem Tarif nicht, aus denen etwas zurückkehren könnte.',
+      'Deine Meldungen, Meldungen über dich und deine Liste blockierter Personen werden mit deinem Konto gelöscht, Meldungen zu einer Party mit der Party.',
       'Löschst du eine einzelne Party, verschwinden damit auch die Zusagen, Umfragen und Antworten zu dieser Party sowie ihr Hintergrundbild.',
       'Für die Protokolle der Dienstleister gilt Abschnitt 10.',
     ],
@@ -211,7 +236,7 @@ const SECTIONS: LegalSection[] = [
   {
     heading: '13. Widerspruchsrecht nach Art. 21 DSGVO',
     paragraphs: [
-      'Soweit wir Daten auf Grundlage eines berechtigten Interesses nach Art. 6 Abs. 1 lit. f DSGVO verarbeiten — das betrifft die Karte, die Adresssuche und die Server-Protokolle —, hast du das Recht, aus Gründen, die sich aus deiner besonderen Situation ergeben, jederzeit Widerspruch gegen diese Verarbeitung einzulegen.',
+      'Soweit wir Daten auf Grundlage eines berechtigten Interesses nach Art. 6 Abs. 1 lit. f DSGVO verarbeiten — das betrifft die Karte, die Adresssuche, die Server-Protokolle sowie Meldungen und Blockierungen —, hast du das Recht, aus Gründen, die sich aus deiner besonderen Situation ergeben, jederzeit Widerspruch gegen diese Verarbeitung einzulegen.',
       'Legst du Widerspruch ein, verarbeiten wir die betroffenen Daten nicht mehr, es sei denn, wir können zwingende schutzwürdige Gründe nachweisen, die deine Interessen, Rechte und Freiheiten überwiegen, oder die Verarbeitung dient der Geltendmachung, Ausübung oder Verteidigung von Rechtsansprüchen.',
       'Ein Widerspruch genügt formlos an die in Abschnitt 2 genannte Adresse.',
       'Direktwerbung betreiben wir nicht, weder per E-Mail noch in der App. Ein Widerspruch dagegen geht deshalb ins Leere — es gibt nichts, dem zu widersprechen wäre.',
@@ -249,5 +274,5 @@ const SECTIONS: LegalSection[] = [
 ]
 
 export default function DatenschutzPage() {
-  return <LegalTextScreen title='Datenschutz' sections={SECTIONS} updated='12. Oktober 2026' />
+  return <LegalTextScreen title='Datenschutz' sections={SECTIONS} updated='15. Oktober 2026' />
 }
