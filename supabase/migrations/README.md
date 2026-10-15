@@ -335,8 +335,8 @@ so gebaut ist, steht in `SCHEMA.md`, Abschnitt zu `private.invite_opens`.
 ## Die Migrationen zu Schritt 13b (Melden und Blockieren)
 
 Geschrieben und angewendet am 14.10.2026. Zu jeder Datei liegt ein Rollback mit demselben
-Namen in `supabase/rollbacks/`. Zurückrollen in umgekehrter Reihenfolge: `201200`,
-`200600`, `200539`, `200517`.
+Namen in `supabase/rollbacks/`. Zurückrollen in umgekehrter Reihenfolge: `233956`,
+`201200`, `200600`, `200539`, `200517`.
 
 | Datei | Was sie ändert | Wie angewendet | Version |
 |---|---|---|---|
@@ -344,6 +344,7 @@ Namen in `supabase/rollbacks/`. Zurückrollen in umgekehrter Reihenfolge: `20120
 | `20261014200539_create_reports.sql` | Tabelle `reports` (RLS ohne Policy, keine Rechte für anon und authenticated), Trigger `reports_cap_per_day`, `submit_report` | `apply_migration` | echt, von `apply_migration` vergeben |
 | `20261014200600_add_block_and_unblock.sql` | `block_user` (räumt Anfragen, Zusagen und `invite_opens` zwischen den beiden ab) und `unblock_user` | SQL-Editor (der Rumpf enthält DELETE) | von Hand gewählt, per INSERT eingetragen |
 | `20261014201200_hide_blocked_people.sql` | `get_explore_parties`, `get_my_parties`, `get_party_detail`, `get_party_guest_list`, `get_party_poll_data` verstecken einseitig; `request_to_join`, `can_rsvp_to_event`, `private.has_party_access` sperren in beide Richtungen | `apply_migration` | echt, von `apply_migration` vergeben |
+| `20261014233956_email_new_reports.sql` | pg_net, `private.email_new_report` und Trigger `reports_email_new`: jede neue Meldung ruft die Edge Function `report-email` auf, die Arthur über Resend eine Mail schickt | `apply_migration`, angewendet am 15.10.2026 | echt, von `apply_migration` vergeben; Platzhalter war `20261015000000` |
 
 `apply_migration` hat die Kommentare der Dateien nicht mitbekommen, nur die Anweisungen.
 `20261014201200` prüft vorher per md5, dass die acht Funktionsrümpfe noch die vom
@@ -353,3 +354,16 @@ die acht alten Rümpfe Zeichen für Zeichen wieder her. Owner, SECURITY, `search
 Rechte sind unverändert. `get_party_guests` ist übersprungen, die App ruft es nicht mehr
 auf. Getestet in zurückgerollten Transaktionen auf der Live-Datenbank als Blockierender,
 Blockierter und Fremder. Warum es so gebaut ist, steht in `SCHEMA.md`, Abschnitt 9c.
+
+`20261014233956` gehört zur dritten Sitzung von 13b (15.10.2026). Dazu kommen zwei Dinge,
+die keine Migration sind und beim Zurückrollen von Hand weg müssen: die Edge Function
+`supabase/functions/report-email` (per MCP mit `verify_jwt = false` deployt) und das
+Geheimnis, das im Vault als `report_email_secret` und in den Edge-Function-Secrets als
+`REPORT_EMAIL_SECRET` liegt. Die beiden REVOKEs auf `net` wirken nicht (`supabase_admin`
+vergibt die Rechte selbst), siehe SCHEMA.md 9c. Danach per md5 geprüft: der Rumpf von
+`private.email_new_report` auf der Datenbank ist derselbe wie in der Datei. Getestet in
+zurückgerollten Transaktionen (Tageslimit: 20 Zeilen, 20 Anfragen, die 21. abgelehnt;
+fehlendes Vault-Geheimnis: Meldung trotzdem gespeichert) und live mit einem kurzlebigen
+Testkonto: falsches Geheimnis ergibt 403 und keine Mail, ungültiger Resend-Key ergibt 502
+und keine Mail, beide Male ist die Meldung gespeichert; mit richtigem Key genau eine Mail
+mit dem geplanten Inhalt. Testzeilen und Testkonto danach gelöscht, 0 Zeilen übrig.

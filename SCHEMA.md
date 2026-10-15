@@ -420,7 +420,8 @@ with their versions recorded by hand in `supabase_migrations.schema_migrations`
 
 Apple guideline 1.2 and Google's UGC policy want both inside the app. Decided with Arthur
 on 2026-10-14: fixed report reasons, no free text; a block also stops RSVPs, not only join
-requests; reports land in a table only (email comes later); a list of blocked people so a
+requests; reports land in a table (the email to Arthur came one session later, below); a
+list of blocked people so a
 block can be undone.
 
 **`public.blocks`** (`blocker_id`, `blocked_id`, primary key on the pair, CHECK against
@@ -492,9 +493,64 @@ unknown target, anon).
 The UI session is done (2026-10-15): the 42501 on an RSVP becomes one sentence in
 `rsvpErrorText` (`features/parties/services/parties.service.ts`), and the 0-row detail
 ends in `PartyDetail`'s missing state (`onMissing`, the dead link on the invite page).
-**13b is not merged or deployed before the email session is done:** the terms promise a
-look at every report within 24 hours, and until reports reach Arthur by email nothing
-tells him one has arrived.
+
+**Every new report emails Arthur** (migration `20261014233956`, Edge Function
+`report-email`), because the terms promise a look within 24 hours and nothing else tells him
+a report has arrived. The AFTER INSERT trigger `reports_email_new`
+(`private.email_new_report`) calls `net.http_post` (pg_net), which only queues the request;
+pg_net sends it after COMMIT. So a rolled-back report sends nothing, and the function's
+answer can never fail the insert. If queueing itself fails, an inner `exception` block turns
+it into a warning, and the report is stored anyway. Fire and forget, no retry.
+
+- **Content:** `id`, `kind`, `reason`, `created_at`, nothing else (Datenschutz section 7).
+  No names, no user ids, no party and no wording go through Resend and Gmail. The mail
+  carries the lookup query and the `update … set status = 'handled'` for the dashboard.
+- **Authentication:** `verify_jwt = false` (also in `supabase/config.toml`, so a CLI deploy
+  cannot turn it back on), because the database has no JWT to send except the public anon
+  key. Instead the header `x-report-secret` must match the function secret
+  `REPORT_EMAIL_SECRET`. The same value lives in Vault as `report_email_secret`, created
+  from random bytes inside the database and read only at call time, so it is in no file and
+  no trigger argument (unlike a Database Webhook). Anything else gets 403 before Resend is
+  touched.
+- **The comparison was fixed after the first live test.** The first "wrong secret → 403"
+  check ran before `REPORT_EMAIL_SECRET` was set, so it only proved the "no secret
+  configured" branch. Once a (deliberately wrong) secret was set, `timingSafeEqual` from
+  `@std/crypto` threw on the different lengths and the function answered 500. Both sides
+  are now hashed with SHA-256 first (always 32 bytes, no length leak). Re-tested against
+  the deployed fix with five calls, all 403: POST without header, GET, a wrong 5-character
+  header, a wrong 64-character header, and the trigger's own request with the real Vault
+  secret against the wrong function secret.
+- **At most 20 emails per reporter per day:** AFTER INSERT fires only for rows actually
+  inserted, so a repeat sends nothing, and `reports_cap_per_day` stops the 21st row.
+- **pg_net and the API roles:** `supabase_admin` owns schema `net` and grants USAGE to anon
+  and authenticated and EXECUTE to PUBLIC itself; `postgres` cannot revoke that (the
+  migration's REVOKEs are no-ops, kept because they ran). It is unreachable anyway: the Data
+  API exposes only `public` and `graphql_public` (`net` answers PGRST106), and no function
+  in `public` runs dynamic SQL or calls `net`. Keep it that way.
+
+**How a failed email shows up.** There is no alarm in this first version. Three places:
+
+```sql
+-- pg_net keeps every answer for 6 hours
+select created, status_code, content, error_msg from net._http_response
+where status_code is distinct from 200 order by created desc;
+
+-- the safety net, also for anything older: every report not yet handled
+select id, kind, reason, created_at from public.reports
+where status = 'open' order by created_at;
+```
+
+The third place is the function log (Dashboard → Edge Functions → report-email → Logs),
+which shows `Resend refused <status> <body>`. Resend's free tier sends 100 mails a day: on a
+day with more reports, the rest only appear in the open list.
+
+Verified 2026-10-15 on the live database. In rolled-back transactions: 21 reports from one
+reporter gave 20 rows and 20 queued requests, the 21st was refused, and the body held only the
+four fields; with the Vault secret missing, the report was still stored. Live, with a
+short-lived test account: a wrong function secret gave 403 and no email; an invalid Resend
+key gave 502 (`API key is invalid`) and no email; in both cases the report was stored and
+the user saw a normal success. With the right key, exactly one email with the planned
+content. The test rows and the test account were deleted afterwards, and 0 rows were left.
 
 ## 10. Checking this file against the database
 

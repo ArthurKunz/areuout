@@ -17,7 +17,11 @@ import LegalTextScreen, { type LegalSection } from '@/features/profile/LegalText
 //                   nachgezogen werden muss — deshalb nennt Abschnitt 7 beide Wege in
 //                   einem Satz, statt heute etwas Falsches zu behaupten. Betreiber ist
 //                   Plus Five Five, Inc., San Francisco; DPF-zertifiziert nach eigener
-//                   DPA, Abschnitt 11.1, zusätzlich Standardvertragsklauseln
+//                   DPA, Abschnitt 11.1, zusätzlich Standardvertragsklauseln.
+//                   Seit 15.10.2026 angeschlossen für die Meldungs-Benachrichtigung an
+//                   Arthur: supabase/functions/report-email/index.ts, aufgerufen vom
+//                   Trigger reports_email_new. Inhalt nur id, kind, reason, created_at.
+//                   Die Auth-Mails laufen weiter über Supabase
 //   OpenFreeMap     lib/map/config.ts (Tiles, Glyphen, Sprites von tiles.openfreemap.org).
 //                   Betreiber, Löschfristen und der mögliche Cloudflare-CDN stammen aus
 //                   https://openfreemap.org/privacy/, am 11.10.2026 von den Seiten des
@@ -77,6 +81,14 @@ import LegalTextScreen, { type LegalSection } from '@/features/profile/LegalText
 // MCP. blocks: Blockierender, Blockierter, Zeitpunkt; nur der Blockierende liest seine
 // Zeilen. Alle Fremdschlüssel beider Tabellen kaskadieren von profiles, reports auch von
 // events — Abschnitt 11 stimmt also. Die Gründe sind fest, Freitext gibt es nicht.
+//
+// Nachtrag 15.10.2026 (Benachrichtigung): jede neue Meldung schickt Arthur eine Mail über
+// Resend an azzuro.kunz@gmail.com (Postfach bei Google Mail). Sie enthält nur id, kind,
+// reason und created_at, keine Namen, keine Nutzer-IDs, keine Party und keinen Wortlaut.
+// Die Meldungs-ID ist trotzdem ein pseudonymes Datum (Art. 4 Nr. 5 DSGVO): Arthur kann sie
+// in der Datenbank auflösen. Deshalb steht die Benachrichtigung in Abschnitt 7, obwohl
+// weder Resend noch Google aus ihr eine Person ablesen können. Abschnitt 8 (Resend in den
+// USA) gilt unverändert.
 //
 // Kein Analytics, kein Tracking, keine Werbe-Cookies — im ganzen Projekt kein einziger
 // Treffer. Deshalb braucht die App auch kein Cookie-Banner: die einzigen Cookies sind die
@@ -166,7 +178,8 @@ const SECTIONS: LegalSection[] = [
       'Supabase (Supabase Inc., USA) betreibt Datenbank, Nutzerkonten und Dateispeicher. Die Server stehen in Frankfurt am Main, AWS-Region eu-central-1, also in der EU — nachgemessen, nicht abgeschrieben. Bei jeder Abfrage protokolliert Supabase technische Angaben, darunter IP-Adresse, Herkunftsland, Browserkennung und die aufgerufene Adresse. Mit Supabase besteht ein Vertrag zur Auftragsverarbeitung nach Art. 28 DSGVO.',
       'Cloudflare (Cloudflare, Inc., USA) liegt technisch vor der Datenbank und dem Bildspeicher von Supabase und sichert die Verbindung ab. Jede Abfrage und jeder Bildabruf läuft darüber, wobei deine IP-Adresse verarbeitet wird. Die Verarbeitung erfolgt in einem weltweiten Netz, in der Regel am nächstgelegenen Standort. Wir sind bei Cloudflare nicht selbst Kunde: Der Dienst ist Supabase vorgeschaltet und über deren Vertrag als Unterauftragsverarbeiter nach Art. 28 Abs. 2 und 4 DSGVO eingebunden.',
       'Vercel (Vercel Inc., USA) hostet die Anwendung. Beim Aufruf entstehen technisch notwendige Server-Protokolle, darunter IP-Adresse, Zeitpunkt und aufgerufene Adresse. Auch mit Vercel besteht ein Vertrag zur Auftragsverarbeitung nach Art. 28 DSGVO.',
-      'Resend (Plus Five Five, Inc., 2261 Market Street #5039, San Francisco, CA 94114, USA) verschickt die E-Mails der App: den Bestätigungscode bei der Anmeldung, die Nachricht zum Zurücksetzen des Passworts und Hinweise zu deinen Partys. Übertragen werden dabei deine E-Mail-Adresse und der Inhalt der jeweiligen Nachricht; die Verarbeitung findet in den USA statt. Bis zur Umstellung auf Resend übernimmt diesen Versand der Standarddienst von Supabase. Mit Resend besteht ein Vertrag zur Auftragsverarbeitung nach Art. 28 DSGVO.',
+      'Resend (Plus Five Five, Inc., 2261 Market Street #5039, San Francisco, CA 94114, USA) verschickt die E-Mails der App: den Bestätigungscode bei der Anmeldung, die Nachricht zum Zurücksetzen des Passworts und Hinweise zu deinen Partys. Übertragen werden dabei deine E-Mail-Adresse und der Inhalt der jeweiligen Nachricht; die Verarbeitung findet in den USA statt. Bis zur Umstellung auf Resend übernimmt diesen Versand der Standarddienst von Supabase. Mit Resend besteht ein Vertrag zur Auftragsverarbeitung (Data Processing Addendum), der Teil der Nutzungsbedingungen von Resend ist.',
+      'Geht eine Meldung ein, erfährt der Betreiber das per E-Mail, ebenfalls über Resend. Diese Benachrichtigung enthält nur eine zufällige Kennnummer der Meldung, ihre Art, den gewählten Grund und den Zeitpunkt — keinen Namen, keine E-Mail-Adresse, keine Party und keinen Wortlaut. Wer gemeldet hat und wer gemeldet wurde, steht nur in unserer Datenbank. Die Benachrichtigung geht an die Adresse aus Abschnitt 2, deren Postfach Google Mail führt.',
       'OpenFreeMap (Hyperknot Software Kft., Petőfi Sándor utca 48., 2724 Újlengyel, Ungarn; Datenschutzkontakt privacy@openfreemap.org) liefert die Karte, die hinter jedem Bildschirm der App liegt. Dabei gehen deine IP-Adresse und der angezeigte Kartenausschnitt an OpenFreeMap, automatisch beim Öffnen der App. OpenFreeMap setzt keine Cookies und verlangt keine Registrierung. Die IP-Adresse speichert OpenFreeMap nur in Fehlerprotokollen und löscht sie nach 7 Tagen, bei Verdacht auf einen Sicherheitsvorfall nach bis zu 30 Tagen. Der Betreiber sitzt in Ungarn, also in der EU. Nach seinen Angaben kann Cloudflare als Auslieferungsnetz davorgeschaltet sein.',
       'Tippst du bei einer Party auf „Route anzeigen", öffnet sich Apple Karten oder Google Maps mit der Adresse als Ziel. Dann gelten deren Bestimmungen.',
       'Google Sign-In (Google Ireland Limited): nur, wenn du dich für die Anmeldung mit Google entscheidest. Wir erhalten dabei deine E-Mail-Adresse und eine Kennung deines Google-Kontos; Google erfährt, dass du dich bei areuout anmeldest. Wählst du diesen Weg nicht, wird nichts an Google übertragen.',

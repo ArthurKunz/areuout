@@ -415,3 +415,8 @@ entrypoint = "./functions/send-consent-email/index.ts"
 # Specifies static files to be bundled with the function. Supports glob patterns.
 # For example, if you want to serve static HTML pages in your function:
 # static_files = [ "./functions/send-consent-email/*.html" ]
+
+# Called only by the trigger reports_email_new through pg_net, which has no JWT to send.
+# The function checks its own shared secret (x-report-secret) instead.
+[functions.report-email]
+verify_jwt = false
