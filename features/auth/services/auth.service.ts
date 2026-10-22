@@ -1,6 +1,6 @@
 import { supabase } from '@/lib/supabase/client'
 import { getOrigin } from '@/lib/utils'
-import { AUTH_CALLBACK_PATH } from '../constants/auth.constants'
+import { AUTH_CALLBACK_PATH, GOOGLE_IOS_CLIENT_ID } from '../constants/auth.constants'
 
 export async function signInWithPassword(email: string, password: string) {
   return supabase.auth.signInWithPassword({ email, password })
@@ -22,12 +22,36 @@ function toHex(bytes: Uint8Array) {
   return Array.from(bytes, (b) => b.toString(16).padStart(2, '0')).join('')
 }
 
-// Native only (iOS app). Apple puts the SHA-256 of the nonce into its identity token;
-// Supabase hashes the raw one and compares, so a stolen token cannot be replayed.
-// The plugin is imported here, on tap, so it never reaches SSR or the web bundle.
-export async function signInWithApple() {
+// Apple and Google put the hashed nonce into their ID token; Supabase hashes the raw one
+// and compares, so a stolen token cannot be replayed.
+async function createNonce() {
   const rawNonce = toHex(crypto.getRandomValues(new Uint8Array(32)))
   const hashedNonce = toHex(new Uint8Array(await crypto.subtle.digest('SHA-256', new TextEncoder().encode(rawNonce))))
+  return { rawNonce, hashedNonce }
+}
+
+// Native only (iOS app): Google blocks its OAuth page inside the app's WebView.
+// With a nonce the plugin always shows Google's sheet instead of restoring an old
+// sign-in, whose token would carry no matching nonce.
+export async function signInWithGoogleNative() {
+  const { rawNonce, hashedNonce } = await createNonce()
+
+  const { SocialLogin } = await import('@capgo/capacitor-social-login')
+  await SocialLogin.initialize({ google: { iOSClientId: GOOGLE_IOS_CLIENT_ID, mode: 'online' } })
+  const { result } = await SocialLogin.login({
+    provider: 'google',
+    options: { scopes: ['email', 'profile'], nonce: hashedNonce },
+  })
+  const idToken = 'idToken' in result ? result.idToken : null
+  if (!idToken) throw new Error('Google hat kein Token geschickt.')
+
+  return supabase.auth.signInWithIdToken({ provider: 'google', token: idToken, nonce: rawNonce })
+}
+
+// Native only (iOS app). The plugin is imported here, on tap, so it never reaches SSR
+// or the web bundle.
+export async function signInWithApple() {
+  const { rawNonce, hashedNonce } = await createNonce()
 
   const { SocialLogin } = await import('@capgo/capacitor-social-login')
   await SocialLogin.initialize({ apple: {} })

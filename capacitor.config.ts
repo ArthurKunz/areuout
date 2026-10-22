@@ -17,13 +17,16 @@ const config: CapacitorConfig = {
     allowNavigation: ['www.areuout.de'],
   },
   plugins: {
-    // Nur Sign in with Apple (Schritt 13c). Der Sync-Hook des Plugins kommentiert die
-    // Pakete der abgeschalteten Anbieter in seiner Package.swift aus. Beim Facebook-SDK
-    // klappt das; das GoogleSignIn-SDK bleibt in Plugin 8.7.5 trotzdem drin (sein Muster
-    // verlangt ein Komma, das hinter dem letzten Listeneintrag fehlt). Zur Laufzeit ist
-    // Google mit false dennoch aus. Google kommt spaeter mit true dazu.
+    // Sign in with Apple und Google nativ (Schritt 13c): Google sperrt seine OAuth-Seite
+    // im WebView der App. Der Sync-Hook des Plugins kommentiert die Pakete der
+    // abgeschalteten Anbieter in seiner Package.swift aus. Beim Facebook-SDK klappt das;
+    // das GoogleSignIn-SDK bliebe in Plugin 8.7.5 auch mit false drin (sein Muster
+    // verlangt ein Komma, das hinter dem letzten Listeneintrag fehlt), und mit dem SDK
+    // waere Google auch zur Laufzeit an: das Plugin prueft fuer Google nur, ob das SDK
+    // da ist, nicht diesen Schalter. Seit Google gewollt ist, schadet der Fehler nicht.
+    // Google braucht ausserdem das URL-Schema in Info.plist, sonst stuerzt die App ab.
     SocialLogin: {
-      providers: { apple: true, google: false, facebook: false, twitter: false },
+      providers: { apple: true, google: true, facebook: false, twitter: false },
     },
   },
 }
