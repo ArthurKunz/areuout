@@ -1,11 +1,16 @@
 'use client'
 
 import Link from 'next/link'
-import { useState } from 'react'
+import { useState, useSyncExternalStore } from 'react'
+import { useRouter } from 'next/navigation'
+import { Capacitor } from '@capacitor/core'
+import { CircleAlert } from 'lucide-react'
 import { alertError } from '@/lib/utils'
 import BigButton from '@/components/shared/BigButton'
 import Spinner from '@/components/shared/Spinner'
-import { signInWithGoogle } from '../services/auth.service'
+import { Alert, AlertDescription, AlertTitle } from '@/components/shared/Alert'
+import { authBannerMessage } from '../services/auth-errors'
+import { signInWithApple, signInWithGoogle } from '../services/auth.service'
 
 type Props = {
   onCreateAccount: () => void
@@ -15,10 +20,23 @@ type Props = {
   description?: string
 }
 
+// The platform never changes while the page lives, so there is nothing to subscribe to.
+const noSubscription = () => () => {}
+const isAppleAvailable = () =>
+  Capacitor.isNativePlatform() && Capacitor.getPlatform() === 'ios' && Capacitor.isPluginAvailable('SocialLogin')
+
 // The start screen (App Redesign 9): the content of the shell container over the map,
 // on /login and on the invite page for someone without an account.
 export default function AuthSheet({ onCreateAccount, onSignIn, next, description }: Props) {
+  const router = useRouter()
   const [pending, setPending] = useState(false)
+  const [applePending, setApplePending] = useState(false)
+  const [appleWarning, setAppleWarning] = useState<string | null>(null)
+  // Only inside the iOS app, and only in a build that carries the plugin: the app loads
+  // the live site, so an older install would otherwise get a button that cannot work.
+  // The server snapshot is false, so the server and the first client render agree (no
+  // button). The Apple button on the website is a later step (4.10).
+  const appleAvailable = useSyncExternalStore(noSubscription, isAppleAvailable, () => false)
 
   const handleGoogle = async () => {
     setPending(true)
@@ -28,6 +46,28 @@ export default function AuthSheet({ onCreateAccount, onSignIn, next, description
       setPending(false)
       alertError('Anmeldung fehlgeschlagen. Bitte versuche es erneut.', error.message)
     }
+  }
+
+  const handleApple = async () => {
+    setApplePending(true)
+    setAppleWarning(null)
+    try {
+      const { error } = await signInWithApple()
+      if (!error) {
+        // A first-time user has no profile yet; proxy.ts sends them on to onboarding.
+        router.push(next ?? '/explore')
+        return
+      }
+      const banner = authBannerMessage(error)
+      if (banner) setAppleWarning(banner)
+      else alertError('Anmeldung fehlgeschlagen. Bitte versuche es erneut.', error.message)
+    } catch (error) {
+      // Closing Apple's sheet is a choice, not a failure.
+      if ((error as { code?: string }).code !== 'USER_CANCELLED') {
+        alertError('Anmeldung fehlgeschlagen. Bitte versuche es erneut.', (error as Error).message)
+      }
+    }
+    setApplePending(false)
   }
 
   return (
@@ -47,24 +87,42 @@ export default function AuthSheet({ onCreateAccount, onSignIn, next, description
         <span className='h-px flex-1 bg-divider' />
       </div>
 
-      <div className='flex w-full max-w-[350px] gap-3'>
-        {/* The wait here is a redirect to Google, which is exactly the kind of
-            shapeless pause the spinner exists for. */}
-        <BigButton variant='white' onClick={handleGoogle} disabled={pending}>
-          {pending ? <Spinner /> : 'Google'}
+      {/* Apple's button rules (guideline 4.8): its own logo, its own wording, black on
+          white, and no smaller than the other sign-in buttons. */}
+      {appleAvailable && (
+        <BigButton variant='white' onClick={handleApple} disabled={applePending}>
+          {applePending ? (
+            <Spinner />
+          ) : (
+            <span className='flex items-center gap-1.5'>
+              <img src='/images/apple-logo.svg' alt='' className='size-4' />
+              Continue with Apple
+            </span>
+          )}
         </BigButton>
-        {/* Shown only: Sign in with Apple needs an Apple Developer account first
-            (Redesign Build Order, step 12). Disabled, so it greys out and cannot be tapped. */}
-        <BigButton variant='white' disabled>
-          Apple
-        </BigButton>
-      </div>
+      )}
 
-      {/* Google signs up without SignUpForm, so its consent sentence stands here too
-          (Store Launch Checklist item 10): a new Google account goes straight on to
+      {/* The wait here is a redirect to Google, which is exactly the kind of
+          shapeless pause the spinner exists for. */}
+      <BigButton variant='white' onClick={handleGoogle} disabled={pending}>
+        {pending ? <Spinner /> : 'Google'}
+      </BigButton>
+
+      {appleWarning && (
+        <div className='w-full max-w-[350px]'>
+          <Alert>
+            <CircleAlert />
+            <AlertTitle>Anmelden hat nicht geklappt</AlertTitle>
+            <AlertDescription>{appleWarning}</AlertDescription>
+          </Alert>
+        </div>
+      )}
+
+      {/* Google and Apple sign up without SignUpForm, so the consent sentence stands here
+          too (Store Launch Checklist item 10): a new account goes straight on to
           onboarding and creates content from there. Same words and links as SignUpForm. */}
       <p className='max-w-[350px] px-1 text-center text-text-4 text-text'>
-        Mit „Google“ bestätigst du, dass du mindestens 16 Jahre alt bist, und stimmst den{' '}
+        {appleAvailable ? 'Mit „Google“ oder „Apple“' : 'Mit „Google“'} bestätigst du, dass du mindestens 16 Jahre alt bist, und stimmst den{' '}
         <Link href='/nutzungsbedingungen' target='_blank' rel='noopener noreferrer' className='underline text-heading'>
           Nutzungsbedingungen
         </Link>{' '}

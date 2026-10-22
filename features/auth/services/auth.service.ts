@@ -18,6 +18,40 @@ export async function signInWithGoogle(next?: string | null) {
   })
 }
 
+function toHex(bytes: Uint8Array) {
+  return Array.from(bytes, (b) => b.toString(16).padStart(2, '0')).join('')
+}
+
+// Native only (iOS app). Apple puts the SHA-256 of the nonce into its identity token;
+// Supabase hashes the raw one and compares, so a stolen token cannot be replayed.
+// The plugin is imported here, on tap, so it never reaches SSR or the web bundle.
+export async function signInWithApple() {
+  const rawNonce = toHex(crypto.getRandomValues(new Uint8Array(32)))
+  const hashedNonce = toHex(new Uint8Array(await crypto.subtle.digest('SHA-256', new TextEncoder().encode(rawNonce))))
+
+  const { SocialLogin } = await import('@capgo/capacitor-social-login')
+  await SocialLogin.initialize({ apple: {} })
+  const { result } = await SocialLogin.login({
+    provider: 'apple',
+    options: { scopes: ['email', 'name'], nonce: hashedNonce },
+  })
+  if (!result.idToken) throw new Error('Apple hat kein Token geschickt.')
+
+  const response = await supabase.auth.signInWithIdToken({ provider: 'apple', token: result.idToken, nonce: rawNonce })
+
+  // Apple sends the name on the first sign-in only. It goes into the auth metadata,
+  // where onboarding offers it as a prefill; profiles is still written by onboarding
+  // alone. The plugin replays a cached name on later sign-ins, hence the check.
+  const user = response.data.user
+  const givenName = result.profile.givenName?.trim() ?? ''
+  const familyName = result.profile.familyName?.trim() ?? ''
+  if (user && !user.user_metadata.given_name && (givenName || familyName)) {
+    await supabase.auth.updateUser({ data: { given_name: givenName, family_name: familyName } })
+  }
+
+  return response
+}
+
 export async function signUpWithEmail(email: string, password: string) {
   return supabase.auth.signUp({ email, password })
 }

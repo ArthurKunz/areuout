@@ -1,16 +1,27 @@
 'use client'
 
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import StepFrame from '@/features/create-party/StepFrame'
 import InputGroup from '@/components/shared/InputGroup'
 import { Info } from 'lucide-react'
 import { Alert, AlertDescription } from '@/components/shared/Alert'
 import { NAME_MAX } from '../constants/onboarding.constants'
+import { getSession } from '../services/onboarding.service'
 import type { NameFormProps } from '../types/onboarding.types'
 
 export default function PersonalDataForm({ onSuccess }: NameFormProps) {
   const [firstname, setFirstname] = useState('')
   const [lastname, setLastname] = useState('')
+
+  // Sign in with Apple leaves the name Apple sent in the auth metadata
+  // (auth.service.ts). It is only a suggestion: a field the user has typed in stays.
+  useEffect(() => {
+    getSession().then(({ data: { session } }) => {
+      const meta = session?.user.user_metadata
+      if (typeof meta?.given_name === 'string') setFirstname((current) => current || meta.given_name.slice(0, NAME_MAX))
+      if (typeof meta?.family_name === 'string') setLastname((current) => current || meta.family_name.slice(0, NAME_MAX))
+    })
+  }, [])
 
   const canContinue = firstname.trim().length > 0 && lastname.trim().length > 0
   const atLimit = firstname.length >= NAME_MAX || lastname.length >= NAME_MAX

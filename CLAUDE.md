@@ -128,6 +128,7 @@ actually protects the data.
   Never change a value in it and never add a new surface style or animation without
   asking Arthur.
 - Icons come from `lucide-react`. Never hand-roll an `<svg>` for an icon.
+  Sole exception: Apple's official logo file in `public/images/apple-logo.svg`, required on the Sign in with Apple button.
 - No monetisation. Not ads, not paid tiers, not a payment provider, not an affiliate
   link. If a change would push past a free tier, say so before writing it.
 - Do not suggest: Prisma, Firebase, PlanetScale, Clerk, NextAuth, React Router, Redux,
