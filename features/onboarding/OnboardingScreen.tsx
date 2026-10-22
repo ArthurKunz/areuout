@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabase/client'
 import { alertError, sanitizeNextPath } from '@/lib/utils'
@@ -31,11 +31,18 @@ export default function OnboardingScreen({ nextParam }: { nextParam: string | nu
     setStep('picture')
   }
 
+  // A second tap while the first insert or its navigation is still running must not
+  // insert again (it answered with a 409 on profiles_pkey).
+  const saving = useRef(false)
+
   const handlePictureDone = async (avatarUrl: string | null, avatarColor: string) => {
+    if (saving.current) return true
+    saving.current = true
+
     const { data: { session } } = await getSession()
     if (!session) {
       router.push('/login')
-      return
+      return true
     }
 
     const { error } = await supabase.from('profiles').insert({
@@ -46,11 +53,15 @@ export default function OnboardingScreen({ nextParam }: { nextParam: string | nu
       avatar_color: avatarColor,
     })
 
-    if (error) {
+    // profiles_pkey is the table's only unique constraint, so 23505 means this user's
+    // row already exists. It is left as it is, never overwritten.
+    if (error && error.code !== '23505') {
+      saving.current = false
       alertError('Dein Profil konnte nicht gespeichert werden.', error.message)
-      return
+      return false
     }
     router.push(next ?? '/explore')
+    return true
   }
 
   return (

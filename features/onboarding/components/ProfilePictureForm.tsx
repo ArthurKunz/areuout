@@ -68,7 +68,9 @@ export default function ProfilePictureForm({ onSuccess, onClose, firstname, last
 
     // Initials: nothing to upload, the colour goes straight into the profile row.
     if (!file) {
-      await onSuccess(null, color ? AVATAR_SWATCHES[color] : pickRandomAvatarColor())
+      // On success the spinner stays until the page has navigated away; re-enabling the
+      // button earlier let a second tap insert the profile again.
+      if (await onSuccess(null, color ? AVATAR_SWATCHES[color] : pickRandomAvatarColor())) return
       setSaving(false)
       return
     }
@@ -109,7 +111,7 @@ export default function ProfilePictureForm({ onSuccess, onClose, firstname, last
     uploadedPath.current = path
 
     const publicUrl = supabase.storage.from(BUCKET).getPublicUrl(path).data.publicUrl
-    await onSuccess(publicUrl, pickRandomAvatarColor())
+    if (await onSuccess(publicUrl, pickRandomAvatarColor())) return
     setSaving(false)
   }
 
