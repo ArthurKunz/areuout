@@ -95,8 +95,25 @@ export default function AuthSheet({ onCreateAccount, onSignIn, next, description
             <Spinner />
           ) : (
             <span className='flex items-center gap-1.5'>
-              <img src='/images/apple-logo.svg' alt='' className='size-4' />
-              Continue with Apple
+              {/* Apple's file is a black glyph on an opaque white square; on our 90% white
+                  glass the square shows. The file stays untouched and serves as a mask:
+                  a full layer minus its luminance (white = 1) leaves only the glyph, filled
+                  black. Glyph in the 56-unit viewBox: x 20.5–35.5, y 16–35, so at 56px
+                  it is 15 × 19 px. Where the mask is unsupported (iOS before 15.4) the
+                  span stays hidden instead of turning into a black box. */}
+              <span
+                aria-hidden='true'
+                className='hidden h-[19px] w-[15px] shrink-0 bg-heading-black supports-[(mask-mode:luminance)_and_(mask-composite:subtract)]:block'
+                style={{
+                  maskImage: 'linear-gradient(#000 0 0), url(/images/apple-logo.svg)',
+                  maskMode: 'alpha, luminance',
+                  maskComposite: 'subtract',
+                  maskSize: '100% 100%, 56px 56px',
+                  maskPosition: '0 0, -20.5px -16px',
+                  maskRepeat: 'no-repeat',
+                }}
+              />
+              Weiter mit Apple
             </span>
           )}
         </BigButton>
