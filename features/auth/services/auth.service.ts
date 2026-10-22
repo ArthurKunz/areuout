@@ -1,3 +1,4 @@
+import { Capacitor } from '@capacitor/core'
 import { supabase } from '@/lib/supabase/client'
 import { getOrigin } from '@/lib/utils'
 import { AUTH_CALLBACK_PATH, GOOGLE_IOS_CLIENT_ID } from '../constants/auth.constants'
@@ -29,6 +30,11 @@ async function createNonce() {
   const hashedNonce = toHex(new Uint8Array(await crypto.subtle.digest('SHA-256', new TextEncoder().encode(rawNonce))))
   return { rawNonce, hashedNonce }
 }
+
+// Only inside the iOS app, and only in a build that carries the plugin: the app loads
+// the live site, so an older install would otherwise offer a sheet that cannot open.
+export const isNativeLogin = () =>
+  Capacitor.isNativePlatform() && Capacitor.getPlatform() === 'ios' && Capacitor.isPluginAvailable('SocialLogin')
 
 // Native only (iOS app): Google blocks its OAuth page inside the app's WebView.
 // With a nonce the plugin always shows Google's sheet instead of restoring an old
@@ -74,6 +80,27 @@ export async function signInWithApple() {
   }
 
   return response
+}
+
+// Native only (iOS app), before an Apple user's account is deleted (App Store 5.1.1(v)).
+// The user confirms with Apple once more; the fresh code goes to the Edge Function
+// revoke-apple, which exchanges it and revokes the authorization at once. No Apple token
+// is ever stored. Closing the sheet rejects with USER_CANCELLED, as on sign-in.
+export async function revokeAppleAuthorization() {
+  const { hashedNonce } = await createNonce()
+
+  const { SocialLogin } = await import('@capgo/capacitor-social-login')
+  // useProperTokenExchange only makes the plugin hand out the raw code; with no
+  // redirectUrl it exchanges nothing itself. signInWithApple initializes again without it.
+  await SocialLogin.initialize({ apple: { useProperTokenExchange: true } })
+  const { result } = await SocialLogin.login({
+    provider: 'apple',
+    options: { scopes: [], nonce: hashedNonce },
+  })
+  const code = 'authorizationCode' in result ? result.authorizationCode : undefined
+  if (!code) throw new Error('Apple hat keinen Code geschickt.')
+
+  return supabase.functions.invoke('revoke-apple', { body: { code } })
 }
 
 export async function signUpWithEmail(email: string, password: string) {

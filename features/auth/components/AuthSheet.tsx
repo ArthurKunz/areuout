@@ -3,14 +3,13 @@
 import Link from 'next/link'
 import { useState, useSyncExternalStore } from 'react'
 import { useRouter } from 'next/navigation'
-import { Capacitor } from '@capacitor/core'
 import { CircleAlert } from 'lucide-react'
 import { alertError } from '@/lib/utils'
 import BigButton from '@/components/shared/BigButton'
 import Spinner from '@/components/shared/Spinner'
 import { Alert, AlertDescription, AlertTitle } from '@/components/shared/Alert'
 import { authBannerMessage } from '../services/auth-errors'
-import { signInWithApple, signInWithGoogle, signInWithGoogleNative } from '../services/auth.service'
+import { isNativeLogin, signInWithApple, signInWithGoogle, signInWithGoogleNative } from '../services/auth.service'
 
 type Props = {
   onCreateAccount: () => void
@@ -22,8 +21,6 @@ type Props = {
 
 // The platform never changes while the page lives, so there is nothing to subscribe to.
 const noSubscription = () => () => {}
-const isNativeLogin = () =>
-  Capacitor.isNativePlatform() && Capacitor.getPlatform() === 'ios' && Capacitor.isPluginAvailable('SocialLogin')
 
 // The start screen (App Redesign 9): the content of the shell container over the map,
 // on /login and on the invite page for someone without an account.

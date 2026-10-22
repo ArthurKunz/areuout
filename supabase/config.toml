@@ -420,3 +420,7 @@ entrypoint = "./functions/send-consent-email/index.ts"
 # The function checks its own shared secret (x-report-secret) instead.
 [functions.report-email]
 verify_jwt = false
+
+# Called by the iOS app before an Apple user's account is deleted; needs the user's JWT.
+[functions.revoke-apple]
+verify_jwt = true
