@@ -75,5 +75,7 @@
 	</array>
 	<key>UIViewControllerBasedStatusBarAppearance</key>
 	<true/>
+    <key>NSCameraUsageDescription</key>
+    <string>areuout nutzt die Kamera nur, wenn du ein Profilbild oder einen Party-Hintergrund aufnehmen möchtest.</string>
 </dict>
 </plist>
