@@ -34,6 +34,7 @@ export default function AuthSheet({ onCreateAccount, onSignIn, next, description
   // The server snapshot is false, so the server and the first client render agree (no
   // Apple button, Google by redirect). The Apple button on the website is a later step (4.10).
   const nativeLogin = useSyncExternalStore(noSubscription, isNativeLogin, () => false)
+  const legalTarget = nativeLogin ? undefined : '_blank'
 
   // The native sheets of Apple and Google share one set of rules, so the two buttons
   // cannot drift apart.
@@ -143,11 +144,11 @@ export default function AuthSheet({ onCreateAccount, onSignIn, next, description
           onboarding and creates content from there. Same words and links as SignUpForm. */}
       <p className='max-w-[350px] px-1 text-center text-text-4 text-text'>
         {nativeLogin ? 'Mit „Google“ oder „Apple“' : 'Mit „Google“'} bestätigst du, dass du mindestens 16 Jahre alt bist, und stimmst den{' '}
-        <Link href='/nutzungsbedingungen' target='_blank' rel='noopener noreferrer' className='underline text-heading'>
+        <Link href='/nutzungsbedingungen' target={legalTarget} rel='noopener noreferrer' className='underline text-heading'>
           Nutzungsbedingungen
         </Link>{' '}
         und der{' '}
-        <Link href='/datenschutz' target='_blank' rel='noopener noreferrer' className='underline text-heading'>
+        <Link href='/datenschutz' target={legalTarget} rel='noopener noreferrer' className='underline text-heading'>
           Datenschutzerklärung
         </Link>{' '}
         zu.
@@ -158,17 +159,19 @@ export default function AuthSheet({ onCreateAccount, onSignIn, next, description
           das Impressum ohne Konto erreichbar sein muss — ein Impressum muss ständig
           verfügbar und leicht erkennbar sein, nicht erst nach der Anmeldung.
 
-          target='_blank', damit ein Blick hinein den angefangenen Login nicht wegwirft. */}
+          target='_blank', damit ein Blick hinein den angefangenen Login nicht wegwirft. In der
+          App nicht: dort schickt Capacitor jedes neue Fenster an Safari, und der Login ist
+          nur zwei Buttons, die ein Zurück ohnehin wiederherstellt. */}
       <div className='flex items-center justify-center gap-1 pt-2 text-text-4 text-text'>
-        <Link href='/impressum' target='_blank' rel='noopener noreferrer'>
+        <Link href='/impressum' target={legalTarget} rel='noopener noreferrer'>
           Impressum
         </Link>
         <span aria-hidden='true'>·</span>
-        <Link href='/datenschutz' target='_blank' rel='noopener noreferrer'>
+        <Link href='/datenschutz' target={legalTarget} rel='noopener noreferrer'>
           Datenschutz
         </Link>
         <span aria-hidden='true'>·</span>
-        <Link href='/nutzungsbedingungen' target='_blank' rel='noopener noreferrer'>
+        <Link href='/nutzungsbedingungen' target={legalTarget} rel='noopener noreferrer'>
           Nutzungsbedingungen
         </Link>
       </div>
