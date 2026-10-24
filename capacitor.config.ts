@@ -11,10 +11,13 @@ const config: CapacitorConfig = {
   appId: 'de.areuout.app',
   appName: 'areuout',
   webDir: 'capacitor-www',
+  backgroundColor: '#000000',
   server: {
     url: 'https://www.areuout.de',
     cleartext: false,
     allowNavigation: ['www.areuout.de'],
+    // Ohne Netz zeigt die App diese gebuendelte Seite statt eines leeren Fensters.
+    errorPath: 'offline.html',
   },
   plugins: {
     // Sign in with Apple und Google nativ (Schritt 13c): Google sperrt seine OAuth-Seite
