@@ -31,6 +31,11 @@ const config: CapacitorConfig = {
     SocialLogin: {
       providers: { apple: true, google: true, facebook: false, twitter: false },
     },
+    // Push (Schritt 13d): auch bei offener App als Banner zeigen, in der Mitteilungszentrale
+    // behalten und mit Ton. Kein badge: die App fuehrt keine Zahl ungelesener Dinge.
+    PushNotifications: {
+      presentationOptions: ['banner', 'list', 'sound'],
+    },
   },
 }
 
