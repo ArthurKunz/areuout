@@ -562,6 +562,50 @@ key gave 502 (`API key is invalid`) and no email; in both cases the report was s
 the user saw a normal success. With the right key, exactly one email with the planned
 content. The test rows and the test account were deleted afterwards, and 0 rows were left.
 
+## 9d. Push tokens (push, commit 2 of the stores)
+
+**`public.push_tokens`** (`token`, `user_id`, `platform`, `created_at`, `updated_at`): one
+row says "this device belongs to this person". `token` is the APNs device token as lowercase
+hex text and the primary key, so a device has exactly one owner. CHECKs pin the token to
+`^[0-9a-f]{64,200}$` and `platform` to `'ios'`. `user_id` references `profiles` with ON
+DELETE CASCADE, so account deletion takes the tokens along (section 7) and `delete_self`
+stays unchanged.
+
+**Who may do what.** RLS is on. `push_tokens_select_own` and `push_tokens_delete_own`, both
+`authenticated` and both on `user_id`: a person reads and deletes only their own rows
+(sign-out deletes the token of that device). anon holds nothing. authenticated has no
+INSERT, UPDATE, TRUNCATE, REFERENCES or TRIGGER, so rows come in only through
+`register_push_token(p_token)`. The table is not in a realtime publication.
+
+**`register_push_token`** takes the person from `auth.uid()` (42501 when signed out),
+lowercases the token and refuses anything that is not 64 to 200 hex characters (22023). It
+takes a `pg_advisory_xact_lock` per person, then:
+
+- a token that belonged to someone else moves to the caller, and the old row is deleted, so
+  the previous person on that phone gets nothing more;
+- the same token again only refreshes `updated_at`;
+- **at most 10 tokens per person:** the oldest by `updated_at` are deleted, so the anon key
+  in the browser bundle cannot fill the table.
+
+Granted to `authenticated` only. If two different accounts register the same new token in
+the same instant, the first insert wins; that needs two accounts on one phone within a
+millisecond, and the next registration moves it.
+
+**Nothing is sent yet.** There is no trigger, no HTTP call and no Edge Function. The table
+stays empty until the app registers a device (commit 3). Push messages show the party title
+and never a person's name (CLAUDE.md).
+
+Rollback: `supabase/rollbacks/20261025130000_create_push_tokens.sql`; later push migrations
+hang on the table, so roll those back first.
+
+Verified 2026-10-25 in a rolled-back transaction on the live database (run by Arthur in the
+SQL Editor): anon refused on select, insert, update, delete and the function;
+authenticated reads and deletes only own rows and cannot insert or update directly; both
+CHECKs and the function's own check refuse bad input; a valid token is stored, a repeat only
+refreshes `updated_at`, a second user takes the token over, the 11th token removes the
+oldest; deleting a profile removes its tokens; the rollback file removes everything. After
+applying: RLS on, no anon privileges, table empty.
+
 ## 10. Checking this file against the database
 
 Do not trust the above. The database answers all of it, and the Supabase MCP is the

@@ -108,6 +108,10 @@ actually protects the data.
   WHO writes a row, never WHAT is in it: the anon key ships in the browser bundle, so
   anything the UI merely declines to offer needs a CHECK, a UNIQUE, an FK or a trigger
   behind it.
+- `public.push_tokens` holds device tokens and is written only through
+  `register_push_token`. Push messages show the party title and never a person's name,
+  because the text lands on the lock screen and passes through Apple. The `.p8` key lives
+  only in Supabase secrets, never in the repo, a log or the vault.
 - After a schema change, regenerate `types/database.types.ts` in the same commit. All
   three clients carry `<Database>`, so a stale file breaks the typecheck instead of
   rotting quietly.
