@@ -14,6 +14,7 @@ import PollsStep from './features/PollsStep'
 import type { Feature } from './features/FeatureChip'
 import { emptyDraft, type PartyDraft } from './draft'
 import { saveParty } from './saveParty'
+import { askForPush } from '@/features/push/push.service'
 import { useShellMap } from '@/components/shell/MapContext'
 
 type Screen = 1 | 2 | 3 | 4 | 5 | { sub: Feature }
@@ -52,6 +53,7 @@ export default function CreatePartyFlow({ from, userId }: { from: string; userId
       setSaving(false)
       return
     }
+    askForPush()
     flyTo(draft.location.lng, draft.location.lat)
     router.replace('/hosting')
   }

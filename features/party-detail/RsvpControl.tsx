@@ -5,6 +5,7 @@ import RsvpStatusButton from '@/features/parties/components/RsvpStatusButton'
 import RsvpStatusMenu from '@/features/parties/components/RsvpStatusMenu'
 import { rsvpErrorText, setRsvp } from '@/features/parties/services/parties.service'
 import type { RsvpStatus } from '@/features/parties/types/parties.types'
+import { askForPush } from '@/features/push/push.service'
 import { supabase } from '@/lib/supabase/client'
 import { alertError } from '@/lib/utils'
 
@@ -65,6 +66,8 @@ export default function RsvpControl({
       alertError(rsvpErrorText(error), error.message)
       return
     }
+    // Not after a no: asking for notifications right then reads oddly.
+    if (next !== 'not_going') askForPush()
     // Held open briefly so the tick visibly lands on the row that was tapped.
     setTimeout(() => setOpen(false), 600)
   }
