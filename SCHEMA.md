@@ -141,6 +141,16 @@ That chain is the whole reason account deletion is complete. A new table holding
 anything personal has to join it — an FK without CASCADE makes the erasure silently
 partial, and nothing will fail to tell you.
 
+**Apple users (iOS app) revoke first.** App Store guideline 5.1.1(v) wants the Sign in with
+Apple authorization revoked on deletion. No Apple token is stored anywhere: before
+`delete_self`, the app asks the user to confirm with Apple once more and sends the fresh
+authorization code to the Edge Function `revoke-apple` (`verify_jwt = true`). The function
+exchanges the code at Apple, checks that the `sub` in Apple's `id_token` equals the
+caller's `identity_data.sub` (the same value as `auth.identities.provider_id`), and revokes
+the refresh token. Secrets: `APPLE_TEAM_ID`, `APPLE_KEY_ID`, `APPLE_PRIVATE_KEY` (the `.p8`),
+`APPLE_CLIENT_ID`. If the revoke fails, the app offers to delete anyway: deletion never
+depends on Apple being up. Email and Google users skip all of this.
+
 ## 8. The map (Step 2 of the redesign)
 
 Every upcoming party, public and private, sits on one map. A visitor without access to

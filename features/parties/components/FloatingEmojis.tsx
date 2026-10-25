@@ -5,9 +5,9 @@ import { useEffect, useState } from 'react'
 // Decorative background layer: bare party emojis (no circle behind them) drifting
 // from below the viewport to above it.
 const EMOJIS = [
-  '🎈', '🎉', '🥳', '🎂', '🎁', '🍾', '🥂', '🪩', '✨', '🎵', '🎶', '🎤', '💃', '🕺',
-  '😁', '🤣', '😂', '😍', '😜', '🤪', '😲', '😉', '👥', '🥃', '🍺', '🍷', '🍻', '🍸',
-  '🎸', '🎫', '🎟️', '❤️', '🔞', '🔊',
+  '🎈', '🎉', '🥳', '🎂', '🎁', '🪩', '✨', '🎵', '🎶', '🎤', '💃', '🕺',
+  '😁', '🤣', '😂', '😍', '😜', '🤪', '😲', '😉', '👥',
+  '🎸', '🎫', '🎟️', '❤️', '🔊',
 ]
 
 const MIN_SIZE = 40
