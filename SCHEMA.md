@@ -591,7 +591,8 @@ Granted to `authenticated` only. If two different accounts register the same new
 the same instant, the first insert wins; that needs two accounts on one phone within a
 millisecond, and the next registration moves it.
 
-**Nothing is sent yet.** There is no trigger, no HTTP call and no Edge Function. The table
+**Nothing is sent yet.** There is no trigger and no HTTP call. The Edge Function `send-push`
+(commit 4) can send, but reads no table and is called by nothing yet. The table
 stays empty until the app registers a device (commit 3). Push messages show the party title
 and never a person's name (CLAUDE.md).
 
