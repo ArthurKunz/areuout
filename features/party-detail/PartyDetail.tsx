@@ -8,6 +8,7 @@ import LoadError from '@/components/shared/LoadError'
 import Spinner from '@/components/shared/Spinner'
 import { Alert, AlertDescription } from '@/components/shared/Alert'
 import { rsvpErrorText, setRsvp } from '@/features/parties/services/parties.service'
+import { askForPush } from '@/features/push/push.service'
 import { getDetailPolls, type DetailPoll } from '@/features/parties/services/pools.service'
 import { supabase } from '@/lib/supabase/client'
 import type { RsvpStatus } from '@/features/parties/types/parties.types'
@@ -280,6 +281,7 @@ export default function PartyDetail({
       return
     }
     changeStatus('going')
+    askForPush()
   }
 
   // `Anfragen` on a private party (Join Request): request_to_join, then the bar waits.
@@ -294,6 +296,7 @@ export default function PartyDetail({
       return
     }
     setLoaded({ ...loaded, requested: true })
+    askForPush()
   }
 
   // The invite bar's three answers, through the same upsert as the RSVP button. The first
@@ -310,6 +313,8 @@ export default function PartyDetail({
     }
     changeStatus(status)
     void reloadPolls()
+    // Not after a no: asking for notifications right then reads oddly.
+    if (status !== 'not_going') askForPush()
   }
 
   // The round ✗ and ? either side of the invite bar: as tall as the green button.

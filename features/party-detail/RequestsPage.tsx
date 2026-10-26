@@ -22,9 +22,10 @@ const circle = 'flex size-[30px] items-center justify-center rounded-full text-m
 // The host's page `Anfragen` (App Redesign 6.3, mockup Hosting 10): two tiles with the
 // counts, a search by name, then one row per person who asked, oldest first as
 // get_party_join_requests returns them, built like the guest list's rows. The green ✓
-// runs accept_join_request, which sets the person to zugesagt; the red ✗ deletes the
-// request through join_requests_delete_host, and the person may ask again. Either way
-// the row goes, and the detail hears of it so its card counts the same.
+// runs accept_join_request, which sets the person to zugesagt; the red ✗ runs
+// decline_join_request, which deletes the request, and the person may ask again. Both
+// push the person who asked (SCHEMA.md 9e). Either way the row goes, and the detail
+// hears of it so its card counts the same.
 export default function RequestsPage({
   partyId,
   requests,
@@ -56,7 +57,7 @@ export default function RequestsPage({
     setBusy(request.user_id)
     const { error } = accept
       ? await supabase.rpc('accept_join_request', { p_event_id: partyId, p_user_id: request.user_id })
-      : await supabase.from('join_requests').delete().eq('event_id', partyId).eq('user_id', request.user_id)
+      : await supabase.rpc('decline_join_request', { p_event_id: partyId, p_user_id: request.user_id })
     setBusy(null)
     if (error) {
       // The database's own sentence, e.g. `Diese Party ist voll.`; the request stays.

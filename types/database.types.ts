@@ -306,6 +306,38 @@ export type Database = {
         }
         Relationships: []
       }
+      push_tokens: {
+        Row: {
+          created_at: string
+          platform: string
+          token: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          platform?: string
+          token: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          platform?: string
+          token?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "push_tokens_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       reports: {
         Row: {
           answer_text: string | null
@@ -435,6 +467,10 @@ export type Database = {
           p_title: string
         }
         Returns: string
+      }
+      decline_join_request: {
+        Args: { p_event_id: string; p_user_id: string }
+        Returns: undefined
       }
       delete_self: { Args: never; Returns: undefined }
       get_event_attendees: {
@@ -715,6 +751,7 @@ export type Database = {
         Args: { p_event_id: string; p_user_id: string }
         Returns: boolean
       }
+      register_push_token: { Args: { p_token: string }; Returns: undefined }
       request_to_join: { Args: { p_event_id: string }; Returns: undefined }
       set_single_pool_response: {
         Args: {

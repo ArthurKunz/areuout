@@ -10,6 +10,7 @@ import Spinner from '@/components/shared/Spinner'
 import { alertError } from '@/lib/utils'
 import { removeStorageFolder } from '@/lib/storage'
 import { isNativeLogin, revokeAppleAuthorization } from '@/features/auth/services/auth.service'
+import { forgetThisDevice } from '@/features/push/push.service'
 
 // Page `Account` (App Redesign 8): the two actions that are not settings.
 export default function MeAccountScreen() {
@@ -20,6 +21,8 @@ export default function MeAccountScreen() {
 
   const handleSignOut = async () => {
     setPending('signout')
+    // While still signed in, or RLS would not let the row go.
+    await forgetThisDevice()
     await supabase.auth.signOut()
     router.push('/login')
   }

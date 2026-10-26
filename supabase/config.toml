@@ -424,3 +424,7 @@ verify_jwt = false
 # Called by the iOS app before an Apple user's account is deleted; needs the user's JWT.
 [functions.revoke-apple]
 verify_jwt = true
+
+# Called with a shared secret (x-push-secret), never by the app; triggers come in session 7.
+[functions.send-push]
+verify_jwt = false
