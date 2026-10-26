@@ -35,8 +35,22 @@ export function getOrigin(): string {
 // Opens the system share sheet with the invite; where the browser has none (mostly
 // older desktop browsers), the same text goes to the clipboard instead. Resolves false
 // only when the host closed the sheet, so the caller shows its tick on true.
+// Inside the iOS app, in a build that carries @capacitor/share, the sheet is iOS's own;
+// Capacitor is imported here and not at the top because server code imports this file.
 export async function shareInvite(title: string, link: string): Promise<boolean> {
   const text = `Komm zu ${title}!`
+  const { Capacitor } = await import('@capacitor/core')
+  if (Capacitor.isNativePlatform() && Capacitor.getPlatform() === 'ios' && Capacitor.isPluginAvailable('Share')) {
+    try {
+      const { Share } = await import('@capacitor/share')
+      await Share.share({ text, url: link })
+      return true
+    } catch (error) {
+      // Matches the plugin's own message text, it has no error code for a cancel. If a
+      // later plugin version words it differently, a cancel only shows the tick.
+      if (error instanceof Error && error.message === 'Share canceled') return false
+    }
+  }
   if (typeof navigator.share === 'function') {
     try {
       await navigator.share({ text, url: link })
