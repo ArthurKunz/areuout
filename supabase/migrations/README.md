@@ -371,9 +371,9 @@ mit dem geplanten Inhalt. Testzeilen und Testkonto danach gelöscht, 0 Zeilen ü
 ## Die Migrationen zu Push (Commit 2 und 5 der Stores)
 
 Zu jeder Datei liegt ein Rollback mit demselben Namen in `supabase/rollbacks/`. Zurückrollen
-in umgekehrter Reihenfolge: `120000`, `110000`, `104449`, `103803`, `20261025130000`.
+in umgekehrter Reihenfolge: `130000`, `120000`, `110000`, `104449`, `103803`, `20261025130000`.
 `120000` erst, wenn `RequestsPage` wieder direkt löscht und `join_requests_delete_host`
-noch steht, sonst kann kein Host mehr ablehnen.
+wieder steht (Rollback von `130000`), sonst kann kein Host mehr ablehnen.
 
 | Datei | Was sie ändert | Wie angewendet | Version |
 |---|---|---|---|
@@ -382,6 +382,7 @@ noch steht, sonst kann kein Host mehr ablehnen.
 | `20261026104449_push_new_join_requests.sql` | Trigger `join_requests_push_new` (`private.push_new_join_request`): neue Anfrage pusht den Host | `apply_migration`, am 26.10.2026 | echt, von `apply_migration` vergeben; Platzhalter war `20261026100100` |
 | `20261026110000_push_accepted_join_requests.sql` | `accept_join_request` pusht am Ende die angenommene Person | SQL-Editor (der Rumpf enthält DELETE), am 26.10.2026 | von Hand gewählt, per INSERT eingetragen |
 | `20261026120000_add_decline_join_request.sql` | neue Funktion `decline_join_request` (nur der Host, löscht die Anfrage, pusht die Person); ersetzt das direkte DELETE in `RequestsPage` | SQL-Editor (der Rumpf enthält DELETE), am 26.10.2026 | von Hand gewählt, per INSERT eingetragen |
+| `20261026130000_drop_join_requests_delete_host.sql` | Policy `join_requests_delete_host` weg, DELETE auf `join_requests` für authenticated entzogen; Ablehnen geht nur noch über `decline_join_request` | SQL-Editor (enthält DELETE), am 26.10.2026, nach dem Deploy von `bb12059` | von Hand gewählt, per INSERT eingetragen |
 
 Dazu kommt, was keine Migration ist und beim Zurückrollen von Hand weg muss: das
 Geheimnis `push_secret` im Vault (am 26.10.2026 in der Datenbank erzeugt, derselbe Wert wie
@@ -391,4 +392,9 @@ geprüft: die Rümpfe auf der Datenbank sind dieselben wie in den Dateien, der R
 Owner `postgres`, SECURITY DEFINER, leerer `search_path`; `queue_push` und die
 Trigger-Funktion nur für den Owner ausführbar, `decline_join_request` für authenticated.
 Der Advisor zeigt danach nur den erwarteten Eintrag für `decline_join_request` (wie für
-`accept_join_request`). Warum es so gebaut ist, steht in `SCHEMA.md`, Abschnitte 9d und 9e.
+`accept_join_request`). Nach `130000` geprüft: keine DELETE-Policy mehr auf `join_requests`,
+authenticated hält `rDxtm` statt `rdDxtm`, die Advisors zeigen nichts Neues. Getestet in einer
+zurückgerollten Transaktion vorher (direktes DELETE des Hosts geht noch, wie erwartet) und
+nachher: direktes DELETE des Hosts ergibt 42501, `decline_join_request`,
+`accept_join_request` und `block_user` entfernen die Anfrage, Party löschen nimmt die
+Anfragen per Cascade mit. Warum es so gebaut ist, steht in `SCHEMA.md`, Abschnitte 9d und 9e.

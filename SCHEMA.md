@@ -407,9 +407,12 @@ else's behalf; every other RSVP still goes through the RLS path of section 9a.
 
 **Declining** is `decline_join_request(event_id, user_id)` since push (section 9e): host
 only (42501 otherwise, checked inside), the request is deleted (refused if it is gone),
-then the person gets a push. The person may ask again. The old DELETE policy
-`join_requests_delete_host` still stands until the app with the function is live, then
-it goes in its own migration. **Withdrawing does not exist:** there is no DELETE policy
+then the person gets a push. The person may ask again. Since
+`drop_join_requests_delete_host` (2026-10-26) the function is the only way to decline:
+there is no DELETE policy, and `authenticated` holds no DELETE on the table, so a direct
+DELETE fails with `permission denied` (42501). Every other delete runs as SECURITY
+DEFINER (`accept_join_request`, `block_user`, the two cleanup triggers below), and the
+`on delete cascade` FKs run with the owner's rights. **Withdrawing does not exist:** there is no DELETE policy
 or function for the requester (Join Request section 8).
 
 **Cleanup** runs in two triggers in `private`, both SECURITY DEFINER and out of reach of
@@ -648,9 +651,10 @@ kann Anfragen ablehnen.` (42501), `Diese Anfrage gibt es nicht mehr.` (P0002). N
 because the DELETE policy has none either; after the cutoff `queue_push` sends nothing. No
 advisory lock: an accept and a decline racing each delete the same row, and the row lock lets
 one win. Granted to authenticated only; the advisor lists it as intended, like
-`accept_join_request`. **`join_requests_delete_host` stays until the app with the function is
-live in production**, then a separate migration drops it and revokes DELETE from
-authenticated, so the function is the only way to decline (and the push cannot be skipped).
+`accept_join_request`. **`join_requests_delete_host` is gone** since
+`20261026130000_drop_join_requests_delete_host.sql`, applied after the app with the function
+was live, together with authenticated's DELETE on the table, so the function is the only way
+to decline (and the push cannot be skipped).
 
 **pg_net's tables and the API roles.** `net.http_request_queue` holds each request, the
 `x-push-secret` header included, until the worker sends it (usually under a second).
@@ -691,7 +695,8 @@ before.
 **Not in this version:** pushes for party changes and cancellations, cleanup of dead tokens
 (`send-push` reports them, nothing deletes them), opening the party on tap.
 
-Rollback, newest first: `supabase/rollbacks/20261026120000_add_decline_join_request.sql`
+Rollback, newest first: `supabase/rollbacks/20261026130000_drop_join_requests_delete_host.sql`
+(policy and DELETE back), `20261026120000_add_decline_join_request.sql`
 (only after `RequestsPage` deletes directly again), `20261026110000_push_accepted_join_requests.sql`,
 `20261026104449_push_new_join_requests.sql`, `20261026103803_add_queue_push.sql`.
 
