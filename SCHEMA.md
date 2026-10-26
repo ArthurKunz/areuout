@@ -405,9 +405,12 @@ voll.`; the call rolls back and the request stays. The new RSVP is what releases
 address and the exact point. This is the only RSVP the database writes on someone
 else's behalf; every other RSVP still goes through the RLS path of section 9a.
 
-**Declining** is `join_requests_delete_host`, a DELETE policy shaped like
-`rsvps_delete_host`. The person may ask again. **Withdrawing does not exist:** there is
-no DELETE policy or function for the requester (Join Request section 8).
+**Declining** is `decline_join_request(event_id, user_id)` since push (section 9e): host
+only (42501 otherwise, checked inside), the request is deleted (refused if it is gone),
+then the person gets a push. The person may ask again. The old DELETE policy
+`join_requests_delete_host` still stands until the app with the function is live, then
+it goes in its own migration. **Withdrawing does not exist:** there is no DELETE policy
+or function for the requester (Join Request section 8).
 
 **Cleanup** runs in two triggers in `private`, both SECURITY DEFINER and out of reach of
 the API roles: `rsvps_drop_join_request` (AFTER INSERT on `rsvps`) removes the request
@@ -591,10 +594,9 @@ Granted to `authenticated` only. If two different accounts register the same new
 the same instant, the first insert wins; that needs two accounts on one phone within a
 millisecond, and the next registration moves it.
 
-**Nothing is sent yet.** There is no trigger and no HTTP call. The Edge Function `send-push`
-(commit 4) can send, but reads no table and is called by nothing yet. The table
-stays empty until the app registers a device (commit 3). Push messages show the party title
-and never a person's name (CLAUDE.md).
+**Who reads the table to send.** Only `private.queue_push` (section 9e), which collects a
+recipient's tokens for the Edge Function `send-push`. `send-push` itself reads no table.
+Push messages show the party title and never a person's name (CLAUDE.md).
 
 Rollback: `supabase/rollbacks/20261025130000_create_push_tokens.sql`; later push migrations
 hang on the table, so roll those back first.
@@ -606,6 +608,92 @@ CHECKs and the function's own check refuse bad input; a valid token is stored, a
 refreshes `updated_at`, a second user takes the token over, the 11th token removes the
 oldest; deleting a profile removes its tokens; the rollback file removes everything. After
 applying: RLS on, no anon privileges, table empty.
+
+## 9e. Push for join requests (push, commit 5 of the stores)
+
+Three moments send a push, each to exactly one person, each with the party title as title,
+a fixed German sentence as body, and `data` = `{ "event_id": … }` only. Never a name, an
+address or a time, because the text lands on the lock screen and passes through Apple.
+
+| Moment | Where | To | Body |
+|---|---|---|---|
+| New request | trigger `join_requests_push_new` (AFTER INSERT, `private.push_new_join_request`) | host | `Neue Anfrage für deine Party` |
+| Accepted | end of `accept_join_request` | requester | `Du bist dabei – deine Anfrage wurde angenommen` |
+| Declined | end of `decline_join_request` | requester | `Deine Anfrage wurde leider abgelehnt` |
+
+**`private.queue_push(recipient, actor, event_id, body)`** is the one place that decides and
+sends. SECURITY DEFINER, empty `search_path`, executable by its owner only, so the app can
+never call it. It sends nothing, without error, when there is no recipient or the recipient
+is the actor; when the recipient has no row in `push_tokens`; when either has blocked the
+other (`private.is_blocked_between`); when the party is gone or past
+`private.party_visible_until`; or when the Vault secret is missing (a warning). Otherwise it
+calls `net.http_post` to `send-push` with all of the recipient's tokens (at most 10, section
+9d) in one request and the title cut to 100 characters (the function's limit).
+
+**Push can never fail the action.** `net.http_post` only queues a row; pg_net sends it after
+COMMIT, so a rolled-back request, accept or decline sends nothing, and `send-push`'s answer
+arrives too late to matter. Errors are caught twice: inside `queue_push` (pg_net, Vault, a
+table), and around every call to it (the trigger and both RPCs), which also covers a missing
+or broken `queue_push`. Both turn into a warning with the party id and the error text,
+never a token, title or name. Fire and forget, no retry.
+
+**Authentication.** `send-push` has `verify_jwt` off and checks the header `x-push-secret`
+against its secret `PUSH_SECRET`. The same value lives in Vault as `push_secret`, generated
+inside the database on 2026-10-26 and copied into the Dashboard by Arthur, read only at call
+time, so it is in no file and no trigger argument.
+
+**`decline_join_request(event_id, user_id)`** replaces the direct DELETE in `RequestsPage`,
+shaped like `accept_join_request`: `Diese Party gibt es nicht mehr.` (P0002), `Nur der Host
+kann Anfragen ablehnen.` (42501), `Diese Anfrage gibt es nicht mehr.` (P0002). No cutoff,
+because the DELETE policy has none either; after the cutoff `queue_push` sends nothing. No
+advisory lock: an accept and a decline racing each delete the same row, and the row lock lets
+one win. Granted to authenticated only; the advisor lists it as intended, like
+`accept_join_request`. **`join_requests_delete_host` stays until the app with the function is
+live in production**, then a separate migration drops it and revokes DELETE from
+authenticated, so the function is the only way to decline (and the push cannot be skipped).
+
+**pg_net's tables and the API roles.** `net.http_request_queue` holds each request, the
+`x-push-secret` header included, until the worker sends it (usually under a second).
+`net._http_response` keeps the answer for 6 hours (`pg_net.ttl`): status, headers and the
+body `{sent, dead: [tokens], failed}`, so dead device tokens, no names and no titles. Both
+belong to `supabase_admin`, which grants all privileges to PUBLIC with RLS off; `postgres`
+cannot revoke that (same as section 9c). So at the SQL level anon and authenticated hold
+SELECT. They cannot reach it: the Data API exposes only `public` and `graphql_public` (`net`
+answers PGRST106), pg_graphql is not installed, and no function in `public` reads `net` or
+runs dynamic SQL. Keep it that way. In practice only Arthur (SQL editor, MCP) and Supabase's
+own roles read them.
+
+**How a failed push shows up.** No alarm. Status only, never the content (it holds tokens):
+
+```sql
+select created, status_code, error_msg from net._http_response
+where status_code is distinct from 200 order by created desc;
+```
+
+The warnings land in the Postgres log, and `send-push` logs step, HTTP status and Apple's
+reason (Dashboard → Edge Functions → send-push → Logs).
+
+Verified 2026-10-26 in one rolled-back transaction on the live database, with throw-away
+users, parties and fake tokens, acting as each user through `set local role` and
+`request.jwt.claims`; the rows were read from `net.http_request_queue` (url, body without
+tokens, token count; never the headers). A new request queued one call to the host, an
+accept one to the requester (RSVP `going`, request gone), a decline one to the requester
+(request gone), each with the party title, its sentence and only the party id. Nothing was
+queued for: a host or requester without tokens (the action still succeeded), actor equal to
+recipient, a block in either direction, a finished party. A stranger got `Nur der Host kann
+Anfragen ablehnen.` (42501), anon `permission denied` (42501), and the request stayed. Two
+tokens of one host went out as one call with both. With the Vault secret renamed, and with
+`push_tokens` renamed so that `queue_push` itself raised, request, accept and decline all
+succeeded and nothing was queued (the warnings themselves are not visible through MCP).
+Afterwards: no test user, party, token or queue row left, and the Vault and table names as
+before.
+
+**Not in this version:** pushes for party changes and cancellations, cleanup of dead tokens
+(`send-push` reports them, nothing deletes them), opening the party on tap.
+
+Rollback, newest first: `supabase/rollbacks/20261026120000_add_decline_join_request.sql`
+(only after `RequestsPage` deletes directly again), `20261026110000_push_accepted_join_requests.sql`,
+`20261026104449_push_new_join_requests.sql`, `20261026103803_add_queue_push.sql`.
 
 ## 10. Checking this file against the database
 

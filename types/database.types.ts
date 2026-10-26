@@ -468,6 +468,10 @@ export type Database = {
         }
         Returns: string
       }
+      decline_join_request: {
+        Args: { p_event_id: string; p_user_id: string }
+        Returns: undefined
+      }
       delete_self: { Args: never; Returns: undefined }
       get_event_attendees: {
         Args: { p_event_id: string }
