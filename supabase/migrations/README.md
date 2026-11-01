@@ -398,3 +398,20 @@ zurückgerollten Transaktion vorher (direktes DELETE des Hosts geht noch, wie er
 nachher: direktes DELETE des Hosts ergibt 42501, `decline_join_request`,
 `accept_join_request` und `block_user` entfernen die Anfrage, Party löschen nimmt die
 Anfragen per Cascade mit. Warum es so gebaut ist, steht in `SCHEMA.md`, Abschnitte 9d und 9e.
+
+## Die Migration zum Löschen der Bilder (Launch Plan, Sitzung 2)
+
+| Datei | Was sie ändert | Wie angewendet | Version |
+|---|---|---|---|
+| `20261101230652_keep_an_account_while_its_pictures_remain.sql` | Trigger `users_keep_while_files_remain` (BEFORE DELETE auf `auth.users`, `private.refuse_user_delete_while_files_remain`): kein Konto wird gelöscht, solange in `avatars/{id}/` oder `event-backgrounds/{id}/` noch eine Datei liegt (SQLSTATE `PT409`) | `apply_migration`, am 01.11.2026 | echt, von `apply_migration` vergeben |
+
+Rollback: `drop trigger if exists users_keep_while_files_remain on auth.users; drop function
+if exists private.refuse_user_delete_while_files_remain();`. Per md5 geprüft: der Text in
+`schema_migrations` ist derselbe wie in der Datei. Owner `postgres`, SECURITY DEFINER,
+leerer `search_path`, EXECUTE für public, anon und authenticated entzogen; die Advisors
+zeigen danach nichts Neues. Getestet vorher (T1, mit der DDL) und nachher (T2) in
+zurückgerollten Transaktionen: direktes DELETE und `delete_self` werden mit `PT409`
+abgelehnt, solange eine Datei im Ordner liegt; leerer Ordner und Konto ohne Dateien gehen
+durch, die Cascade läuft. Danach 0 Testzeilen übrig. Ende zu Ende mit einem Testkonto (E-Mail,
+Web, 3 Dateien in 2 Party-Ordnern): alles weg. Google und Apple folgen im Gerätetest. Warum
+es so gebaut ist, steht in `SCHEMA.md`, Abschnitt 7.

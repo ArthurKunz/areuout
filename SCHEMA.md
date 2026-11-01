@@ -141,6 +141,34 @@ That chain is the whole reason account deletion is complete. A new table holding
 anything personal has to join it — an FK without CASCADE makes the erasure silently
 partial, and nothing will fail to tell you.
 
+**Pictures do not follow the cascade, so a trigger holds the account back.** Storage
+files are not rows of `public`: nothing points at them with a foreign key, and an SQL
+delete on `storage.objects` would not remove them either. `storage.protect_delete()`
+refuses it, and the docs say why: "Deleting objects via a SQL query will not remove the
+object from the bucket and will result in the object being orphaned"
+(https://supabase.com/docs/guides/storage/management/delete-objects, and
+https://supabase.com/docs/guides/storage/schema/design). Files only go through the
+Storage API. So the app removes `avatars/{uid}/` and `event-backgrounds/{uid}/` itself,
+under the user's own RLS (`removeStorageFolder` in `lib/storage.ts`, which recurses into
+the party folders), before it calls `delete_self`. The BEFORE DELETE trigger
+`users_keep_while_files_remain` on `auth.users`
+(`private.refuse_user_delete_while_files_remain`, migration `20261101230652`) refuses
+any deletion while either folder still holds an object, with SQLSTATE `PT409` and a
+message the alert shows. That makes the cleanup impossible to skip. A client that leaves
+files behind keeps its account, and tapping again finishes the job. The worst case is
+"pictures gone, account still there", never the reverse.
+
+The trigger covers every path that ends in `auth.users`: `delete_self`, the Dashboard,
+the Admin API. **To delete a user in the Dashboard, first empty `avatars/{id}/` and
+`event-backgrounds/{id}/` in Storage.** Otherwise Auth answers "Database error deleting
+user". That is the guard working: the orphans from 27.08.2026 and October 2026 came from
+deletions that never touched storage.
+
+Tested end to end on 01.11.2026 for email sign-up on the web: one account with 1 avatar
+and 2 parties, each with an uploaded background (3 files in 2 party folders), deleted in
+the app. Afterwards, no user, profile, party or object was left. Google and Apple end to
+end are not tested yet and go to the device pass.
+
 **Apple users (iOS app) revoke first.** App Store guideline 5.1.1(v) wants the Sign in with
 Apple authorization revoked on deletion. No Apple token is stored anywhere: before
 `delete_self`, the app asks the user to confirm with Apple once more and sends the fresh
