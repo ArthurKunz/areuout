@@ -111,6 +111,8 @@ export async function proxy(request: NextRequest) {
 
 export const config = {
   // Everything except Next's own assets and files with an extension, so the check runs
-  // on pages and route handlers but not on every image and script.
-  matcher: ['/((?!_next/static|_next/image|favicon.ico|.*\\.[^/]*$).*)'],
+  // on pages and route handlers but not on every image and script. /.well-known/ too:
+  // Apple fetches apple-app-site-association there without a cookie and must get the
+  // file itself, not a redirect to /login.
+  matcher: ['/((?!_next/static|_next/image|favicon.ico|\\.well-known/|.*\\.[^/]*$).*)'],
 }

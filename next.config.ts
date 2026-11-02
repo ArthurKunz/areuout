@@ -30,7 +30,12 @@ const SECURITY_HEADERS = [
 const nextConfig: NextConfig = {
   allowedDevOrigins: ['192.168.188.167', '192.168.0.*', '192.168.1.*', '10.0.0.*', 'survive-congenial-survival.ngrok-free.dev'],
   async headers() {
-    return [{ source: '/:path*', headers: SECURITY_HEADERS }]
+    return [
+      { source: '/:path*', headers: SECURITY_HEADERS },
+      // Apple liest diese Datei, um zu entscheiden, welche Links die App oeffnen. Sie hat
+      // keine Endung, also nennt ihr niemand einen Typ — Apple erwartet JSON.
+      { source: '/.well-known/apple-app-site-association', headers: [{ key: 'Content-Type', value: 'application/json' }] },
+    ]
   },
 }
 
