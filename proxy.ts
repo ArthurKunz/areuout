@@ -101,7 +101,9 @@ export async function proxy(request: NextRequest) {
 
   // The mirror image: a finished account has no business on the auth screens or back
   // in onboarding, which is what makes `/login` safe to navigate to from inside the app.
-  if (profile && (onLogin || onOnboarding)) {
+  // `/` too: the app always starts there, and sending it on from the server, before any
+  // script runs, means nothing on the client can overtake an invite link that opened it.
+  if (profile && (onLogin || onOnboarding || path === '/')) {
     const target = sanitizeNextPath(request.nextUrl.searchParams.get('next')) ?? '/explore'
     return NextResponse.redirect(new URL(target, request.url))
   }
