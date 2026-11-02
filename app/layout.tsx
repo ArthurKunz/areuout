@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from 'next';
 import { siteUrl } from '@/lib/site';
+import UniversalLinks from '@/features/deep-links/UniversalLinks';
 import './globals.css';
 
 export const metadata: Metadata = {
@@ -39,6 +40,7 @@ export default function RootLayout({
           erstem Byte und erstem Paint die Standardfarbe des Browsers — also Weiss, bei
           einer durchgehend schwarzen App ein sichtbares Aufblitzen. */}
       <body className='font-sans bg-main' suppressHydrationWarning>
+        <UniversalLinks />
         {children}
       </body>
     </html>
