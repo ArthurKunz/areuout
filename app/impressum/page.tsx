@@ -45,5 +45,5 @@ const SECTIONS: LegalSection[] = [
 ]
 
 export default function ImpressumPage() {
-  return <LegalTextScreen title='Impressum' sections={SECTIONS} updated='23. August 2026' />
+  return <LegalTextScreen title='Impressum' sections={SECTIONS} updated='2. November 2026' />
 }

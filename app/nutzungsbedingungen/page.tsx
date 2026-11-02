@@ -19,6 +19,10 @@ import LegalTextScreen, { type LegalSection } from '@/features/profile/LegalText
 // solche Inhalte kein Platz ist (Apple 1.2), § 13 beschreibt beides; die E-Mail-Absätze
 // zu rechtswidrigen Inhalten (Art. 16 DSA) stehen unverändert dahinter.
 //
+// Am 02.11.2026 (Launch Plan, Sitzung 3): Apple in § 4 (nur iOS-App, Weiterleitungsadresse),
+// der Absatz zur Zustimmung der Eltern in § 3 gestrichen (nicht erforderlich, entschieden
+// von Arthur; 16+ bleibt), Menünamen wie in MeScreen.tsx, keine Mails zu Partys mehr.
+//
 //   Einladungslink        get_party_by_invite_code ist für anon freigegeben, liefert aber
 //                         keine Adresse. Ohne Konto zeigt InviteScreen.tsx nur das
 //                         AuthSheet. Angemeldet trägt der Aufruf invite_opens ein, und
@@ -111,16 +115,14 @@ const SECTIONS: LegalSection[] = [
     heading: '3. Mindestalter',
     paragraphs: [
       'Die Nutzung ist Menschen ab 16 Jahren gestattet. Mit der Anmeldung bestätigst du, dass du mindestens 16 Jahre alt bist.',
-      'Wir erheben zur Prüfung kein Geburtsdatum, weil wir so wenig Daten wie möglich speichern wollen. Wir vertrauen auf deine Bestätigung. Erlangen wir Kenntnis davon, dass ein Konto von einer jüngeren Person geführt wird, löschen wir es.',
-      'Bist du zwischen 16 und 18 Jahre alt, brauchst du für die Nutzung die Zustimmung deiner Eltern oder deines gesetzlichen Vertreters (§§ 106 ff. BGB). Mit der Anmeldung bestätigst du, dass diese Zustimmung vorliegt. Deine Eltern können sie uns gegenüber jederzeit widerrufen; wir löschen das Konto dann.',
-    ],
+      'Wir erheben zur Prüfung kein Geburtsdatum, weil wir so wenig Daten wie möglich speichern wollen. Wir vertrauen auf deine Bestätigung. Erlangen wir Kenntnis davon, dass ein Konto von einer jüngeren Person geführt wird, löschen wir es.',    ],
   },
   {
     heading: '4. Dein Konto',
     paragraphs: [
-      'Du legst ein Konto mit einer E-Mail-Adresse und einem Passwort an oder meldest dich mit Google an. Bei der Anmeldung per E-Mail schicken wir dir einen Bestätigungscode; ohne ihn wird das Konto nicht aktiv. Das Passwort muss mindestens acht Zeichen lang sein und einen Großbuchstaben, eine Zahl und ein Sonderzeichen enthalten.',
-      'Die E-Mail-Adresse, mit der du dich angemeldet hast, lässt sich in der App nicht ändern — auch nicht, wenn du dich über Google angemeldet hast; das Konto hängt dann an dieser Google-Adresse. Willst du eine andere Adresse nutzen, musst du das alte Konto löschen und ein neues anlegen.',
-      'Deine Zugangsdaten gehören dir allein; gib sie nicht weiter. Für alles, was über dein Konto geschieht, bist du verantwortlich. Hast du den Verdacht, dass jemand anderes Zugriff hat, ändere dein Passwort unter „Profil → Passwort" und sag uns Bescheid.',
+      'Du legst ein Konto mit einer E-Mail-Adresse und einem Passwort an oder meldest dich mit Google an, in der iOS-App auch mit Apple. Bei der Anmeldung per E-Mail schicken wir dir einen Bestätigungscode; ohne ihn wird das Konto nicht aktiv. Das Passwort muss mindestens acht Zeichen lang sein und einen Großbuchstaben, eine Zahl und ein Sonderzeichen enthalten.',
+      'Die E-Mail-Adresse, mit der du dich angemeldet hast, lässt sich in der App nicht ändern — auch nicht, wenn du dich über Google oder Apple angemeldet hast; das Konto hängt dann an der Adresse, die uns der Anbieter übermittelt. Bei Apple kann das eine Weiterleitungsadresse sein, wenn du deine Adresse dort verbirgst; unsere E-Mails erreichen dich dann über Apple. Willst du eine andere Adresse nutzen, musst du das alte Konto löschen und ein neues anlegen.',
+      'Deine Zugangsdaten gehören dir allein; gib sie nicht weiter. Für alles, was über dein Konto geschieht, bist du verantwortlich. Hast du den Verdacht, dass jemand anderes Zugriff hat, ändere dein Passwort unter „Profil → Password" und sag uns Bescheid.',
       'Gib bei Vor- und Nachnamen den Namen an, unter dem andere Gäste dich erkennen. Konten, die erkennbar eine andere Person vortäuschen, können wir sperren.',
       'Pro Person ist ein Konto vorgesehen.',
     ],
@@ -136,7 +138,7 @@ const SECTIONS: LegalSection[] = [
       'Gib den Link deshalb nur an Menschen weiter, die eingeladen sein sollen. Als Gastgeber bist du dafür verantwortlich, wem du ihn gibst; als Gast dafür, dass du ihn nicht ungefragt weiterleitest.',
       'Angemeldete sehen in der App alle Partys, die noch nicht vorbei sind, öffentliche wie private, auf der Karte und in einer Liste, jeweils mit Titel, Hintergrundbild, Datum, Uhrzeit und dem Namen des Gastgebers.',
       'Bei einer öffentlichen Party sieht jede angemeldete Person auch die Adresse und kann über „Teilnehmen" direkt zusagen.',
-      'Bei einer privaten Party zeigt die Karte nur einen ungefähren Punkt. Ohne Link kannst du über „Anfragen" um Zugang bitten. Nimmt der Gastgeber an, bist du zugesagt. Lehnt er ab, verschwindet die Anfrage. Du kannst höchstens zehn Anfragen gleichzeitig offen haben.',
+      'Bei einer privaten Party zeigt die Karte nur einen ungefähren Punkt. Ohne Link kannst du über „Anfragen" um Zugang bitten. Nimmt der Gastgeber an, bist du zugesagt. Lehnt er ab, verschwindet die Anfrage. Antwortet er nicht, bleibt sie auch nach dem Ende der Party gespeichert, bis er sie ablehnt, die Party gelöscht wird oder du dein Konto löschst. Du kannst höchstens zehn Anfragen gleichzeitig offen haben.',
     ],
   },
   {
@@ -228,7 +230,7 @@ const SECTIONS: LegalSection[] = [
   {
     heading: '16. E-Mails von uns',
     paragraphs: [
-      'Wir schicken dir E-Mails, die zum Betrieb deines Kontos gehören: den Bestätigungscode bei der Anmeldung, die Nachricht zum Zurücksetzen deines Passworts und Hinweise zu Partys, zu denen du gehörst.',
+      'Wir schicken dir E-Mails, die zum Betrieb deines Kontos gehören: den Bestätigungscode bei der Anmeldung und die Nachricht zum Zurücksetzen deines Passworts.',
       'Werbung verschicken wir nicht. Diese Servicenachrichten lassen sich nicht einzeln abbestellen — sie gehören zur Nutzung. Willst du sie nicht mehr bekommen, kannst du dein Konto löschen.',
     ],
   },
@@ -243,7 +245,7 @@ const SECTIONS: LegalSection[] = [
   {
     heading: '18. Beendigung',
     paragraphs: [
-      'Du kannst dein Konto jederzeit ohne Angabe von Gründen unter „Profil → Account" löschen. Das geschieht sofort und ist nicht rückgängig zu machen.',
+      'Du kannst dein Konto jederzeit ohne Angabe von Gründen unter „Profil → Account verwalten" löschen. Das geschieht sofort und ist nicht rückgängig zu machen.',
       'Gelöscht werden dabei dein Profil, deine Bilder, deine Antworten auf fremde Einladungen — und alle Partys, die du erstellt hast, samt deren Zusagen, Umfragen und Antworten. Deine Gäste verlieren diese Partys damit ebenfalls, und ihre Einladungslinks führen ins Leere. Sag ihnen vorher Bescheid, wenn eine Party noch bevorsteht.',
       'Wir können ein Konto nach § 14 sperren oder löschen. Außerdem können wir den Nutzungsvertrag mit einer Frist von 14 Tagen ordentlich kündigen; die Kündigung geht an die E-Mail-Adresse deines Kontos.',
     ],
@@ -287,5 +289,5 @@ const SECTIONS: LegalSection[] = [
 ]
 
 export default function NutzungsbedingungenPage() {
-  return <LegalTextScreen title='Nutzungsbedingungen' sections={SECTIONS} updated='15. Oktober 2026' />
+  return <LegalTextScreen title='Nutzungsbedingungen' sections={SECTIONS} updated='2. November 2026' />
 }
