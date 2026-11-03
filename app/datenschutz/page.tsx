@@ -197,22 +197,19 @@ const SECTIONS: LegalSection[] = [
       'OpenFreeMap (Hyperknot Software Kft., Petőfi Sándor utca 48., 2724 Újlengyel, Ungarn; Datenschutzkontakt privacy@openfreemap.org) liefert die Karte, die hinter jedem Bildschirm der App liegt. Dabei gehen deine IP-Adresse und der angezeigte Kartenausschnitt an OpenFreeMap, automatisch beim Öffnen der App. OpenFreeMap setzt keine Cookies und verlangt keine Registrierung. Die IP-Adresse speichert OpenFreeMap nur in Fehlerprotokollen und löscht sie nach 7 Tagen, bei Verdacht auf einen Sicherheitsvorfall nach bis zu 30 Tagen. Der Betreiber sitzt in Ungarn, also in der EU. Nach seinen Angaben kann Cloudflare als Auslieferungsnetz davorgeschaltet sein.',
       'Tippst du bei einer Party auf „Route anzeigen", öffnet sich Apple Karten oder Google Maps mit der Adresse als Ziel. Dann gelten deren Bestimmungen.',
       'Google Sign-In (Google Ireland Limited): nur, wenn du dich für die Anmeldung mit Google entscheidest — im Browser über die Seite von Google, in der iOS-App über das Anmeldefenster von Google. Wir erhalten dabei deine E-Mail-Adresse, eine Kennung deines Google-Kontos, deinen Namen und die Adresse deines Google-Profilbilds und legen sie in deinem Konto ab. Für dein Profil in areuout nutzt die App davon nichts; Namen und Bild gibst du dort selbst an. Google erfährt, dass du dich bei areuout anmeldest. Wählst du diesen Weg nicht, wird nichts an Google übertragen.',
-      // OFFEN (Arthur): Firmenname und Sitz von Apple sind nicht geprüft und stehen deshalb
-      // nicht im Text, weder hier noch im Absatz zu den Mitteilungen darunter.
-      'Mit Apple anmelden (Apple): nur in der iOS-App und nur, wenn du dich dafür entscheidest. Wir erhalten dabei eine Kennung deines Apple-Accounts und deine E-Mail-Adresse — oder, wenn du deine Adresse bei Apple verbirgst, eine Weiterleitungsadresse von Apple, über die unsere E-Mails dich erreichen. Bei der ersten Anmeldung schickt Apple außerdem deinen Namen mit; wir legen ihn in deinem Konto ab und schlagen ihn dir beim Einrichten deines Profils vor. Apple erfährt, dass du dich bei areuout anmeldest. Löschst du dein Konto in der iOS-App, bestätigst du einmal mit Apple, und die App beendet die Anmeldung mit Apple auch dort. Klappt das nicht, kannst du dein Konto trotzdem löschen und die Verbindung selbst in den Einstellungen deines Apple-Accounts beenden.',
-      'Apple Push Notification Service (Apple) stellt die Mitteilungen der iOS-App zu. Dafür gehen das Token deines Geräts, der Titel der Party, ein fester Satz und eine Kennung der Party an Apple — kein Name, keine Adresse, keine Uhrzeit. Verschickt werden sie von Supabase aus; die Tokens liegen dort in der Datenbank in Frankfurt.',
+      'Mit Apple anmelden (Apple Distribution International Limited, Hollyhill Industrial Estate, Hollyhill, Cork, Irland): nur in der iOS-App und nur, wenn du dich dafür entscheidest. Wir erhalten dabei eine Kennung deines Apple-Accounts und deine E-Mail-Adresse — oder, wenn du deine Adresse bei Apple verbirgst, eine Weiterleitungsadresse von Apple, über die unsere E-Mails dich erreichen. Bei der ersten Anmeldung schickt Apple außerdem deinen Namen mit; wir legen ihn in deinem Konto ab und schlagen ihn dir beim Einrichten deines Profils vor. Apple erfährt, dass du dich bei areuout anmeldest. Löschst du dein Konto in der iOS-App, bestätigst du einmal mit Apple, und die App beendet die Anmeldung mit Apple auch dort. Klappt das nicht, kannst du dein Konto trotzdem löschen und die Verbindung selbst in den Einstellungen deines Apple-Accounts beenden.',
+      'Apple Push Notification Service (Apple Distribution International Limited) stellt die Mitteilungen der iOS-App zu. Dafür gehen das Token deines Geräts, der Titel der Party, ein fester Satz und eine Kennung der Party an Apple — kein Name, keine Adresse, keine Uhrzeit. Verschickt werden sie von Supabase aus; die Tokens liegen dort in der Datenbank in Frankfurt.',
       'Photon (komoot GmbH, Potsdam): Die Adresssuche beim Erstellen einer Party schickt deine Eingabe an Photon — ab drei Zeichen und sobald du beim Tippen kurz innehältst, also nicht erst beim Absenden. Übertragen werden der eingegebene Adressanfang und deine IP-Adresse. Kürzere Eingaben verlassen dein Gerät nicht. Die Server stehen in Deutschland.',
-      'Google, komoot und OpenFreeMap sind an dieser Stelle keine Auftragsverarbeiter: Bei der Anmeldung mit Google, der Adresssuche und der Karte entscheiden sie selbst über die Verarbeitung und sind dafür eigenständig verantwortlich. Ein Vertrag nach Art. 28 DSGVO besteht mit ihnen deshalb nicht — sie handeln nicht auf unsere Weisung, sondern nach ihren eigenen Bestimmungen.',
+      'Google, Apple, komoot und OpenFreeMap sind an dieser Stelle keine Auftragsverarbeiter: Bei der Anmeldung mit Google oder Apple, bei den Mitteilungen über Apple, der Adresssuche und der Karte entscheiden sie selbst über die Verarbeitung und sind dafür eigenständig verantwortlich. Ein Vertrag nach Art. 28 DSGVO besteht mit ihnen deshalb nicht — sie handeln nicht auf unsere Weisung, sondern nach ihren eigenen Bestimmungen.',
       'Analyse-, Werbe- oder Fehlerüberwachungsdienste setzen wir nicht ein. Auch die Schriftarten der App liegen auf unserem eigenen Server: Beim Laden einer Seite geht deshalb keine Anfrage an einen Schriften-Server von Google.',
     ],
   },
   {
     heading: '8. Übermittlung in Länder außerhalb der EU',
     paragraphs: [
-      // OFFEN (Arthur): Grundlage der Übermittlung an Apple (Data Privacy Framework oder
-      // Standardvertragsklauseln) ist nicht geprüft; der nächste Absatz nennt Apple deshalb nicht.
       'Die Daten, die die App selbst speichert, liegen in der EU. Bei Cloudflare, Vercel, Google, Apple und OpenFreeMap lässt sich eine Verarbeitung in den USA nicht ausschließen, beim Mailversand über Resend findet sie dort statt. Supabase ist ein US-Unternehmen, auch wenn seine Server für dieses Projekt in Frankfurt stehen.',
       'Google, Cloudflare und Resend sind nach dem EU-US Data Privacy Framework zertifiziert. Für sie stützt sich die Übermittlung auf den Angemessenheitsbeschluss der EU-Kommission vom 10. Juli 2023 und ergänzend auf die Standardvertragsklauseln der EU-Kommission.',
+      'Bei Apple stützt sich eine Übermittlung in die USA nach Apples eigenen Angaben auf die Standardvertragsklauseln der EU-Kommission.',
       'Bei Supabase und Vercel stützt sie sich auf die Standardvertragsklauseln der EU-Kommission, die Bestandteil der jeweiligen Verträge zur Auftragsverarbeitung sind.',
       'Eine Kopie der vereinbarten Garantien kannst du unter der oben genannten Adresse anfordern.',
     ],
@@ -222,7 +219,7 @@ const SECTIONS: LegalSection[] = [
     paragraphs: [
       'areuout setzt ausschließlich technisch notwendige Cookies, und es gibt nur eine Sorte davon: das Anmelde-Token, mit dem dein Gerät angemeldet bleibt. Es wird von Supabase gesetzt, kann aus technischen Gründen auf mehrere Teil-Cookies aufgeteilt sein, hat eine Laufzeit von bis zu 400 Tagen und verschwindet, wenn du dich abmeldest.',
       'Besuchst du nur eine Einladungsseite, ohne dich anzumelden, setzt die App überhaupt kein Cookie.',
-      'Weitere Speicher deines Browsers — localStorage oder sessionStorage — nutzt die App nicht.',
+      'localStorage nutzt die App nicht. Nur in der iOS-App merkt sich die App im sessionStorage den zuletzt geöffneten Einladungslink, damit dieselbe Party nach einem Neuladen nicht erneut aufgeht. Dieser Eintrag ist technisch notwendig, verlässt dein Gerät nicht und verschwindet, sobald die App geschlossen wird.',
       'Es gibt keine Analyse-, Tracking- oder Werbe-Cookies. Deshalb fragt die App auch nicht nach einer Cookie-Einwilligung: Für technisch notwendige Cookies ist nach § 25 Abs. 2 Nr. 2 TDDDG keine erforderlich.',
     ],
   },
@@ -294,5 +291,5 @@ const SECTIONS: LegalSection[] = [
 ]
 
 export default function DatenschutzPage() {
-  return <LegalTextScreen title='Datenschutz' sections={SECTIONS} updated='2. November 2026' />
+  return <LegalTextScreen title='Datenschutz' sections={SECTIONS} updated='3. November 2026' />
 }
