@@ -10,10 +10,10 @@ import StatusScreen, { statusButtonClass } from '@/components/shared/StatusScree
 // the root layout; an error IN the root layout would need global-error instead.
 export default function Error({
   error,
-  unstable_retry,
+  retry,
 }: {
   error: Error & { digest?: string }
-  unstable_retry: () => void
+  retry: () => void
 }) {
   // retry re-fetches, which can take as long as the request that failed. React owns
   // the pending flag, so it ends by itself whether the retry succeeds or throws again.
@@ -33,7 +33,7 @@ export default function Error({
     >
       <button
         type='button'
-        onClick={() => startRetry(() => unstable_retry())}
+        onClick={() => startRetry(() => retry())}
         disabled={retrying}
         className={statusButtonClass}
       >
