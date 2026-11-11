@@ -14,6 +14,41 @@ export type Database = {
   }
   public: {
     Tables: {
+      agent_event_details: {
+        Row: {
+          cancelled_at: string | null
+          event_id: string
+          last_checked_at: string | null
+          organizer_name: string | null
+          source_url: string
+          starts_on: string
+        }
+        Insert: {
+          cancelled_at?: string | null
+          event_id: string
+          last_checked_at?: string | null
+          organizer_name?: string | null
+          source_url: string
+          starts_on: string
+        }
+        Update: {
+          cancelled_at?: string | null
+          event_id?: string
+          last_checked_at?: string | null
+          organizer_name?: string | null
+          source_url?: string
+          starts_on?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "agent_event_details_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: true
+            referencedRelation: "events"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       blocks: {
         Row: {
           blocked_id: string
@@ -68,6 +103,7 @@ export type Database = {
           motto: string | null
           price: number | null
           title: string
+          website_url: string | null
         }
         Insert: {
           background_url?: string | null
@@ -89,6 +125,7 @@ export type Database = {
           motto?: string | null
           price?: number | null
           title: string
+          website_url?: string | null
         }
         Update: {
           background_url?: string | null
@@ -110,6 +147,7 @@ export type Database = {
           motto?: string | null
           price?: number | null
           title?: string
+          website_url?: string | null
         }
         Relationships: [
           {
@@ -473,6 +511,14 @@ export type Database = {
         Returns: undefined
       }
       delete_self: { Args: never; Returns: undefined }
+      get_agent_event_details: {
+        Args: { p_event_id: string }
+        Returns: {
+          cancelled_at: string
+          organizer_name: string
+          source_url: string
+        }[]
+      }
       get_event_attendees: {
         Args: { p_event_id: string }
         Returns: {
@@ -753,6 +799,7 @@ export type Database = {
       }
       register_push_token: { Args: { p_token: string }; Returns: undefined }
       request_to_join: { Args: { p_event_id: string }; Returns: undefined }
+      rsvp_is_open: { Args: { p_event_id: string }; Returns: boolean }
       set_single_pool_response: {
         Args: {
           p_option_id: string

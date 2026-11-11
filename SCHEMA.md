@@ -16,7 +16,7 @@ Verified against the live database on 2026-09-01; section 8 added and verified 2
 
 ## 1. How security works here, in four sentences
 
-RLS is on for all nine tables in `public`, and every policy is written for the
+RLS is on for every table in `public`, and every policy is written for the
 `authenticated` role. A signed-in person reaches their own rows and the rows of parties
 they belong to — nothing else. Everything an anonymous visitor sees comes from
 `SECURITY DEFINER` functions, never from a table. Host and guest are not stored
@@ -727,6 +727,56 @@ Rollback, newest first: `supabase/rollbacks/20261026130000_drop_join_requests_de
 (policy and DELETE back), `20261026120000_add_decline_join_request.sql`
 (only after `RequestsPage` deletes directly again), `20261026110000_push_accepted_join_requests.sql`,
 `20261026104449_push_new_join_requests.sql`, `20261026103803_add_queue_push.sql`.
+
+## 9f. Party agent (agent steps 2, 2026-11-11)
+
+The party agent finds public events and Arthur approves each one (vault: *Party Agent*,
+*Party Agent Database Review*). Two decisions shape the database.
+
+**Drafts never touch `events`.** Everything the agent finds lands in
+`private.agent_candidates` (kind `new`, `change` or `cancel`; status `draft`,
+`approved`, `discarded`, `expired`). The API roles have no USAGE on `private`, so a draft
+is unreachable by construction, and none of the functions that hand out parties needs a
+draft filter. Only an approval copies a candidate into `events`. Its CHECKs mirror the
+ones on `events` so an approval never fails on one. A certain duplicate is the same
+`source_url` on the same `starts_on` (recurring parties share one page), enforced by a
+partial unique index on open and approved `new` candidates.
+
+**An agent event is a party hosted by the system account.** `private.agent_config` holds
+the one id (`private.agent_system_account()`), `private.is_agent_event(id)` asks it.
+Nobody can fake one: RLS on `events` only lets a user write their own `host_id`. No agent
+column was added to `events` on purpose, because `authenticated` holds table-level INSERT
+and UPDATE there (section 2), so any new column is writable by every user at once.
+Agent-only details live in `public.agent_event_details` (source link, start day,
+organiser, `last_checked_at`, `cancelled_at`), RLS on with no policy and no privilege for
+anon or authenticated; the app reads them through `get_agent_event_details(event_id)`,
+which answers only for public, still visible agent events and only for signed-in callers.
+
+**What changes for users.**
+
+- No guest names on agent events: `get_party_guest_list`, `get_party_guests`,
+  `get_event_attendees`, `get_event_attendees_for_events` and
+  `get_event_attendees_by_invite_code` return no rows for them. The counts still come from
+  the count functions. A public event is open to strangers, so a name list would show
+  everyone who is going.
+- A cancelled agent event (`cancelled_at` set) takes no new RSVP and no change to `going`
+  or `maybe`: `public.rsvp_is_open(event_id)` (SECURITY DEFINER, because a policy cannot
+  read `private` or the locked table) sits in `rsvps_insert_authenticated` and
+  `rsvps_update_own`. Leaving (DELETE) still works.
+- `block_user` refuses the system account (`areuout kannst du nicht blockieren.`, 22023):
+  a block would hide every agent event without explanation.
+- `reports.reason` also takes `organizer` ("Ich bin der Veranstalter").
+- `events.website_url` (all parties): CHECK `^https://`, no spaces, at most 500
+  characters, its own `GRANT SELECT` (section 2).
+
+**Admins.** `private.admins (user_id)` and `private.is_admin()`; no role column on
+`profiles`. Every admin function (agent step 4) checks `private.is_admin()` first.
+
+**Run log and blocked sources.** `private.agent_runs` (one row per run and category,
+counts, tokens, cost, error) and `private.agent_blocked_sources` (source links of removed
+events; the agent never adds them again).
+
+Applied 2026-11-11, see `supabase/migrations/README.md`.
 
 ## 10. Checking this file against the database
 
