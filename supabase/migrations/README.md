@@ -415,3 +415,24 @@ abgelehnt, solange eine Datei im Ordner liegt; leerer Ordner und Konto ohne Date
 durch, die Cascade läuft. Danach 0 Testzeilen übrig. Ende zu Ende mit einem Testkonto (E-Mail,
 Web, 3 Dateien in 2 Party-Ordnern): alles weg. Google und Apple folgen im Gerätetest. Warum
 es so gebaut ist, steht in `SCHEMA.md`, Abschnitt 7.
+
+## Die Migrationen für den Party Agent (Schritt 2, 11.11.2026)
+
+| Datei | Was sie ändert | Wie angewendet | Version |
+|---|---|---|---|
+| `20261111211832_add_party_agent_foundation.sql` | `private.agent_config`, `private.admins`, `private.agent_runs`, `private.agent_blocked_sources`, `private.agent_candidates` (Entwürfe, nie in `events`), `public.agent_event_details` (RLS an, keine Policy, keine Rechte), `get_agent_event_details`, `private.is_admin`, `private.agent_system_account`, `private.is_agent_event` | `apply_migration`, am 11.11.2026 | echt, von `apply_migration` vergeben |
+| `20261111212120_add_a_website_link_to_a_party.sql` | `events.website_url` mit CHECK (nur `https://`, höchstens 500 Zeichen) und `GRANT SELECT (website_url)` | `apply_migration`, am 11.11.2026 | echt |
+| `20261111212150_hide_guest_names_on_agent_events.sql` | fünf Namens-Funktionen geben bei Agent-Events keine Zeilen zurück | `apply_migration`, am 11.11.2026 | echt |
+| `20261111212215_add_agent_event_rules.sql` | `rsvp_is_open` und beide RSVP-Policies (abgesagtes Agent-Event: keine Zusage), `block_user` lehnt den Systemaccount ab, Melde-Grund `organizer` | `apply_migration`, am 11.11.2026 | echt |
+
+Alle vier vorher in einer zurückgerollten Transaktion auf der Live-Datenbank getestet
+(danach 0 Agent-Tabellen übrig) und nachher geprüft: anon und authenticated haben keinen
+Zugriff auf die neuen Tabellen und kein USAGE auf `private`, `get_agent_event_details` und
+`rsvp_is_open` nur für authenticated, alle 9 Partys nehmen weiter Zusagen an. Die Advisors
+zeigen nur die erwarteten neuen Einträge (`agent_event_details` ohne Policy wie `reports`,
+die zwei neuen Funktionen für authenticated).
+
+Die Daten dazu (Profil des Systemaccounts, Zeile in `private.agent_config`, Arthur in
+`private.admins`) sind keine Migration, weil die IDs nur auf dieser Datenbank gelten;
+Arthur trägt sie im SQL Editor ein. Warum es so gebaut ist, steht in `SCHEMA.md`,
+Abschnitt 9f, und im Vault unter *Party Agent Database Review*.
