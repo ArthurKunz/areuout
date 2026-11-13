@@ -482,6 +482,8 @@ export type Database = {
         Args: { p_event_id: string; p_user_id: string }
         Returns: undefined
       }
+      am_i_admin: { Args: never; Returns: boolean }
+      approve_agent_candidate: { Args: { p_id: string }; Returns: string }
       block_user: { Args: { p_user_id: string }; Returns: undefined }
       can_rsvp_to_event: { Args: { p_event_id: string }; Returns: boolean }
       create_party: {
@@ -511,6 +513,25 @@ export type Database = {
         Returns: undefined
       }
       delete_self: { Args: never; Returns: undefined }
+      discard_agent_candidate: { Args: { p_id: string }; Returns: undefined }
+      get_agent_drafts: {
+        Args: never
+        Returns: {
+          background_url: string
+          description: string
+          duplicate_title: string
+          ends_at: string
+          event_type: string
+          id: string
+          location: string
+          organizer_name: string
+          price: number
+          source_url: string
+          starts_at: string
+          title: string
+          website_url: string
+        }[]
+      }
       get_agent_event_details: {
         Args: { p_event_id: string }
         Returns: {

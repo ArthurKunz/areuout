@@ -246,6 +246,20 @@ Deno.serve(async (req) => {
       input_tokens = ${usage.inputTokens}, output_tokens = ${usage.outputTokens},
       web_searches = ${usage.searches}, cost_usd = ${cost}, error = ${error}
     where id = ${run.id}`
+
+  // Eine Push an die Admins pro Aufruf (Schritt 4): bei neuen Entwuerfen oder wenn der Lauf
+  // gescheitert ist. Schritt 7 buendelt das zu einer Push pro vollem Lauf. Die Push darf den
+  // Lauf nie scheitern lassen; queue_admin_push faengt seine Fehler selbst.
+  const push = counts.drafts
+    ? counts.drafts === 1 ? '1 neues Event wartet auf dich' : `${counts.drafts} neue Events warten auf dich`
+    : error ? `Agent-Lauf fehlgeschlagen: ${category.id} – ${error}`.slice(0, 200) : null
+  if (push) {
+    try {
+      await sql`select private.queue_admin_push(${push})`
+    } catch (err) {
+      console.error('admin push failed', err instanceof Error ? err.name : 'unknown')
+    }
+  }
   await sql.end()
 
   // Nur Zahlen und Gruende, keine Inhalte.

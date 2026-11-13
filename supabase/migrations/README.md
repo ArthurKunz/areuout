@@ -436,3 +436,14 @@ Die Daten dazu (Profil des Systemaccounts, Zeile in `private.agent_config`, Arth
 `private.admins`) sind keine Migration, weil die IDs nur auf dieser Datenbank gelten;
 Arthur trägt sie im SQL Editor ein. Warum es so gebaut ist, steht in `SCHEMA.md`,
 Abschnitt 9f, und im Vault unter *Party Agent Database Review*.
+
+## Die Migration für den Admin-Screen des Party Agent (Schritt 4, 13.11.2026)
+
+| Datei | Was sie ändert | Wie angewendet | Version |
+|---|---|---|---|
+| `20261113200537_add_agent_review.sql` | `am_i_admin`, `get_agent_drafts`, `approve_agent_candidate`, `discard_agent_candidate` (nur authenticated, alle prüfen `private.is_admin()`), `private.queue_admin_push` (nur Owner) | `apply_migration`, am 13.11.2026 | echt |
+
+Vorher in einer zurückgerollten Transaktion auf der Live-Datenbank getestet (Freigeben,
+Verwerfen, 42501 für Nicht-Admins, kein EXECUTE für anon), danach erneut geprüft. Die
+Advisors zeigen nur die vier neuen Funktionen für authenticated, wie gewollt. Warum es so
+gebaut ist, steht in `SCHEMA.md`, Abschnitt 9f.

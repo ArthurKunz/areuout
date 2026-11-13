@@ -789,6 +789,39 @@ service; Nominatim answers Supabase's servers with 403), and compared with the k
 links (all statuses, so a discarded draft never comes back), the open drafts and all
 upcoming public parties. Stock photos live in `event-backgrounds/<system account>/<type>/`.
 
+**Review and push (agent step 4, 2026-11-13).** Four RPCs for the admin screen `/admin`
+(`Neue Events`), all SECURITY DEFINER, granted to `authenticated` only, and each one checks
+`private.is_admin()` first (42501 `Nur Admins dürfen das.` for everyone else, so typing the
+URL or calling the API gets nothing):
+
+- `am_i_admin()`: the page `/admin` answers 404 unless it is true; the profile shows the row
+  `Neue Events` only when it is true.
+- `get_agent_drafts()`: first sets drafts whose event has started to `expired` (no schedule
+  needed; pg_cron comes in step 7), then returns the open `new` drafts, soonest first, with
+  the title of `duplicate_of` as `duplicate_title`.
+- `approve_agent_candidate(id)`: only an open `new` draft whose event has not started.
+  Inserts the event (host = system account, `is_public`, no `max_guests`, a 12-character
+  invite code from the same alphabet as `generateInviteCode`) and its
+  `agent_event_details` row, and marks the candidate `approved` with `event_id`. The map
+  shows it through `get_explore_parties` like any public party.
+- `discard_agent_candidate(id)`: open draft to `discarded`; the agent never proposes the
+  source link again (it compares all statuses).
+
+**`private.queue_admin_push(body)`** follows `private.queue_push` (section 9e): the tokens of
+every admin, Vault `push_secret`, `net.http_post` to `send-push`, title `Neue Events`, data
+`{ "path": "/admin" }`. Owner only; `party-agent` calls it after each category call when
+there are new drafts (`[n] neue Events warten auf dich`) or the call failed
+(`Agent-Lauf fehlgeschlagen: …`). Every error turns into a warning, so a run never fails on
+the push. In the app, `features/push/PushTaps.tsx` follows a tapped push only to paths on
+its allowlist (today `/admin`).
+
+Verified 2026-11-13 in rolled-back transactions on the live database: Arthur gets the 5
+drafts, approve creates a public event of the system account with fuzzy position and
+details row, discard leaves 3, a second decision on the same draft gets P0002; a stranger
+gets 42501 on all three admin RPCs, `am_i_admin` false, and sees an approved event in
+`get_explore_parties`; anon holds no EXECUTE; `queue_admin_push` queues nothing for an
+admin without tokens. Rollback: `supabase/rollbacks/20261113200537_add_agent_review.sql`.
+
 ## 10. Checking this file against the database
 
 Do not trust the above. The database answers all of it, and the Supabase MCP is the
