@@ -428,3 +428,8 @@ verify_jwt = true
 # Called with a shared secret (x-push-secret), never by the app; triggers come in session 7.
 [functions.send-push]
 verify_jwt = false
+
+# Party agent (agent step 3): started by hand now, by pg_cron later (step 7), never by the app.
+# Checks its own shared secret (x-agent-secret) instead of a JWT.
+[functions.party-agent]
+verify_jwt = false
