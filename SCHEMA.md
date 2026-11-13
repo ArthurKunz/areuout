@@ -778,6 +778,17 @@ events; the agent never adds them again).
 
 Applied 2026-11-11, see `supabase/migrations/README.md`.
 
+**The agent itself (agent step 3, 2026-11-12).** Edge Function `party-agent`, one category
+per call, started with the header `x-agent-secret` (secret `AGENT_SECRET`, `verify_jwt`
+off, same pattern as `send-push`). Even `service_role` has no USAGE on `private`, so the
+function does not go through PostgREST: it connects with the built-in secret
+`SUPABASE_DB_URL` (role `postgres`) and writes only `private.agent_candidates` and
+`private.agent_runs`, never `events`. Every event is checked in code against its source
+page (robots.txt, name, date, place, 14-day window, price), geocoded with Photon (the app's
+service; Nominatim answers Supabase's servers with 403), and compared with the known source
+links (all statuses, so a discarded draft never comes back), the open drafts and all
+upcoming public parties. Stock photos live in `event-backgrounds/<system account>/<type>/`.
+
 ## 10. Checking this file against the database
 
 Do not trust the above. The database answers all of it, and the Supabase MCP is the
