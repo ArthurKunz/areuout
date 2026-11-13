@@ -195,7 +195,9 @@ export default function PartyDetail({
   }
 
   const { party, polls, questions, inviteCode, userId, requested, full, requests } = loaded
-  const hostName = `${party.host_firstname} ${party.host_lastname}`
+  // Without a missing part, like ProfilePage: the areuout system account has no last name
+  // and showed as `areuout null`.
+  const hostName = [party.host_firstname, party.host_lastname].filter(Boolean).join(' ')
   const host: ProfileUser = {
     id: party.host_id,
     firstname: party.host_firstname,
