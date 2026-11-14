@@ -460,3 +460,10 @@ Veranstalter-Meldung reiht zwei Anfragen ein (E-Mail und Push); der Admin sieht 
 `remove_agent_event` löscht das Event und sperrt die Quelle; anon hat kein EXECUTE. Die
 Advisors zeigen nur die drei neuen Funktionen für authenticated, wie gewollt. Rollback:
 `supabase/rollbacks/20261114184640_add_agent_display.sql`.
+
+| Datei | Was sie ändert | Wie angewendet | Version |
+|---|---|---|---|
+| `20261114191338_discard_drafts_of_removed_source.sql` | `remove_agent_event` setzt zusätzlich alle offenen Entwürfe derselben Quelle auf `discarded` (Fund aus dem iPhone-Test) | `apply_migration`, am 14.11.2026 | echt |
+
+Danach in einer zurückgerollten Transaktion geprüft: ein zweiter Entwurf derselben Quelle
+steht nach `remove_agent_event` auf `discarded`, Entwürfe anderer Quellen bleiben offen.

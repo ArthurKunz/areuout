@@ -840,7 +840,11 @@ admin without tokens. Rollback: `supabase/rollbacks/20261113200537_add_agent_rev
   `private.agent_blocked_sources` (`organizer_request`) and then deletes the event.
   **The order matters:** `agent_candidates.event_id` cascades, so deleting the event also
   deletes the approved candidate the agent used to recognise the source. Without the block
-  the next run would add the event again.
+  the next run would add the event again. Since migration `20261114191338` it also sets
+  every open draft of the same source link to `discarded` (other dates of a recurring
+  event, found in the iPhone test). **Known gap:** the block hangs on the link, not on the
+  event, so the same event found on another site comes back as a draft (parked in the
+  vault's build order).
 
 Verified 2026-11-14 in one rolled-back transaction on the live database (see
 `supabase/migrations/README.md`). Rollback: `supabase/rollbacks/20261114184640_add_agent_display.sql`.
