@@ -8,10 +8,14 @@
 // report-email: spaeter ruft pg_cron ueber pg_net auf, ohne JWT. Eine Kategorie pro Aufruf,
 // damit ein Lauf sicher unter dem Zeitlimit der Edge Functions bleibt.
 //
-// Schreibt nur private.agent_candidates (Entwuerfe) und private.agent_runs (eine Zeile pro
-// Aufruf), nie public.events. Das private Schema ist fuer die API-Rollen gesperrt, auch fuer
-// service_role. Deshalb geht die Funktion direkt ueber SUPABASE_DB_URL in die Datenbank
-// (SCHEMA.md 9f). Jeder Fehler landet als Text in der Lauf-Zeile.
+// Vor der Suche prueft jeder Aufruf die freigegebenen Events seiner Kategorie nach und
+// legt Aenderungs- oder Absage-Vorschlaege an (Schritt 6, recheck.ts).
+//
+// Schreibt nur private.agent_candidates (Entwuerfe und Vorschlaege), private.agent_runs (eine
+// Zeile pro Aufruf) und last_checked_at in public.agent_event_details, nie public.events.
+// Das private Schema ist fuer die API-Rollen gesperrt, auch fuer service_role. Deshalb geht
+// die Funktion direkt ueber SUPABASE_DB_URL in die Datenbank (SCHEMA.md 9f).
+// Jeder Fehler landet als Text in der Lauf-Zeile.
 
 import { timingSafeEqual } from 'jsr:@std/crypto@1/timing-safe-equal'
 import postgres from 'npm:postgres@3.4.5'
@@ -19,6 +23,7 @@ import { emptyUsage, MODEL, runClaude } from './claude.ts'
 import { sameEvent, type Slot } from './dedupe.ts'
 import { geocode, geoProblem } from './geo.ts'
 import { berlinToDate, buildPrompt, CATEGORIES, EVENT_TYPES, type EventType, type FoundEvent, parseEvents, toFoundEvent, windowDates } from './prompt.ts'
+import { recheckEvents } from './recheck.ts'
 import { checkEvent, type RobotsCache } from './verify.ts'
 
 const MAX_EVENTS = 60
@@ -80,6 +85,7 @@ Deno.serve(async (req) => {
     reasons[reason] = (reasons[reason] ?? 0) + 1
   }
   const usage = emptyUsage()
+  const recheck = { rechecked: 0, proposals: 0 }
   let error: string | null = null
 
   const [run] = await sql<{ id: string }[]>`
@@ -100,6 +106,15 @@ Deno.serve(async (req) => {
       photos.set(type, [...(photos.get(type) ?? []), name])
     }
     if (!photos.get(category.id)?.length) throw new Error(`Keine Stockfotos unter ${systemId}/${category.id}/`)
+
+    // Erst die freigegebenen Events nachpruefen, dann suchen. Ein Fehler hier stoppt die
+    // Suche nicht.
+    try {
+      Object.assign(recheck, await recheckEvents(sql, category.id, run.id, usage, reasons))
+    } catch (err) {
+      const key = `Nachpruefung: ${err instanceof Error ? err.message : String(err)}`.slice(0, 200)
+      reasons[key] = (reasons[key] ?? 0) + 1
+    }
 
     const blocked = new Set(
       (await sql<{ source_url: string }[]>`select source_url from private.agent_blocked_sources`).map((r) => r.source_url),
@@ -243,6 +258,7 @@ Deno.serve(async (req) => {
     update private.agent_runs set
       finished_at = now(), found = ${counts.found}, verified = ${counts.verified},
       discarded = ${counts.discarded}, duplicates = ${counts.duplicates}, drafts = ${counts.drafts},
+      rechecked = ${recheck.rechecked}, proposals = ${recheck.proposals},
       input_tokens = ${usage.inputTokens}, output_tokens = ${usage.outputTokens},
       web_searches = ${usage.searches}, cost_usd = ${cost}, error = ${error}
     where id = ${run.id}`
@@ -250,8 +266,14 @@ Deno.serve(async (req) => {
   // Eine Push an die Admins pro Aufruf (Schritt 4): bei neuen Entwuerfen oder wenn der Lauf
   // gescheitert ist. Schritt 7 buendelt das zu einer Push pro vollem Lauf. Die Push darf den
   // Lauf nie scheitern lassen; queue_admin_push faengt seine Fehler selbst.
-  const push = counts.drafts
-    ? counts.drafts === 1 ? '1 neues Event wartet auf dich' : `${counts.drafts} neue Events warten auf dich`
+  // Ab Schritt 6 zaehlen die Vorschlaege mit.
+  const parts = [
+    counts.drafts && (counts.drafts === 1 ? '1 neues Event' : `${counts.drafts} neue Events`),
+    recheck.proposals && (recheck.proposals === 1 ? '1 Änderung' : `${recheck.proposals} Änderungen`),
+  ].filter(Boolean)
+  const waiting = counts.drafts + recheck.proposals
+  const push = waiting
+    ? `${parts.join(' und ')} ${waiting === 1 ? 'wartet' : 'warten'} auf dich`
     : error ? `Agent-Lauf fehlgeschlagen: ${category.id} – ${error}`.slice(0, 200) : null
   if (push) {
     try {
@@ -263,11 +285,12 @@ Deno.serve(async (req) => {
   await sql.end()
 
   // Nur Zahlen und Gruende, keine Inhalte.
-  console.log(JSON.stringify({ run: run.id, category: category.id, ...counts, cost_usd: cost, error }))
+  console.log(JSON.stringify({ run: run.id, category: category.id, ...counts, ...recheck, cost_usd: cost, error }))
   return json(error && !counts.drafts ? 500 : 200, {
     run_id: run.id,
     category: category.id,
     ...counts,
+    ...recheck,
     discard_reasons: reasons,
     web_searches: usage.searches,
     web_fetches: usage.fetches,

@@ -60,7 +60,7 @@ const goingText = (count: number) =>
   count === 0 ? 'Noch niemand dabei' : count === 1 ? '1 ist dabei' : `${count} sind dabei`
 
 // What an agent event shows beyond a party (get_agent_event_details).
-export type AgentInfo = { sourceUrl: string; organizerName: string | null; goingCount: number }
+export type AgentInfo = { sourceUrl: string; organizerName: string | null; goingCount: number; cancelled: boolean }
 
 const ICON_CLASS = {
   red: 'bg-red',

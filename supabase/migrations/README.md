@@ -467,3 +467,19 @@ Advisors zeigen nur die drei neuen Funktionen für authenticated, wie gewollt. R
 
 Danach in einer zurückgerollten Transaktion geprüft: ein zweiter Entwurf derselben Quelle
 steht nach `remove_agent_event` auf `discarded`, Entwürfe anderer Quellen bleiben offen.
+
+## Die Migration für Änderungen und Absagen (Agent-Schritt 6, 14.11.2026)
+
+| Datei | Was sie ändert | Wie angewendet | Version |
+|---|---|---|---|
+| `20261114192638_add_agent_proposals.sql` | `agent_runs.rechecked` und `.proposals`, Index `agent_candidates_one_open_proposal`, `get_agent_proposals` und `approve_agent_proposal` (nur authenticated, beide prüfen `private.is_admin()`; Push an Gäste über `private.queue_push`) | `apply_migration`, am 14.11.2026 | echt |
+
+Die Advisors zeigen danach nur die zwei neuen Funktionen für authenticated, wie gewollt.
+
+Vorher in einer zurückgerollten Transaktion auf der Live-Datenbank geprüft: ein zweiter
+offener Änderungsvorschlag pro Event wird abgewiesen; ein Fremder bekommt 42501 auf beide
+Funktionen; die Änderung verschiebt Datum, `starts_on` und Preis und reiht eine Push
+(`Geändert: Datum, Uhrzeit, Preis`) an den Gast mit Zusage ein, keine an den mit Absage;
+die Absage setzt `cancelled_at`, `rsvp_is_open` ist danach false, Push
+`Die Party wurde abgesagt`; ein zweites Freigeben gibt P0002.
+

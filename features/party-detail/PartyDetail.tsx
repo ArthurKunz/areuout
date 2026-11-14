@@ -163,7 +163,12 @@ export default function PartyDetail({
         full,
         requests: requests.data ?? [],
         agent: agent.data
-          ? { sourceUrl: agent.data.source_url, organizerName: agent.data.organizer_name, goingCount: agent.data.going_count }
+          ? {
+              sourceUrl: agent.data.source_url,
+              organizerName: agent.data.organizer_name,
+              goingCount: agent.data.going_count,
+              cancelled: agent.data.cancelled_at !== null,
+            }
           : null,
       })
       onLoaded?.(party)
@@ -278,9 +283,13 @@ export default function PartyDetail({
   const answered = (requestUserId: string) =>
     setLoaded((current) => current && { ...current, requests: current.requests.filter((item) => item.user_id !== requestUserId) })
 
+  // A cancelled agent event takes no answer any more (rsvp_is_open, Party Agent section 8
+  // "Cancellation"): no RSVP button and no bar.
+  const cancelled = agent?.cancelled ?? false
+
   // From the data, not the caller: whoever has an answer gets the RSVP button, so a
   // stranger who just tapped Teilnehmen turns into a guest in place.
-  const rsvp = viewer !== 'host' && myStatus && (
+  const rsvp = viewer !== 'host' && myStatus && !cancelled && (
     <RsvpControl partyId={party.id} initialStatus={myStatus} over={over} onStatusChange={changeStatus} />
   )
 
@@ -338,7 +347,7 @@ export default function PartyDetail({
   // The bar at the bottom (App Redesign 3.5), only for someone without an answer while
   // the party is not over.
   const bar =
-    viewer === 'host' || myStatus || over ? null : invite ? (
+    viewer === 'host' || myStatus || over || cancelled ? null : invite ? (
       <div className='flex w-full items-center gap-2'>
         <button type='button' onClick={() => answer('not_going')} disabled={answering !== null} aria-label='Absagen' className={`${round} bg-red`}>
           {answering === 'not_going' ? <Spinner /> : <X size={30} strokeWidth={2.5} />}
@@ -460,6 +469,14 @@ export default function PartyDetail({
             )
           }
         >
+          {cancelled && (
+            <div className='pb-2.5'>
+              <Alert tone='notice'>
+                <CalendarX />
+                <AlertDescription>Abgesagt</AlertDescription>
+              </Alert>
+            </div>
+          )}
           {invite && over && (
             <div className='pb-2.5'>
               <Alert tone='notice'>

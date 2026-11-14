@@ -484,6 +484,7 @@ export type Database = {
       }
       am_i_admin: { Args: never; Returns: boolean }
       approve_agent_candidate: { Args: { p_id: string }; Returns: string }
+      approve_agent_proposal: { Args: { p_id: string }; Returns: undefined }
       block_user: { Args: { p_user_id: string }; Returns: undefined }
       can_rsvp_to_event: { Args: { p_event_id: string }; Returns: boolean }
       create_party: {
@@ -539,6 +540,25 @@ export type Database = {
           going_count: number
           organizer_name: string
           source_url: string
+        }[]
+      }
+      get_agent_proposals: {
+        Args: never
+        Returns: {
+          changes: Json
+          ends_at: string
+          event_date: string
+          event_id: string
+          id: string
+          kind: string
+          location: string
+          new_ends_at: string
+          new_location: string
+          new_price: number
+          new_starts_at: string
+          price: number
+          source_url: string
+          title: string
         }[]
       }
       get_agent_reports: {
