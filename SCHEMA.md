@@ -849,6 +849,34 @@ admin without tokens. Rollback: `supabase/rollbacks/20261113200537_add_agent_rev
 Verified 2026-11-14 in one rolled-back transaction on the live database (see
 `supabase/migrations/README.md`). Rollback: `supabase/rollbacks/20261114184640_add_agent_display.sql`.
 
+**Re-check, changes and cancellation (agent step 6, 2026-11-14).** Migration `20261114192638`:
+
+- `party-agent` re-checks, before each search, the approved, not cancelled, upcoming agent
+  events of its category (`other` runs with `club`; `recheck.ts`, at most 60 s). It reads the
+  source page itself (robots.txt as for new events), a short Claude call without tools pulls
+  out date, times, place, price and "cancelled", and the code checks them against the page:
+  a new date or price must be on it, a new place must be more than 100 m away, a
+  cancellation needs a word like `abgesagt` on the page. Description and wording are never
+  compared. It sets `last_checked_at` and writes proposals as `agent_candidates` with kind
+  `change` (the row carries the proposed state, `changes` names only the changed fields:
+  `starts_at`, `ends_at`, `location` with `lat`/`lng`, `price`) or `cancel`. A proposal that
+  is already open or was discarded is not made again; an older open one of the same kind
+  expires. Index `agent_candidates_one_open_proposal`: one open proposal per event and kind.
+  `agent_runs` counts `rechecked` and `proposals`.
+- `get_agent_proposals()` (admin only, 42501 otherwise): first expires open proposals whose
+  event has started, then returns the open ones with the current and the proposed values.
+- `approve_agent_proposal(id)` (admin only): applies only the fields in `changes` to `events`
+  (and `starts_on` when the day moves), or sets `cancelled_at` (open changes of the event
+  expire). Then every guest with `going` or `maybe` gets a push through `private.queue_push`
+  (actor = system account): title = party title, body `Geändert: Datum, Uhrzeit, …` or
+  `Die Party wurde abgesagt`, no name. Each call is caught, so the approval never fails on a
+  push. Verwerfen uses `discard_agent_candidate`.
+- The app shows `Abgesagt` and no RSVP button or bar when `cancelled_at` is set;
+  `rsvp_is_open` (step 2) refuses the write anyway.
+
+Verified 2026-11-14 in one rolled-back transaction on the live database (see
+`supabase/migrations/README.md`). Rollback: `supabase/rollbacks/20261114192638_add_agent_proposals.sql`.
+
 ## 10. Checking this file against the database
 
 Do not trust the above. The database answers all of it, and the Supabase MCP is the

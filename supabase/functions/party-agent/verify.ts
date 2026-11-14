@@ -101,6 +101,15 @@ export function copiedFromPage(description: string, text: string): boolean {
   return false
 }
 
+// Die Quellseite als kleingeschriebener Text, nur wenn robots.txt es erlaubt. Auch fuer die
+// Nachpruefung freigegebener Events (Schritt 6, recheck.ts).
+export async function readPage(url: URL, robots: RobotsCache): Promise<{ ok: true; text: string } | { ok: false; reason: string }> {
+  if (!(await robotsAllows(url, robots))) return { ok: false, reason: 'robots.txt verbietet' }
+  const r = await fetch(url, { headers: { 'user-agent': UA }, redirect: 'follow', signal: AbortSignal.timeout(15000) })
+  if (!r.ok) return { ok: false, reason: `HTTP ${r.status}` }
+  return { ok: true, text: pageText((await r.text()).slice(0, MAX_PAGE_CHARS)) }
+}
+
 export type Check = { ok: boolean; reasons: string[]; priceConfirmed: boolean | null }
 
 export async function checkEvent(ev: FoundEvent, window: Window, robots: RobotsCache): Promise<Check> {
@@ -114,10 +123,9 @@ export async function checkEvent(ev: FoundEvent, window: Window, robots: RobotsC
   if (url.protocol !== 'https:' && url.protocol !== 'http:') return fail('source_url ungueltig')
   if (ev.date < window.start || ev.date > window.end) return fail('Datum ausserhalb des Fensters')
   try {
-    if (!(await robotsAllows(url, robots))) return fail('robots.txt verbietet')
-    const r = await fetch(url, { headers: { 'user-agent': UA }, redirect: 'follow', signal: AbortSignal.timeout(15000) })
-    if (!r.ok) return fail(`HTTP ${r.status}`)
-    const text = pageText((await r.text()).slice(0, MAX_PAGE_CHARS))
+    const page = await readPage(url, robots)
+    if (!page.ok) return fail(page.reason)
+    const text = page.text
     const reasons: string[] = []
     if (text.length < 300) reasons.push('Seite fast leer (vermutlich JavaScript)')
     if (!wordsMatch(ev.name, text, 0.5)) reasons.push('Name nicht auf der Seite')

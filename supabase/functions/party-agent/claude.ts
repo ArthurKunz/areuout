@@ -86,3 +86,18 @@ export async function runClaude(prompt: string, total: Usage): Promise<string> {
   }
   throw new Error('Keine Antwort nach der letzten Runde')
 }
+
+// Ein kurzer Aufruf ohne Werkzeuge fuer die Nachpruefung (Schritt 6): die Seite liest der
+// Code selbst, Claude zieht nur die Fakten heraus. Gleiche Preisrechnung wie oben.
+export async function askClaude(prompt: string, total: Usage): Promise<string> {
+  const client = new Anthropic({ apiKey: Deno.env.get('ANTHROPIC_API_KEY') })
+  const res = await client.messages.create({ model: MODEL, max_tokens: 1000, messages: [{ role: 'user', content: prompt }] })
+  const input = res.usage.input_tokens ?? 0
+  const output = res.usage.output_tokens ?? 0
+  const p = input > LONG_FROM ? PRICE_LONG : PRICE
+  total.inputTokens += input
+  total.outputTokens += output
+  total.costUsd += (input * p.in + output * p.out) / 1e6
+  if (res.stop_reason === 'refusal') throw new Error('Claude hat abgelehnt')
+  return res.content.flatMap((b) => (b.type === 'text' ? [b.text] : [])).join('\n')
+}
