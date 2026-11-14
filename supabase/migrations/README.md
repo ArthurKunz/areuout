@@ -447,3 +447,23 @@ Vorher in einer zurückgerollten Transaktion auf der Live-Datenbank getestet (Fr
 Verwerfen, 42501 für Nicht-Admins, kein EXECUTE für anon), danach erneut geprüft. Die
 Advisors zeigen nur die vier neuen Funktionen für authenticated, wie gewollt. Warum es so
 gebaut ist, steht in `SCHEMA.md`, Abschnitt 9f.
+
+## Die Migration für Agent-Events in der App (Schritt 5, 14.11.2026)
+
+| Datei | Was sie ändert | Wie angewendet | Version |
+|---|---|---|---|
+| `20261114184640_add_agent_display.sql` | `get_agent_event_details` mit `going_count`, Trigger `reports_push_organizer` (Push an die Admins bei einer Veranstalter-Meldung auf einem Agent-Event), `get_agent_reports`, `remove_agent_event`, `keep_agent_event` (nur authenticated, alle prüfen `private.is_admin()`) | `apply_migration`, am 14.11.2026 | echt |
+
+Danach in einer zurückgerollten Transaktion auf der Live-Datenbank geprüft: ein Fremder
+sieht `going_count` 1 und keine Namen, bekommt 42501 auf die drei Admin-Funktionen; eine
+Veranstalter-Meldung reiht zwei Anfragen ein (E-Mail und Push); der Admin sieht die Meldung,
+`remove_agent_event` löscht das Event und sperrt die Quelle; anon hat kein EXECUTE. Die
+Advisors zeigen nur die drei neuen Funktionen für authenticated, wie gewollt. Rollback:
+`supabase/rollbacks/20261114184640_add_agent_display.sql`.
+
+| Datei | Was sie ändert | Wie angewendet | Version |
+|---|---|---|---|
+| `20261114191338_discard_drafts_of_removed_source.sql` | `remove_agent_event` setzt zusätzlich alle offenen Entwürfe derselben Quelle auf `discarded` (Fund aus dem iPhone-Test) | `apply_migration`, am 14.11.2026 | echt |
+
+Danach in einer zurückgerollten Transaktion geprüft: ein zweiter Entwurf derselben Quelle
+steht nach `remove_agent_event` auf `discarded`, Entwürfe anderer Quellen bleiben offen.

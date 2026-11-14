@@ -536,8 +536,19 @@ export type Database = {
         Args: { p_event_id: string }
         Returns: {
           cancelled_at: string
+          going_count: number
           organizer_name: string
           source_url: string
+        }[]
+      }
+      get_agent_reports: {
+        Args: never
+        Returns: {
+          event_date: string
+          event_id: string
+          report_count: number
+          source_url: string
+          title: string
         }[]
       }
       get_event_attendees: {
@@ -814,11 +825,13 @@ export type Database = {
         }[]
       }
       is_party_member: { Args: { p_event_id: string }; Returns: boolean }
+      keep_agent_event: { Args: { p_event_id: string }; Returns: undefined }
       party_has_room: {
         Args: { p_event_id: string; p_user_id: string }
         Returns: boolean
       }
       register_push_token: { Args: { p_token: string }; Returns: undefined }
+      remove_agent_event: { Args: { p_event_id: string }; Returns: undefined }
       request_to_join: { Args: { p_event_id: string }; Returns: undefined }
       rsvp_is_open: { Args: { p_event_id: string }; Returns: boolean }
       set_single_pool_response: {

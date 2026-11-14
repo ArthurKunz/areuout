@@ -13,7 +13,7 @@ import { getDetailPolls, type DetailPoll } from '@/features/parties/services/poo
 import { supabase } from '@/lib/supabase/client'
 import type { RsvpStatus } from '@/features/parties/types/parties.types'
 import { alertError, isPartyOver } from '@/lib/utils'
-import DetailCards, { type DetailPage, type PartyDetailRow } from './DetailCards'
+import DetailCards, { type AgentInfo, type DetailPage, type PartyDetailRow } from './DetailCards'
 import DetailHeader from './DetailHeader'
 import GuestsPage from './GuestsPage'
 import HostActions from './HostActions'
@@ -49,6 +49,8 @@ type Loaded = {
   full: boolean
   // Host only: the open join requests for the card `Anfragen`.
   requests: JoinRequest[]
+  // An agent event (Party Agent step 5): get_agent_event_details answers only for those.
+  agent: AgentInfo | null
 }
 
 // The party detail container (App Redesign 3.5), built once for every place that opens
@@ -124,9 +126,10 @@ export default function PartyDetail({
         ? supabase.rpc('get_party_join_requests', { p_event_id: partyId })
         : Promise.resolve({ data: null, error: null }),
       supabase.auth.getSession(),
-    ]).then(async ([detail, polls, code, requests, session]) => {
+      supabase.rpc('get_agent_event_details', { p_event_id: partyId }).maybeSingle(),
+    ]).then(async ([detail, polls, code, requests, session, agent]) => {
       if (cancelled) return
-      const error = detail.error ?? polls.error ?? code.error ?? requests.error
+      const error = detail.error ?? polls.error ?? code.error ?? requests.error ?? agent.error
       if (error) {
         console.error('[areuout]', error.message)
         setFailed(true)
@@ -159,6 +162,9 @@ export default function PartyDetail({
         requested: party.my_status === 'requested',
         full,
         requests: requests.data ?? [],
+        agent: agent.data
+          ? { sourceUrl: agent.data.source_url, organizerName: agent.data.organizer_name, goingCount: agent.data.going_count }
+          : null,
       })
       onLoaded?.(party)
     })
@@ -194,7 +200,7 @@ export default function PartyDetail({
     )
   }
 
-  const { party, polls, questions, inviteCode, userId, requested, full, requests } = loaded
+  const { party, polls, questions, inviteCode, userId, requested, full, requests, agent } = loaded
   // Without a missing part, like ProfilePage: the areuout system account has no last name
   // and showed as `areuout null`.
   const hostName = [party.host_firstname, party.host_lastname].filter(Boolean).join(' ')
@@ -205,6 +211,13 @@ export default function PartyDetail({
     avatarUrl: party.host_avatar_url,
     avatarColor: party.host_avatar_color,
   }
+  // The count was read with the viewer's answer at load time; their own taps since then
+  // move it, so `Teilnehmen` shows at once without reading it again.
+  const agentInfo = agent && {
+    ...agent,
+    goingCount: agent.goingCount - Number(party.my_status === 'going') + Number(myStatus === 'going'),
+  }
+
   // The host votes and answers in their own party (Polls.md, Question.md); everyone
   // else needs an answer to the party first.
   const canAnswer = viewer === 'host' || myStatus !== null
@@ -415,7 +428,17 @@ export default function PartyDetail({
           hostName={hostName}
           isPublic={party.is_public}
           onClose={onClose}
-          onHost={party.host_id === userId ? undefined : () => openProfile(host)}
+          // An agent event names no host to open: areuout only lists it (Party Agent
+          // section 8 "Display"), and the system account has no profile worth showing.
+          onHost={agent || party.host_id === userId ? undefined : () => openProfile(host)}
+          byline={
+            agent && (
+              <>
+                <span className='text-text-3 text-text'>gelistet von areuout</span>
+                {agent.organizerName && <span className='text-text-3 text-text'>Veranstalter: {agent.organizerName}</span>}
+              </>
+            )
+          }
           actions={
             viewer === 'host' && inviteCode ? (
               <HostActions
@@ -429,7 +452,7 @@ export default function PartyDetail({
             ) : userId && party.host_id !== userId ? (
               // ⋯ to report the party, left of the RSVP button (step 13b).
               <>
-                <PartyMenu partyId={party.id} hostId={party.host_id} />
+                <PartyMenu partyId={party.id} hostId={party.host_id} agent={agent !== null} />
                 {rsvp}
               </>
             ) : (
@@ -457,6 +480,7 @@ export default function PartyDetail({
               userId={userId}
               canAnswer={canAnswer}
               requestCount={viewer === 'host' ? requests.length : 0}
+              agent={agentInfo}
               onPollChange={changePoll}
               onPollSaved={reloadPolls}
               onOpen={open}

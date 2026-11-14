@@ -822,6 +822,33 @@ gets 42501 on all three admin RPCs, `am_i_admin` false, and sees an approved eve
 `get_explore_parties`; anon holds no EXECUTE; `queue_admin_push` queues nothing for an
 admin without tokens. Rollback: `supabase/rollbacks/20261113200537_add_agent_review.sql`.
 
+**Agent events in the app (agent step 5, 2026-11-14).** Migration `20261114184640`:
+
+- `get_agent_event_details` also returns `going_count`, the number of `going` RSVPs. The
+  count functions (`get_rsvp_counts_by_status`) answer only party members, so a stranger
+  would see 0. Same rules as before: public, still visible agent events, signed-in callers
+  only. Still no names anywhere. The app shows `gelistet von areuout`, `Veranstalter: …`,
+  the count and `Quelle ansehen` whenever this function returns a row.
+- Report reason `organizer` on an agent event: the AFTER INSERT trigger
+  `reports_push_organizer` (`private.push_organizer_report`) calls `private.queue_admin_push`
+  with `Veranstalter-Meldung: <title>` (title only, no name). The email to Arthur
+  (`reports_email_new`) still goes out as for every report. The app offers the reason only
+  on agent events.
+- Three admin RPCs (authenticated only, `private.is_admin()` first, 42501 otherwise):
+  `get_agent_reports()` lists open organiser reports per agent event; `keep_agent_event(id)`
+  sets them to `handled`; `remove_agent_event(id)` writes the source link to
+  `private.agent_blocked_sources` (`organizer_request`) and then deletes the event.
+  **The order matters:** `agent_candidates.event_id` cascades, so deleting the event also
+  deletes the approved candidate the agent used to recognise the source. Without the block
+  the next run would add the event again. Since migration `20261114191338` it also sets
+  every open draft of the same source link to `discarded` (other dates of a recurring
+  event, found in the iPhone test). **Known gap:** the block hangs on the link, not on the
+  event, so the same event found on another site comes back as a draft (parked in the
+  vault's build order).
+
+Verified 2026-11-14 in one rolled-back transaction on the live database (see
+`supabase/migrations/README.md`). Rollback: `supabase/rollbacks/20261114184640_add_agent_display.sql`.
+
 ## 10. Checking this file against the database
 
 Do not trust the above. The database answers all of it, and the Supabase MCP is the

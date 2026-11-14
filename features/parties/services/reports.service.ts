@@ -3,7 +3,7 @@ import type { Database } from '@/types/database.types'
 
 type RpcArgs = Database['public']['Functions']['submit_report']['Args']
 
-// The four reasons reports.reason allows (CHECK reports_reason_check), in the order the
+// The four reasons every report offers, of the five reports.reason allows (CHECK reports_reason_check), in the order the
 // dialog lists them. No free text (SCHEMA.md 9c).
 export const REPORT_REASONS = [
   { value: 'spam', label: 'Spam' },
@@ -12,7 +12,12 @@ export const REPORT_REASONS = [
   { value: 'other', label: 'Etwas anderes' },
 ] as const
 
-export type ReportReason = (typeof REPORT_REASONS)[number]['value']
+// The fifth reason, offered only on agent events (Party Agent section 8 "Organisers"):
+// the organiser asks for the event to be removed. A report with it pushes Arthur
+// (trigger reports_push_organizer, SCHEMA.md 9f).
+export const ORGANIZER_REASON = { value: 'organizer', label: 'Ich bin der Veranstalter' } as const
+
+export type ReportReason = (typeof REPORT_REASONS)[number]['value'] | typeof ORGANIZER_REASON.value
 
 // What is reported, exactly as submit_report checks it: a party names its host, an
 // answer its author, its party and its text as shown, a person only themself.

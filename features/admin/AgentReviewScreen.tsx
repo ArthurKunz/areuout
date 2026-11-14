@@ -2,15 +2,17 @@
 
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { CircleAlert, Copy } from 'lucide-react'
+import { CircleAlert, Copy, Flag } from 'lucide-react'
 import { FitSheet } from '@/components/shell/Shell'
 import StepFrame from '@/features/create-party/StepFrame'
 import LoadError from '@/components/shared/LoadError'
 import { Alert, AlertDescription, AlertTitle } from '@/components/shared/Alert'
+import ConfirmPrompt from '@/features/party-detail/ConfirmPrompt'
 import { supabase } from '@/lib/supabase/client'
 import type { Database } from '@/types/database.types'
 
 type Draft = Database['public']['Functions']['get_agent_drafts']['Returns'][number]
+type Report = Database['public']['Functions']['get_agent_reports']['Returns'][number]
 
 const pad = (n: number) => String(n).padStart(2, '0')
 // Formats as in the detail's cards (DetailCards), plus the weekday: 'Mi., 18.11.26', HH:MM, '5€'.
@@ -37,21 +39,33 @@ const textButton = 'shrink-0 text-text-3 font-semibold transition-opacity durati
 // `Freigeben` publishes it, `Verwerfen` drops it; the card leaves at once and comes back
 // if the call fails, as in MeBlockedScreen. `Quelle ansehen` sits high up because a
 // draft must be checked against its source before it is approved.
+// Above the drafts, the agent events an organiser asked to remove (step 5, Party Agent
+// section 8 "Organisers"): `Entfernen` deletes the event and blocks its source link,
+// after a question since it cannot be undone; `Behalten` closes the reports.
 export default function AgentReviewScreen() {
   const router = useRouter()
   const [drafts, setDrafts] = useState<Draft[] | null>(null)
+  const [reports, setReports] = useState<Report[] | null>(null)
+  // The report whose `Entfernen` is being asked about, and the one last asked about: the
+  // prompt keeps its title while it fades out (GuestsPage).
+  const [removing, setRemoving] = useState<Report | null>(null)
+  const [asked, setAsked] = useState<Report | null>(null)
+  if (removing && removing !== asked) setAsked(removing)
+  const [pending, setPending] = useState(false)
   const [failed, setFailed] = useState(false)
   const [attempt, setAttempt] = useState(0)
   const [actionFailed, setActionFailed] = useState<string | null>(null)
 
   useEffect(() => {
-    supabase.rpc('get_agent_drafts').then(({ data, error }) => {
+    Promise.all([supabase.rpc('get_agent_drafts'), supabase.rpc('get_agent_reports')]).then(([draftList, reportList]) => {
+      const error = draftList.error ?? reportList.error
       if (error) {
         console.error('[areuout]', error.message)
         setFailed(true)
         return
       }
-      setDrafts(data)
+      setDrafts(draftList.data)
+      setReports(reportList.data)
     })
   }, [attempt])
 
@@ -69,6 +83,33 @@ export default function AgentReviewScreen() {
     }
   }
 
+  const keep = async (report: Report) => {
+    setActionFailed(null)
+    const index = reports?.indexOf(report) ?? 0
+    setReports((current) => current?.filter((item) => item.event_id !== report.event_id) ?? null)
+    const { error } = await supabase.rpc('keep_agent_event', { p_event_id: report.event_id })
+    if (error) {
+      console.error('[areuout]', error.message)
+      setReports((current) => current && [...current.slice(0, index), report, ...current.slice(index)])
+      setActionFailed(`${report.title}: ${error.message}`)
+    }
+  }
+
+  const remove = async () => {
+    if (!removing) return
+    setActionFailed(null)
+    setPending(true)
+    const { error } = await supabase.rpc('remove_agent_event', { p_event_id: removing.event_id })
+    setPending(false)
+    if (error) {
+      console.error('[areuout]', error.message)
+      setActionFailed(`${removing.title}: ${error.message}`)
+    } else {
+      setReports((current) => current?.filter((item) => item.event_id !== removing.event_id) ?? null)
+    }
+    setRemoving(null)
+  }
+
   return (
     <>
       <FitSheet />
@@ -83,7 +124,7 @@ export default function AgentReviewScreen() {
               }}
             />
           </div>
-        ) : !drafts ? (
+        ) : !drafts || !reports ? (
           <div className='h-27.5 w-full max-w-[350px] rounded-[25px] skeleton' />
         ) : (
           <>
@@ -96,7 +137,40 @@ export default function AgentReviewScreen() {
                 </Alert>
               </div>
             )}
-            {drafts.length === 0 ? (
+            {reports.map((report) => (
+              <article key={report.event_id} className='flex w-full max-w-[350px] flex-col gap-3 rounded-[25px] bg-main p-4'>
+                <div className='flex flex-col gap-1'>
+                  <h2 className='text-text-2 font-bold text-heading'>{report.title}</h2>
+                  <span className='text-text-3 text-text'>
+                    {formatDate(report.event_date)} · {formatTime(report.event_date)}
+                  </span>
+                  <a
+                    href={report.source_url}
+                    target='_blank'
+                    rel='noopener noreferrer'
+                    className='truncate text-text-3 font-semibold text-brand transition-opacity duration-(--duration-press) ease-ios active:opacity-60'
+                  >
+                    Quelle ansehen
+                  </a>
+                </div>
+                <Alert tone='notice'>
+                  <Flag />
+                  <AlertDescription>
+                    {report.report_count === 1 ? 'Veranstalter-Meldung' : `${report.report_count} Meldungen`}
+                  </AlertDescription>
+                </Alert>
+                <div className='h-px w-full bg-divider' />
+                <div className='flex items-center justify-between'>
+                  <button type='button' onClick={() => keep(report)} className={`${textButton} text-text`}>
+                    Behalten
+                  </button>
+                  <button type='button' onClick={() => setRemoving(report)} className={`${textButton} text-red`}>
+                    Entfernen
+                  </button>
+                </div>
+              </article>
+            ))}
+            {drafts.length === 0 && reports.length === 0 ? (
               <div className='flex flex-col items-center gap-1 pt-2 text-center'>
                 <span className='text-text-2 font-bold text-heading'>Alles erledigt</span>
                 <span className='text-text-3 text-text'>Am {nextRunDay()} sucht der Agent wieder</span>
@@ -145,6 +219,17 @@ export default function AgentReviewScreen() {
           </>
         )}
       </StepFrame>
+      {asked && (
+        <ConfirmPrompt
+          open={removing !== null}
+          title={`${asked.title} entfernen?`}
+          message='Das Event verschwindet für alle, und der Agent nimmt diese Quelle nicht wieder auf.'
+          confirmLabel='Entfernen'
+          pending={pending}
+          onConfirm={remove}
+          onCancel={() => setRemoving(null)}
+        />
+      )}
     </>
   )
 }

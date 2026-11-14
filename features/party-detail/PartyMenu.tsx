@@ -9,7 +9,8 @@ const menuItem = 'flex h-11 w-full items-center gap-3 px-4 text-text-1'
 
 // ⋯ for everyone but the host (step 13b), left of the RSVP button: the host's menu
 // (HostActions) with one item, `Party melden`, which reports the party and its host.
-export default function PartyMenu({ partyId, hostId }: { partyId: string; hostId: string }) {
+// On an agent event the report also offers `Ich bin der Veranstalter`.
+export default function PartyMenu({ partyId, hostId, agent = false }: { partyId: string; hostId: string; agent?: boolean }) {
   const [menuOpen, setMenuOpen] = useState(false)
   const [reporting, setReporting] = useState(false)
   const menuRef = useRef<HTMLDivElement>(null)
@@ -52,6 +53,7 @@ export default function PartyMenu({ partyId, hostId }: { partyId: string; hostId
         open={reporting}
         title='Party melden'
         target={{ kind: 'party', reportedUserId: hostId, eventId: partyId }}
+        organizer={agent}
         onClose={() => setReporting(false)}
       />
     </>
