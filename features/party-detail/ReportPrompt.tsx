@@ -3,7 +3,7 @@
 import { useState } from 'react'
 import { Check, CircleAlert } from 'lucide-react'
 import { Alert, AlertDescription, AlertTitle } from '@/components/shared/Alert'
-import { REPORT_REASONS, submitReport, type ReportReason, type ReportTarget } from '@/features/parties/services/reports.service'
+import { ORGANIZER_REASON, REPORT_REASONS, submitReport, type ReportReason, type ReportTarget } from '@/features/parties/services/reports.service'
 import { INTERNAL_DETAIL } from '@/lib/utils'
 import ConfirmPrompt from './ConfirmPrompt'
 
@@ -16,13 +16,17 @@ export default function ReportPrompt({
   open,
   title,
   target,
+  organizer = false,
   onClose,
 }: {
   open: boolean
   title: string
   target: ReportTarget
+  // An agent event: `Ich bin der Veranstalter` comes first.
+  organizer?: boolean
   onClose: () => void
 }) {
+  const reasons = organizer ? [ORGANIZER_REASON, ...REPORT_REASONS] : REPORT_REASONS
   const [reason, setReason] = useState<ReportReason | null>(null)
   const [pending, setPending] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -79,7 +83,7 @@ export default function ReportPrompt({
       {/* RsvpStatusMenu's rows: the tick keeps its column, so a new choice moves only
           the tick. */}
       <div role='radiogroup' aria-label='Grund' className='flex w-full flex-col'>
-        {REPORT_REASONS.map((option, i) => (
+        {reasons.map((option, i) => (
           <div key={option.value}>
             {i > 0 && <div className='mx-3 h-px rounded-full bg-divider' />}
             <button
