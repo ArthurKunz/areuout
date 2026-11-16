@@ -15,7 +15,9 @@
 // Zeile pro Aufruf) und last_checked_at in public.agent_event_details, nie public.events.
 // Das private Schema ist fuer die API-Rollen gesperrt, auch fuer service_role. Deshalb geht
 // die Funktion direkt ueber SUPABASE_DB_URL in die Datenbank (SCHEMA.md 9f).
-// Jeder Fehler landet als Text in der Lauf-Zeile.
+// Jeder Fehler landet als Text in der Lauf-Zeile. Seit Schritt 7 startet pg_cron jeden Montag
+// und Donnerstag die vier Kategorien nacheinander (private.call_party_agent) und schickt
+// danach eine Push fuer den ganzen Lauf (private.finish_agent_run).
 
 import { timingSafeEqual } from 'jsr:@std/crypto@1/timing-safe-equal'
 import postgres from 'npm:postgres@3.4.5'
@@ -263,25 +265,8 @@ Deno.serve(async (req) => {
       web_searches = ${usage.searches}, cost_usd = ${cost}, error = ${error}
     where id = ${run.id}`
 
-  // Eine Push an die Admins pro Aufruf (Schritt 4): bei neuen Entwuerfen oder wenn der Lauf
-  // gescheitert ist. Schritt 7 buendelt das zu einer Push pro vollem Lauf. Die Push darf den
-  // Lauf nie scheitern lassen; queue_admin_push faengt seine Fehler selbst.
-  // Ab Schritt 6 zaehlen die Vorschlaege mit.
-  const parts = [
-    counts.drafts && (counts.drafts === 1 ? '1 neues Event' : `${counts.drafts} neue Events`),
-    recheck.proposals && (recheck.proposals === 1 ? '1 Änderung' : `${recheck.proposals} Änderungen`),
-  ].filter(Boolean)
-  const waiting = counts.drafts + recheck.proposals
-  const push = waiting
-    ? `${parts.join(' und ')} ${waiting === 1 ? 'wartet' : 'warten'} auf dich`
-    : error ? `Agent-Lauf fehlgeschlagen: ${category.id} – ${error}`.slice(0, 200) : null
-  if (push) {
-    try {
-      await sql`select private.queue_admin_push(${push})`
-    } catch (err) {
-      console.error('admin push failed', err instanceof Error ? err.name : 'unknown')
-    }
-  }
+  // Keine Push mehr pro Aufruf: seit Schritt 7 schickt private.finish_agent_run eine Push
+  // pro vollem Lauf (alle vier Kategorien), auch fuer Fehler.
   await sql.end()
 
   // Nur Zahlen und Gruende, keine Inhalte.

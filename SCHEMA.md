@@ -877,6 +877,37 @@ Verified 2026-11-14 in one rolled-back transaction on the live database (see
 Verified 2026-11-14 in one rolled-back transaction on the live database (see
 `supabase/migrations/README.md`). Rollback: `supabase/rollbacks/20261114192638_add_agent_proposals.sql`.
 
+**Schedule (agent step 7, 2026-11-15).** Migration `20261115205332`:
+
+- `pg_cron` is on. Jobs (pg_cron runs in UTC; 13:00 UTC is 14:00 in Leipzig in winter,
+  15:00 in summer): `party-agent-club`, `-concert`, `-festival`, `-open-air` every Monday
+  and Thursday at 13:00, 13:10, 13:20, 13:30, then `party-agent-finish` at 13:50;
+  `agent-expire-candidates` every hour at :05. `select jobname, schedule from cron.job;`
+- `private.call_party_agent(category)` posts to `party-agent` through pg_net with the header
+  `x-agent-secret`, read at call time from Vault `agent_secret` (entered by Arthur, same value
+  as the function secret `AGENT_SECRET`). The secret is in no migration, job text or log.
+  Without it the function writes an error row (`Nicht gestartet: Vault-Secret …`).
+- `private.finish_agent_run()` looks at the rows of the last 55 minutes: a call without
+  `finished_at` gets `Abgebrochen: kein Abschluss …`, a category without a row gets an error
+  row `Nicht gestartet: keine Antwort von party-agent` (e.g. a wrong secret, 403). Then
+  **one** admin push per full run through `private.queue_admin_push`: `… neue Events und …
+  Änderungen warten auf dich` and/or `Agent-Lauf fehlgeschlagen: <categories> – <reason>`.
+  No retry; the next scheduled run starts normally. `party-agent` itself no longer pushes
+  (it did once per call since step 4), so a manual curl run pushes nothing; call
+  `select private.finish_agent_run();` afterwards for the push.
+- `private.expire_agent_candidates()`: the expiry rules of `get_agent_drafts` and
+  `get_agent_proposals` on a schedule (both RPCs still expire on load as well).
+- `private.agent_cost_by_month` (security_invoker): calls, failed calls, drafts, proposals,
+  tokens, searches and `cost_usd` per month in Leipzig time. SQL editor only.
+
+All three functions are owner only (no EXECUTE for public, anon, authenticated).
+
+Verified 2026-11-15/16 on production: a rolled-back transaction for the error paths (no
+secret, unfinished call, missing category, nothing found gives no push); then two real
+runs with the jobs set to a one-off time: all four categories (11 drafts, 0.53 $) and one
+push; with a broken `ANTHROPIC_API_KEY` four error rows (401) and one push
+`Agent-Lauf fehlgeschlagen`. Rollback: `supabase/rollbacks/20261115205332_schedule_party_agent.sql`.
+
 ## 10. Checking this file against the database
 
 Do not trust the above. The database answers all of it, and the Supabase MCP is the
