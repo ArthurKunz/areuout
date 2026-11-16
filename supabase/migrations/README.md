@@ -483,3 +483,16 @@ Funktionen; die Änderung verschiebt Datum, `starts_on` und Preis und reiht eine
 die Absage setzt `cancelled_at`, `rsvp_is_open` ist danach false, Push
 `Die Party wurde abgesagt`; ein zweites Freigeben gibt P0002.
 
+
+## Die Migration für den Zeitplan (Agent-Schritt 7, 15.11.2026)
+
+| Datei | Was sie ändert | Wie angewendet | Version |
+|---|---|---|---|
+| `20261115205332_schedule_party_agent.sql` | `pg_cron` an; `private.call_party_agent`, `private.finish_agent_run`, `private.expire_agent_candidates` (nur Owner); View `private.agent_cost_by_month`; sechs Cron-Jobs (Mo + Do 13:00–13:50 UTC, stündlich Ablauf) | `apply_migration`, am 15.11.2026 | echt |
+
+Vorher in einer zurückgerollten Transaktion auf der Live-Datenbank geprüft (Fehler-Zeile ohne
+Vault-Secret, abgebrochener Aufruf, fehlende Kategorie, eine gebündelte Push, keine Push ohne
+Funde). Danach zwei echte Läufe mit einmalig umgestellten Zeiten: alle vier Kategorien und eine
+Push; mit kaputtem `ANTHROPIC_API_KEY` vier Fehler-Zeilen und die Push `Agent-Lauf
+fehlgeschlagen`. Die Advisors zeigen nichts Neues. Das Vault-Secret `agent_secret` hat Arthur
+selbst angelegt.
