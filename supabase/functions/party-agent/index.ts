@@ -32,7 +32,9 @@ const MAX_EVENTS = 60
 const PARALLEL_CHECKS = 5
 // Zeitbudget fuer den ganzen Aufruf. Das harte Limit der Plattform liegt darueber.
 const BUDGET_MS = 300_000
-const TITLE_MAX = 60
+// The prompt asks for at most 20 characters (one line in the app, step 8c); this only
+// catches a longer answer and cuts it at a word with an ellipsis.
+const TITLE_MAX = 25
 const DESCRIPTION_MAX = 500
 const FREE = 'Eintritt frei.'
 
