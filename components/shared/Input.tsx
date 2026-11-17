@@ -17,7 +17,8 @@ export function InputRow({
   value: string
   onChange: (next: string) => void
   placeholder?: string
-  type?: 'text' | 'number' | 'password' | 'email'
+  // 'url' brings the iPhone's address keyboard and no capital first letter.
+  type?: 'text' | 'number' | 'password' | 'email' | 'url'
   maxLength?: number
   inputMode?: 'text' | 'numeric' | 'decimal'
   autoComplete?: string

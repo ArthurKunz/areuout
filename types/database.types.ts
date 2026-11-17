@@ -506,6 +506,7 @@ export type Database = {
           p_price?: number
           p_questions: Json
           p_title: string
+          p_website_url?: string
         }
         Returns: string
       }
@@ -744,6 +745,7 @@ export type Database = {
           my_status: string
           price: number
           title: string
+          website_url: string
         }[]
       }
       get_party_guest_list: {
@@ -891,6 +893,7 @@ export type Database = {
           p_price?: number
           p_questions: Json
           p_title: string
+          p_website_url?: string
         }
         Returns: undefined
       }

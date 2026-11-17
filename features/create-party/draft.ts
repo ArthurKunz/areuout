@@ -31,6 +31,8 @@ export type PartyDraft = {
   description: string | null
   // Euro, up to 2 decimals. null means no price; 0 is not a second way of saying that.
   price: number | null
+  // Always with https:// (toWebsiteUrl). null means no link.
+  website: string | null
   // [] means the chip was not added.
   polls: PollDraft[]
   questions: string[]
@@ -51,6 +53,8 @@ export const LIMITS = {
   polls: 5,
   question: 60,
   questions: 5,
+  // events_website_url_check: the whole link, https:// included.
+  website: 500,
 } as const
 
 export function emptyDraft(): PartyDraft {
@@ -69,6 +73,7 @@ export function emptyDraft(): PartyDraft {
     dresscode: null,
     description: null,
     price: null,
+    website: null,
     polls: [],
     questions: [],
   }
@@ -145,13 +150,13 @@ export function toTimestamps(draft: PartyDraft): { eventDate: string; endsAt: st
 }
 
 type RpcArgs = Database['public']['Functions']['create_party']['Args']
-type NullableArg = 'p_ends_at' | 'p_description' | 'p_motto' | 'p_dresscode' | 'p_max_guests' | 'p_price'
+type NullableArg = 'p_ends_at' | 'p_description' | 'p_motto' | 'p_dresscode' | 'p_max_guests' | 'p_price' | 'p_website_url'
 
 // The generated Args type marks every parameter as required and non-null, because
 // Postgres function parameters carry no nullability. create_party does take null for
-// these six (no end, no description, motto, dresscode, guest cap or price), so they
-// are widened here. p_price is generated optional because it has a DEFAULT; it is
-// always sent anyway, so that it loses the `?` here is the shape we want.
+// these seven (no end, no description, motto, dresscode, guest cap, price or website),
+// so they are widened here. p_price and p_website_url are generated optional because
+// they have a DEFAULT; they are always sent anyway, so that it loses the `?` here is the shape we want.
 export type CreatePartyArgs = Omit<RpcArgs, NullableArg> & { [K in NullableArg]: RpcArgs[K] | null }
 
 export const orNull = (text: string | null) => text?.trim() || null
@@ -177,11 +182,38 @@ export function toRpcArgs(draft: PartyDraft, partyId: string, backgroundUrl: str
     p_dresscode: orNull(draft.dresscode),
     p_max_guests: draft.maxGuests,
     p_price: draft.price,
+    p_website_url: draft.website,
     p_polls: draft.polls.map((poll) => ({
       question: poll.question.trim(),
       options: poll.options.map((option) => option.trim()),
       allow_multiple: poll.allowMultiple,
     })),
     p_questions: draft.questions.map((question) => question.trim()),
+  }
+}
+
+// What the host typed as the link that gets saved: https:// in front (an http:// or
+// https:// typed by hand is replaced), or null when it is no address. events_website_url_check
+// holds the same rule in the database; this only lets the step say so before the save.
+export function toWebsiteUrl(input: string): string | null {
+  const rest = input.trim().replace(/^https?:\/\//i, '')
+  if (!rest || /\s/.test(rest)) return null
+  const url = `https://${rest}`
+  if (url.length > LIMITS.website) return null
+  try {
+    const { hostname } = new URL(url)
+    const labels = hostname.split('.')
+    return labels.length >= 2 && labels.every((label) => label.length > 0) ? url : null
+  } catch {
+    return null
+  }
+}
+
+// The link as the card shows it: the domain alone, without www. ('meineparty.de').
+export function websiteDomain(url: string): string {
+  try {
+    return new URL(url).hostname.replace(/^www\./, '')
+  } catch {
+    return url
   }
 }

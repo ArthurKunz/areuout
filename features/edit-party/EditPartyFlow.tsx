@@ -131,6 +131,7 @@ export default function EditPartyFlow({ partyId, userId }: { partyId: string; us
       case 'maxGuests':
       case 'dresscode':
       case 'price':
+      case 'website':
         return <SingleFieldStep field={screen.sub} {...sub} />
       case 'description':
         return <DescriptionStep {...sub} />
