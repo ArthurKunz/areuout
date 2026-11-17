@@ -2,6 +2,7 @@
 
 import { Fragment, type ReactNode } from 'react'
 import {
+  Building2,
   CalendarDays,
   ChartBar,
   ChevronRight,
@@ -77,6 +78,7 @@ const ICON_CLASS = {
   lime: 'bg-lime',
   slate: 'bg-slate',
   coral: 'bg-coral',
+  teal: 'bg-teal',
 } as const
 
 const linkRow = 'flex h-11 w-full items-center justify-between text-text-2 text-blue transition-opacity duration-(--duration-press) ease-ios active:opacity-60'
@@ -217,6 +219,12 @@ export default function DetailCards({
   }
   if (party.price) {
     half('preis', (wide) => <InfoCard icon={Euro} color='slate' title='Preis' value={formatPrice(party.price)} wide={wide} />)
+  }
+  // The host's own entry first; an agent event keeps its organiser in
+  // agent_event_details (step 8b), so it falls back to that.
+  const organizer = party.organizer_name || agent?.organizerName
+  if (organizer) {
+    half('veranstalter', (wide) => <InfoCard icon={Building2} color='teal' title='Veranstalter' value={organizer} wide={wide} />)
   }
   // get_party_detail hands the link only to those who see the address (Website Link 13).
   // It opens outside the app: Capacitor sends every host outside allowNavigation to

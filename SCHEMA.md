@@ -774,6 +774,12 @@ which answers only for public, still visible agent events and only for signed-in
   gets it. `create_party` and `update_party` take `p_website_url` (DEFAULT NULL).
   `update_party` keeps the link when the parameter is NULL, because the App Store version
   does not send it; `''` removes the link.
+- `events.organizer_name` (all parties, agent step 8b): CHECK 1–40 characters after trim,
+  its own `GRANT SELECT`. Returned by `get_party_detail` to everyone who gets the row (like
+  motto and price, not tied to the address); `create_party` and `update_party` take
+  `p_organizer_name` with the same keep rule as the website (NULL keeps, `''` removes). An
+  agent event keeps its organiser in `agent_event_details.organizer_name` (≤ 200); the app
+  shows that one when `events.organizer_name` is empty.
 
 **Admins.** `private.admins (user_id)` and `private.is_admin()`; no role column on
 `profiles`. Every admin function (agent step 4) checks `private.is_admin()` first.

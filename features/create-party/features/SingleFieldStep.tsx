@@ -30,10 +30,12 @@ const FIELDS = {
   dresscode: { label: 'Dresscode', placeholder: 'z.B. Verkleidung', maxLength: LIMITS.dresscode },
   price: { label: 'Preis', placeholder: 'z.B. 5€', maxLength: undefined },
   website: { label: 'Website', placeholder: 'z.B. meineparty.de', maxLength: LIMITS.website },
+  organizer: { label: 'Veranstalter', placeholder: 'z.B. Abi-Komitee 2027', maxLength: LIMITS.organizer },
 } as const
 
-// The Motto, max. Teilnehmer, Dresscode, Preis and Website sub-steps: one row each
-// (mockups Create 07–09 and 16; Website is built like Preis, Party Agent step 8). Works on a local copy; back discards it, Hinzufügen saves it.
+// The Motto, max. Teilnehmer, Dresscode, Preis, Website and Veranstalter sub-steps: one
+// row each (mockups Create 07–09 and 16; Website and Veranstalter are built like Preis,
+// Party Agent steps 8 and 8b). Works on a local copy; back discards it, Hinzufügen saves it.
 export default function SingleFieldStep({
   field,
   draft,
@@ -70,6 +72,8 @@ export default function SingleFieldStep({
         return onSave({ motto: trimmed })
       case 'dresscode':
         return onSave({ dresscode: trimmed })
+      case 'organizer':
+        return onSave({ organizer: trimmed })
       case 'website': {
         const website = toWebsiteUrl(trimmed)
         if (!website) return alertError('Das ist keine gültige Website. Zum Beispiel: meineparty.de')
