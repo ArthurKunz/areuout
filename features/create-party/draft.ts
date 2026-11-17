@@ -33,6 +33,8 @@ export type PartyDraft = {
   price: number | null
   // Always with https:// (toWebsiteUrl). null means no link.
   website: string | null
+  // Who organises the party, if not the host alone (e.g. a club or a school class).
+  organizer: string | null
   // [] means the chip was not added.
   polls: PollDraft[]
   questions: string[]
@@ -55,6 +57,7 @@ export const LIMITS = {
   questions: 5,
   // events_website_url_check: the whole link, https:// included.
   website: 500,
+  organizer: 40,
 } as const
 
 export function emptyDraft(): PartyDraft {
@@ -74,6 +77,7 @@ export function emptyDraft(): PartyDraft {
     description: null,
     price: null,
     website: null,
+    organizer: null,
     polls: [],
     questions: [],
   }
@@ -150,13 +154,13 @@ export function toTimestamps(draft: PartyDraft): { eventDate: string; endsAt: st
 }
 
 type RpcArgs = Database['public']['Functions']['create_party']['Args']
-type NullableArg = 'p_ends_at' | 'p_description' | 'p_motto' | 'p_dresscode' | 'p_max_guests' | 'p_price' | 'p_website_url'
+type NullableArg = 'p_ends_at' | 'p_description' | 'p_motto' | 'p_dresscode' | 'p_max_guests' | 'p_price' | 'p_website_url' | 'p_organizer_name'
 
 // The generated Args type marks every parameter as required and non-null, because
 // Postgres function parameters carry no nullability. create_party does take null for
-// these seven (no end, no description, motto, dresscode, guest cap, price or website),
-// so they are widened here. p_price and p_website_url are generated optional because
-// they have a DEFAULT; they are always sent anyway, so that it loses the `?` here is the shape we want.
+// these eight (no end, no description, motto, dresscode, guest cap, price, website or
+// organiser), so they are widened here. p_price, p_website_url and p_organizer_name are
+// generated optional because they have a DEFAULT; they are always sent anyway, so that it loses the `?` here is the shape we want.
 export type CreatePartyArgs = Omit<RpcArgs, NullableArg> & { [K in NullableArg]: RpcArgs[K] | null }
 
 export const orNull = (text: string | null) => text?.trim() || null
@@ -183,6 +187,7 @@ export function toRpcArgs(draft: PartyDraft, partyId: string, backgroundUrl: str
     p_max_guests: draft.maxGuests,
     p_price: draft.price,
     p_website_url: draft.website,
+    p_organizer_name: orNull(draft.organizer),
     p_polls: draft.polls.map((poll) => ({
       question: poll.question.trim(),
       options: poll.options.map((option) => option.trim()),

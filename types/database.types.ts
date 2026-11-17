@@ -101,6 +101,7 @@ export type Database = {
           location: string
           max_guests: number | null
           motto: string | null
+          organizer_name: string | null
           price: number | null
           title: string
           website_url: string | null
@@ -123,6 +124,7 @@ export type Database = {
           location: string
           max_guests?: number | null
           motto?: string | null
+          organizer_name?: string | null
           price?: number | null
           title: string
           website_url?: string | null
@@ -145,6 +147,7 @@ export type Database = {
           location?: string
           max_guests?: number | null
           motto?: string | null
+          organizer_name?: string | null
           price?: number | null
           title?: string
           website_url?: string | null
@@ -502,6 +505,7 @@ export type Database = {
           p_location: string
           p_max_guests: number
           p_motto: string
+          p_organizer_name?: string
           p_polls: Json
           p_price?: number
           p_questions: Json
@@ -743,6 +747,7 @@ export type Database = {
           max_guests: number
           motto: string
           my_status: string
+          organizer_name: string
           price: number
           title: string
           website_url: string
@@ -889,6 +894,7 @@ export type Database = {
           p_location: string
           p_max_guests: number
           p_motto: string
+          p_organizer_name?: string
           p_polls: Json
           p_price?: number
           p_questions: Json

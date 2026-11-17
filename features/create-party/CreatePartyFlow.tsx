@@ -107,6 +107,7 @@ export default function CreatePartyFlow({ from, userId }: { from: string; userId
     case 'dresscode':
     case 'price':
     case 'website':
+    case 'organizer':
       return <SingleFieldStep field={key} {...sub} />
     case 'description':
       return <DescriptionStep {...sub} />

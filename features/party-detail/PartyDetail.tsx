@@ -441,12 +441,9 @@ export default function PartyDetail({
           // section 8 "Display"), and the system account has no profile worth showing.
           onHost={agent || party.host_id === userId ? undefined : () => openProfile(host)}
           byline={
-            agent && (
-              <>
-                <span className='text-text-3 text-text'>gelistet von areuout</span>
-                {agent.organizerName && <span className='text-text-3 text-text'>Veranstalter: {agent.organizerName}</span>}
-              </>
-            )
+            // The organiser has its own card since step 8b, so the header names only
+            // who listed the event.
+            agent && <span className='text-text-3 text-text'>gelistet von areuout</span>
           }
           actions={
             viewer === 'host' && inviteCode ? (

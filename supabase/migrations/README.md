@@ -509,3 +509,16 @@ der Host sieht ihn; ein Speichern ohne `p_website_url` (wie die App-Store-App) b
 Fremder auf der privaten Party bekommt NULL; `http://` scheitert an `events_website_url_check`;
 `''` löscht ihn. Die Advisors zeigen nichts Neues. Rollback:
 `supabase/rollbacks/20261117202000_add_the_website_link_to_the_party_functions.sql`.
+
+
+## Die Migration für den Veranstalter (Agent-Schritt 8b, 17.11.2026)
+
+| Datei | Was sie ändert | Wie angewendet | Version |
+|---|---|---|---|
+| `20261117212113_add_an_organizer_to_a_party.sql` | `events.organizer_name` (CHECK 1–40 Zeichen nach Trim, `GRANT SELECT`); `get_party_detail` gibt sie zurück (wie Motto und Preis); `create_party` und `update_party` nehmen `p_organizer_name` mit derselben Behalten-Regel wie der Website-Link | `apply_migration`, am 17.11.2026 | echt |
+
+Danach in einer zurückgerollten Transaktion auf der Live-Datenbank geprüft: Anlegen mit
+Veranstalter (getrimmt); Speichern ohne den Parameter behält Veranstalter und Website; ein
+Fremder auf der privaten Party sieht den Veranstalter, aber keine Website; 41 Zeichen werden
+abgelehnt; `''` löscht nur den Veranstalter. Rollback:
+`supabase/rollbacks/20261117212113_add_an_organizer_to_a_party.sql`.
