@@ -14,6 +14,7 @@ const ADDED: Record<Feature, (d: PartyDraft) => boolean> = {
   questions: (d) => d.questions.length > 0,
   description: (d) => d.description !== null,
   price: (d) => d.price !== null,
+  website: (d) => d.website !== null,
 }
 
 const CLEARED: Record<Feature, Partial<PartyDraft>> = {
@@ -24,6 +25,7 @@ const CLEARED: Record<Feature, Partial<PartyDraft>> = {
   questions: { questions: [] },
   description: { description: null },
   price: { price: null },
+  website: { website: null },
 }
 
 // The optional features as chips (mockups Create 06). A plain chip opens its sub-step;

@@ -496,3 +496,16 @@ Funde). Danach zwei echte Läufe mit einmalig umgestellten Zeiten: alle vier Kat
 Push; mit kaputtem `ANTHROPIC_API_KEY` vier Fehler-Zeilen und die Push `Agent-Lauf
 fehlgeschlagen`. Die Advisors zeigen nichts Neues. Das Vault-Secret `agent_secret` hat Arthur
 selbst angelegt.
+
+
+## Die Migration für den Website-Link (Agent-Schritt 8, 17.11.2026)
+
+| Datei | Was sie ändert | Wie angewendet | Version |
+|---|---|---|---|
+| `20261117202000_add_the_website_link_to_the_party_functions.sql` | `get_party_detail` gibt `website_url` zurück (nur mit genauem Zugang, wie `location`); `create_party` und `update_party` nehmen `p_website_url` (DEFAULT NULL). `update_party` behält den Link bei NULL (die App-Store-App schickt ihn nicht), `''` löscht ihn | `apply_migration`, am 17.11.2026 | echt |
+
+Danach in einer zurückgerollten Transaktion auf der Live-Datenbank geprüft: Anlegen mit Link,
+der Host sieht ihn; ein Speichern ohne `p_website_url` (wie die App-Store-App) behält ihn; ein
+Fremder auf der privaten Party bekommt NULL; `http://` scheitert an `events_website_url_check`;
+`''` löscht ihn. Die Advisors zeigen nichts Neues. Rollback:
+`supabase/rollbacks/20261117202000_add_the_website_link_to_the_party_functions.sql`.

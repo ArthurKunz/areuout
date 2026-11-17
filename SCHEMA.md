@@ -767,7 +767,13 @@ which answers only for public, still visible agent events and only for signed-in
   a block would hide every agent event without explanation.
 - `reports.reason` also takes `organizer` ("Ich bin der Veranstalter").
 - `events.website_url` (all parties): CHECK `^https://`, no spaces, at most 500
-  characters, its own `GRANT SELECT` (section 2).
+  characters, its own `GRANT SELECT` (section 2). Since agent step 8 the app reads and
+  writes it through the party functions: `get_party_detail` returns `website_url` under
+  the same rule as `location` (only with exact access, and for everyone but the host only
+  until `private.party_visible_until`), so a stranger on a blurred private party never
+  gets it. `create_party` and `update_party` take `p_website_url` (DEFAULT NULL).
+  `update_party` keeps the link when the parameter is NULL, because the App Store version
+  does not send it; `''` removes the link.
 
 **Admins.** `private.admins (user_id)` and `private.is_admin()`; no role column on
 `profiles`. Every admin function (agent step 4) checks `private.is_admin()` first.

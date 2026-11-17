@@ -8,6 +8,7 @@ import {
   Clock,
   Euro,
   Footprints,
+  Globe,
   Info,
   Lightbulb,
   MessageCircleQuestion,
@@ -16,6 +17,7 @@ import {
   Users,
   type LucideIcon,
 } from 'lucide-react'
+import { websiteDomain } from '@/features/create-party/draft'
 import type { DetailPoll } from '@/features/parties/services/pools.service'
 import type { Database } from '@/types/database.types'
 import AnswerRow from './AnswerRow'
@@ -74,6 +76,7 @@ const ICON_CLASS = {
   yellow: 'bg-yellow',
   lime: 'bg-lime',
   slate: 'bg-slate',
+  coral: 'bg-coral',
 } as const
 
 const linkRow = 'flex h-11 w-full items-center justify-between text-text-2 text-blue transition-opacity duration-(--duration-press) ease-ios active:opacity-60'
@@ -214,6 +217,27 @@ export default function DetailCards({
   }
   if (party.price) {
     half('preis', (wide) => <InfoCard icon={Euro} color='slate' title='Preis' value={formatPrice(party.price)} wide={wide} />)
+  }
+  // get_party_detail hands the link only to those who see the address (Website Link 13).
+  // It opens outside the app: Capacitor sends every host outside allowNavigation to
+  // Safari, as with `Route anzeigen` and `Quelle ansehen`.
+  if (party.website_url) {
+    full(
+      'website',
+      <InfoCard
+        icon={Globe}
+        color='coral'
+        title='Website'
+        value={websiteDomain(party.website_url)}
+        wide
+        link={
+          <a href={party.website_url} target='_blank' rel='noopener noreferrer' className={linkRow}>
+            Website öffnen
+            <ChevronRight size={20} />
+          </a>
+        }
+      />
+    )
   }
   full(
     'teilnehmer',

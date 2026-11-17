@@ -137,6 +137,7 @@ takes one of the `--color-*` tokens from `globals.css`. Tailwind builds the `bg-
 |---|---|---|
 | `--color-lime` | #A4D400 | the open requests only: the `Anfragen` card in the detail and the `Anfragen` tile on its page. Added in step 11c with Arthur's approval. |
 | `--color-slate` | #7A8594 | the price only: the `Preis` chip in the Features step of Create and Edit Party, and the `Preis` card's icon in the detail. Added in step 11c with Arthur's approval. |
+| `--color-coral` | #FF6B6B | the website link only: the `Website` chip in the Features step of Create and Edit Party, and the `Website` card's icon in the detail. Added in Party Agent step 8 with Arthur's approval (2026-11-17). |
 
 The symbol stays `text-main-white`, as on every other icon circle. Any further colour
 needs Arthur's approval.
@@ -147,7 +148,7 @@ The detail's cards sit in a two-column grid (`features/party-detail/DetailCards.
 A card is either half width or full width:
 
 - Half width: `Datum`, `Uhrzeit`, `Dresscode`, `Motto`, `Preis`.
-- Full width: `Location`, `Teilnehmer`, `Anfragen`, `Infos`, every poll, every question.
+- Full width: `Location`, `Website`, `Teilnehmer`, `Anfragen`, `Infos`, every poll, every question.
 
 **Consecutive half-width cards fill a row in pairs; a half-width card left without a
 partner in its row takes the full width instead of leaving a gap.** A full-width card
