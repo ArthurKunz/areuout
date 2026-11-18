@@ -66,7 +66,7 @@ Rules:
 - Only real, public events you found on a web page. Never invent an event, a date, a time, a place or a price.
 - Every event needs the URL of the page where you found it ("source_url"). Prefer the organiser's or venue's own page over aggregators.
 - If a value is not stated on the source page, use null. Do not guess.
-- name: the event's name as stated, at most 60 characters (use the shortest official form).
+- name: a short display name, at most 20 characters, so it fits on one line in the app (hosts have the same limit). Keep the core name as stated; drop subtitles, tour names, years, venue names and separators like "•", "–" or "|". Examples: "Disco Live – 80er, 90er & Schlagerparty" becomes "Disco Live"; "A NIGHT LIKE THIS • The Alternative 80s Party" becomes "A Night Like This".
 - price_eur: the box office price, or the lowest stated price if there are several. 0 only if the page says the event is free. null if not stated.
 - description_de: 1-2 sentences in German, in your own words. Never copy text from the page.
 - Do not pull one single event calendar in bulk. Collect across several sources.
