@@ -33,6 +33,8 @@ export function toEditDraft(
     dresscode: party.dresscode,
     description: party.description,
     price: party.price,
+    website: party.website_url,
+    organizer: party.organizer_name,
     polls: polls.map((poll) => ({
       question: poll.question,
       options: poll.options.map((option) => option.label),
@@ -43,9 +45,9 @@ export function toEditDraft(
 }
 
 type RpcArgs = Database['public']['Functions']['update_party']['Args']
-type NullableArg = 'p_ends_at' | 'p_description' | 'p_motto' | 'p_dresscode' | 'p_max_guests' | 'p_price'
+type NullableArg = 'p_ends_at' | 'p_description' | 'p_motto' | 'p_dresscode' | 'p_max_guests' | 'p_price' | 'p_website_url' | 'p_organizer_name'
 
-// Widened like CreatePartyArgs in draft.ts: update_party takes null for these six.
+// Widened like CreatePartyArgs in draft.ts: update_party takes null for these eight.
 export type UpdatePartyArgs = Omit<RpcArgs, NullableArg> & { [K in NullableArg]: RpcArgs[K] | null }
 
 export function toUpdateArgs(draft: PartyDraft, partyId: string, backgroundUrl: string): UpdatePartyArgs {
@@ -67,6 +69,11 @@ export function toUpdateArgs(draft: PartyDraft, partyId: string, backgroundUrl: 
     p_dresscode: orNull(draft.dresscode),
     p_max_guests: draft.maxGuests,
     p_price: draft.price,
+    // update_party keeps the link on null (what the App Store version sends, which does
+    // not know the field), so a removed link goes as '' instead.
+    p_website_url: draft.website ?? '',
+    // Same keep rule as the website: null keeps, '' removes.
+    p_organizer_name: orNull(draft.organizer) ?? '',
     p_polls: draft.polls.map((poll) => ({
       question: poll.question.trim(),
       options: poll.options.map((option) => option.trim()),

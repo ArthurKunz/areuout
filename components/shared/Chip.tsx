@@ -14,11 +14,13 @@ const VARIANT_CLASS = {
   question: 'bg-yellow',
   description: 'bg-taupe',
   price: 'bg-slate',
+  website: 'bg-coral',
+  organizer: 'bg-teal',
 } as const
 
 // The 36px-tall pill used to pick which optional info a host adds to a
 // party (Motto, max. Teilnehmer, Umfrage, Dresscode, Frage, Beschreibung,
-// Preis).
+// Preis, Website, Veranstalter).
 // Once selected it gains a 20x20 remove circle: tapping the label opens the
 // info again to edit it (App Redesign 7.3), tapping the circle removes it —
 // two different actions, so two separate buttons.

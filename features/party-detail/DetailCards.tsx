@@ -2,12 +2,14 @@
 
 import { Fragment, type ReactNode } from 'react'
 import {
+  Building2,
   CalendarDays,
   ChartBar,
   ChevronRight,
   Clock,
   Euro,
   Footprints,
+  Globe,
   Info,
   Lightbulb,
   MessageCircleQuestion,
@@ -16,6 +18,7 @@ import {
   Users,
   type LucideIcon,
 } from 'lucide-react'
+import { websiteDomain } from '@/features/create-party/draft'
 import type { DetailPoll } from '@/features/parties/services/pools.service'
 import type { Database } from '@/types/database.types'
 import AnswerRow from './AnswerRow'
@@ -55,6 +58,13 @@ function routeUrl(address: string) {
     : `https://www.google.com/maps/dir/?api=1&destination=${destination}`
 }
 
+// An agent event shows how many are going, never who (Party Agent section 8 "Display").
+const goingText = (count: number) =>
+  count === 0 ? 'Noch niemand dabei' : count === 1 ? '1 ist dabei' : `${count} sind dabei`
+
+// What an agent event shows beyond a party (get_agent_event_details).
+export type AgentInfo = { sourceUrl: string; organizerName: string | null; goingCount: number; cancelled: boolean }
+
 const ICON_CLASS = {
   red: 'bg-red',
   green: 'bg-green',
@@ -67,6 +77,8 @@ const ICON_CLASS = {
   yellow: 'bg-yellow',
   lime: 'bg-lime',
   slate: 'bg-slate',
+  coral: 'bg-coral',
+  teal: 'bg-teal',
 } as const
 
 const linkRow = 'flex h-11 w-full items-center justify-between text-text-2 text-blue transition-opacity duration-(--duration-press) ease-ios active:opacity-60'
@@ -147,11 +159,14 @@ export default function DetailCards({
   userId,
   canAnswer,
   requestCount,
+  agent,
   onPollChange,
   onPollSaved,
   onOpen,
 }: {
   party: PartyDetailRow
+  // Set on an agent event: the count instead of the guest list, and the source link.
+  agent: AgentInfo | null
   polls: DetailPoll[]
   questions: DetailPoll[]
   userId: string | null
@@ -205,15 +220,42 @@ export default function DetailCards({
   if (party.price) {
     half('preis', (wide) => <InfoCard icon={Euro} color='slate' title='Preis' value={formatPrice(party.price)} wide={wide} />)
   }
+  // The host's own entry first; an agent event keeps its organiser in
+  // agent_event_details (step 8b), so it falls back to that.
+  const organizer = party.organizer_name || agent?.organizerName
+  if (organizer) {
+    half('veranstalter', (wide) => <InfoCard icon={Building2} color='teal' title='Veranstalter' value={organizer} wide={wide} />)
+  }
+  // get_party_detail hands the link only to those who see the address (Website Link 13).
+  // It opens outside the app: Capacitor sends every host outside allowNavigation to
+  // Safari, as with `Route anzeigen` and `Quelle ansehen`.
+  if (party.website_url) {
+    full(
+      'website',
+      <InfoCard
+        icon={Globe}
+        color='coral'
+        title='Website'
+        value={websiteDomain(party.website_url)}
+        wide
+        link={
+          <a href={party.website_url} target='_blank' rel='noopener noreferrer' className={linkRow}>
+            Website öffnen
+            <ChevronRight size={20} />
+          </a>
+        }
+      />
+    )
+  }
   full(
     'teilnehmer',
     <InfoCard
       icon={Users}
       color='blue'
       title='Teilnehmer'
-      value={party.max_guests ? `max. ${party.max_guests}` : undefined}
+      value={agent ? goingText(agent.goingCount) : party.max_guests ? `max. ${party.max_guests}` : undefined}
       wide
-      link={<PageLink label='Gästeliste anzeigen' onClick={() => onOpen({ kind: 'guests' })} />}
+      link={agent ? undefined : <PageLink label='Gästeliste anzeigen' onClick={() => onOpen({ kind: 'guests' })} />}
     />
   )
   if (requestCount > 0) {
@@ -230,7 +272,24 @@ export default function DetailCards({
     )
   }
   if (party.description) {
-    full('infos', <InfoCard icon={Info} color='taupe' title='Infos' value={party.description} wide />)
+    full(
+      'infos',
+      <InfoCard
+        icon={Info}
+        color='taupe'
+        title='Infos'
+        value={party.description}
+        wide
+        link={
+          agent && (
+            <a href={agent.sourceUrl} target='_blank' rel='noopener noreferrer' className={linkRow}>
+              Quelle ansehen
+              <ChevronRight size={20} />
+            </a>
+          )
+        }
+      />
+    )
   }
   polls.forEach((poll) =>
     full(

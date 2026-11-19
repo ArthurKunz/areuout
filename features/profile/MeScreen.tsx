@@ -27,6 +27,8 @@ export default function MeScreen() {
   // What the name field shows while it is being edited; null means "show the stored name".
   const [draftName, setDraftName] = useState<string | null>(null)
   const [warning, setWarning] = useState<string | null>(null)
+  // The row `Neue Events` only for admins (Party Agent step 4); the page itself checks again.
+  const [isAdmin, setIsAdmin] = useState(false)
   const fileRef = useRef<HTMLInputElement>(null)
 
   useEffect(() => {
@@ -37,7 +39,9 @@ export default function MeScreen() {
       }
       setUserId(session.user.id)
       setEmail(session.user.email ?? '')
-      setProfile(await getMyProfile(session.user.id))
+      const [loaded, admin] = await Promise.all([getMyProfile(session.user.id), supabase.rpc('am_i_admin')])
+      setProfile(loaded)
+      setIsAdmin(admin.data === true)
       setLoading(false)
     })
   }, [router])
@@ -157,6 +161,7 @@ export default function MeScreen() {
                   { label: 'Account verwalten', onClick: () => router.push('/me/account') },
                   { label: 'Blockierte Personen', onClick: () => router.push('/me/blocked') },
                   { label: 'Rechtliches', onClick: () => router.push('/me/legal') },
+                  ...(isAdmin ? [{ label: 'Neue Events', onClick: () => router.push('/admin') }] : []),
                 ]}
               />
               {warning && (

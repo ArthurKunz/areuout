@@ -415,3 +415,119 @@ abgelehnt, solange eine Datei im Ordner liegt; leerer Ordner und Konto ohne Date
 durch, die Cascade läuft. Danach 0 Testzeilen übrig. Ende zu Ende mit einem Testkonto (E-Mail,
 Web, 3 Dateien in 2 Party-Ordnern): alles weg. Google und Apple folgen im Gerätetest. Warum
 es so gebaut ist, steht in `SCHEMA.md`, Abschnitt 7.
+
+## Die Migrationen für den Party Agent (Schritt 2, 11.11.2026)
+
+| Datei | Was sie ändert | Wie angewendet | Version |
+|---|---|---|---|
+| `20261111211832_add_party_agent_foundation.sql` | `private.agent_config`, `private.admins`, `private.agent_runs`, `private.agent_blocked_sources`, `private.agent_candidates` (Entwürfe, nie in `events`), `public.agent_event_details` (RLS an, keine Policy, keine Rechte), `get_agent_event_details`, `private.is_admin`, `private.agent_system_account`, `private.is_agent_event` | `apply_migration`, am 11.11.2026 | echt, von `apply_migration` vergeben |
+| `20261111212120_add_a_website_link_to_a_party.sql` | `events.website_url` mit CHECK (nur `https://`, höchstens 500 Zeichen) und `GRANT SELECT (website_url)` | `apply_migration`, am 11.11.2026 | echt |
+| `20261111212150_hide_guest_names_on_agent_events.sql` | fünf Namens-Funktionen geben bei Agent-Events keine Zeilen zurück | `apply_migration`, am 11.11.2026 | echt |
+| `20261111212215_add_agent_event_rules.sql` | `rsvp_is_open` und beide RSVP-Policies (abgesagtes Agent-Event: keine Zusage), `block_user` lehnt den Systemaccount ab, Melde-Grund `organizer` | `apply_migration`, am 11.11.2026 | echt |
+
+Alle vier vorher in einer zurückgerollten Transaktion auf der Live-Datenbank getestet
+(danach 0 Agent-Tabellen übrig) und nachher geprüft: anon und authenticated haben keinen
+Zugriff auf die neuen Tabellen und kein USAGE auf `private`, `get_agent_event_details` und
+`rsvp_is_open` nur für authenticated, alle 9 Partys nehmen weiter Zusagen an. Die Advisors
+zeigen nur die erwarteten neuen Einträge (`agent_event_details` ohne Policy wie `reports`,
+die zwei neuen Funktionen für authenticated).
+
+Die Daten dazu (Profil des Systemaccounts, Zeile in `private.agent_config`, Arthur in
+`private.admins`) sind keine Migration, weil die IDs nur auf dieser Datenbank gelten;
+Arthur trägt sie im SQL Editor ein. Warum es so gebaut ist, steht in `SCHEMA.md`,
+Abschnitt 9f, und im Vault unter *Party Agent Database Review*.
+
+## Die Migration für den Admin-Screen des Party Agent (Schritt 4, 13.11.2026)
+
+| Datei | Was sie ändert | Wie angewendet | Version |
+|---|---|---|---|
+| `20261113200537_add_agent_review.sql` | `am_i_admin`, `get_agent_drafts`, `approve_agent_candidate`, `discard_agent_candidate` (nur authenticated, alle prüfen `private.is_admin()`), `private.queue_admin_push` (nur Owner) | `apply_migration`, am 13.11.2026 | echt |
+
+Vorher in einer zurückgerollten Transaktion auf der Live-Datenbank getestet (Freigeben,
+Verwerfen, 42501 für Nicht-Admins, kein EXECUTE für anon), danach erneut geprüft. Die
+Advisors zeigen nur die vier neuen Funktionen für authenticated, wie gewollt. Warum es so
+gebaut ist, steht in `SCHEMA.md`, Abschnitt 9f.
+
+## Die Migration für Agent-Events in der App (Schritt 5, 14.11.2026)
+
+| Datei | Was sie ändert | Wie angewendet | Version |
+|---|---|---|---|
+| `20261114184640_add_agent_display.sql` | `get_agent_event_details` mit `going_count`, Trigger `reports_push_organizer` (Push an die Admins bei einer Veranstalter-Meldung auf einem Agent-Event), `get_agent_reports`, `remove_agent_event`, `keep_agent_event` (nur authenticated, alle prüfen `private.is_admin()`) | `apply_migration`, am 14.11.2026 | echt |
+
+Danach in einer zurückgerollten Transaktion auf der Live-Datenbank geprüft: ein Fremder
+sieht `going_count` 1 und keine Namen, bekommt 42501 auf die drei Admin-Funktionen; eine
+Veranstalter-Meldung reiht zwei Anfragen ein (E-Mail und Push); der Admin sieht die Meldung,
+`remove_agent_event` löscht das Event und sperrt die Quelle; anon hat kein EXECUTE. Die
+Advisors zeigen nur die drei neuen Funktionen für authenticated, wie gewollt. Rollback:
+`supabase/rollbacks/20261114184640_add_agent_display.sql`.
+
+| Datei | Was sie ändert | Wie angewendet | Version |
+|---|---|---|---|
+| `20261114191338_discard_drafts_of_removed_source.sql` | `remove_agent_event` setzt zusätzlich alle offenen Entwürfe derselben Quelle auf `discarded` (Fund aus dem iPhone-Test) | `apply_migration`, am 14.11.2026 | echt |
+
+Danach in einer zurückgerollten Transaktion geprüft: ein zweiter Entwurf derselben Quelle
+steht nach `remove_agent_event` auf `discarded`, Entwürfe anderer Quellen bleiben offen.
+
+## Die Migration für Änderungen und Absagen (Agent-Schritt 6, 14.11.2026)
+
+| Datei | Was sie ändert | Wie angewendet | Version |
+|---|---|---|---|
+| `20261114192638_add_agent_proposals.sql` | `agent_runs.rechecked` und `.proposals`, Index `agent_candidates_one_open_proposal`, `get_agent_proposals` und `approve_agent_proposal` (nur authenticated, beide prüfen `private.is_admin()`; Push an Gäste über `private.queue_push`) | `apply_migration`, am 14.11.2026 | echt |
+
+Die Advisors zeigen danach nur die zwei neuen Funktionen für authenticated, wie gewollt.
+
+Vorher in einer zurückgerollten Transaktion auf der Live-Datenbank geprüft: ein zweiter
+offener Änderungsvorschlag pro Event wird abgewiesen; ein Fremder bekommt 42501 auf beide
+Funktionen; die Änderung verschiebt Datum, `starts_on` und Preis und reiht eine Push
+(`Geändert: Datum, Uhrzeit, Preis`) an den Gast mit Zusage ein, keine an den mit Absage;
+die Absage setzt `cancelled_at`, `rsvp_is_open` ist danach false, Push
+`Die Party wurde abgesagt`; ein zweites Freigeben gibt P0002.
+
+
+## Die Migration für den Zeitplan (Agent-Schritt 7, 15.11.2026)
+
+| Datei | Was sie ändert | Wie angewendet | Version |
+|---|---|---|---|
+| `20261115205332_schedule_party_agent.sql` | `pg_cron` an; `private.call_party_agent`, `private.finish_agent_run`, `private.expire_agent_candidates` (nur Owner); View `private.agent_cost_by_month`; sechs Cron-Jobs (Mo + Do 13:00–13:50 UTC, stündlich Ablauf) | `apply_migration`, am 15.11.2026 | echt |
+
+Vorher in einer zurückgerollten Transaktion auf der Live-Datenbank geprüft (Fehler-Zeile ohne
+Vault-Secret, abgebrochener Aufruf, fehlende Kategorie, eine gebündelte Push, keine Push ohne
+Funde). Danach zwei echte Läufe mit einmalig umgestellten Zeiten: alle vier Kategorien und eine
+Push; mit kaputtem `ANTHROPIC_API_KEY` vier Fehler-Zeilen und die Push `Agent-Lauf
+fehlgeschlagen`. Die Advisors zeigen nichts Neues. Das Vault-Secret `agent_secret` hat Arthur
+selbst angelegt.
+
+
+## Die Migration für den Website-Link (Agent-Schritt 8, 17.11.2026)
+
+| Datei | Was sie ändert | Wie angewendet | Version |
+|---|---|---|---|
+| `20261117202000_add_the_website_link_to_the_party_functions.sql` | `get_party_detail` gibt `website_url` zurück (nur mit genauem Zugang, wie `location`); `create_party` und `update_party` nehmen `p_website_url` (DEFAULT NULL). `update_party` behält den Link bei NULL (die App-Store-App schickt ihn nicht), `''` löscht ihn | `apply_migration`, am 17.11.2026 | echt |
+
+Danach in einer zurückgerollten Transaktion auf der Live-Datenbank geprüft: Anlegen mit Link,
+der Host sieht ihn; ein Speichern ohne `p_website_url` (wie die App-Store-App) behält ihn; ein
+Fremder auf der privaten Party bekommt NULL; `http://` scheitert an `events_website_url_check`;
+`''` löscht ihn. Die Advisors zeigen nichts Neues. Rollback:
+`supabase/rollbacks/20261117202000_add_the_website_link_to_the_party_functions.sql`.
+
+
+## Die Migration für den Veranstalter (Agent-Schritt 8b, 17.11.2026)
+
+| Datei | Was sie ändert | Wie angewendet | Version |
+|---|---|---|---|
+| `20261117212113_add_an_organizer_to_a_party.sql` | `events.organizer_name` (CHECK 1–40 Zeichen nach Trim, `GRANT SELECT`); `get_party_detail` gibt sie zurück (wie Motto und Preis); `create_party` und `update_party` nehmen `p_organizer_name` mit derselben Behalten-Regel wie der Website-Link | `apply_migration`, am 17.11.2026 | echt |
+
+Danach in einer zurückgerollten Transaktion auf der Live-Datenbank geprüft: Anlegen mit
+Veranstalter (getrimmt); Speichern ohne den Parameter behält Veranstalter und Website; ein
+Fremder auf der privaten Party sieht den Veranstalter, aber keine Website; 41 Zeichen werden
+abgelehnt; `''` löscht nur den Veranstalter. Rollback:
+`supabase/rollbacks/20261117212113_add_an_organizer_to_a_party.sql`.
+
+
+## Die Migration für das Spaltenrecht des Website-Links (Agent-Schritt 9, 19.11.2026)
+
+| Datei | Was sie ändert | Wie angewendet | Version |
+|---|---|---|---|
+| `20261119152029_hide_the_website_column_of_events.sql` | Nimmt `GRANT SELECT (website_url)` auf `events` zurück: der Link ist wie `location` nur über `get_party_detail` lesbar (Code-Review Schritt 9) | `apply_migration`, am 19.11.2026 | echt |
+
+Rollback: `supabase/rollbacks/20261119152029_hide_the_website_column_of_events.sql`.

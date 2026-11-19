@@ -14,6 +14,41 @@ export type Database = {
   }
   public: {
     Tables: {
+      agent_event_details: {
+        Row: {
+          cancelled_at: string | null
+          event_id: string
+          last_checked_at: string | null
+          organizer_name: string | null
+          source_url: string
+          starts_on: string
+        }
+        Insert: {
+          cancelled_at?: string | null
+          event_id: string
+          last_checked_at?: string | null
+          organizer_name?: string | null
+          source_url: string
+          starts_on: string
+        }
+        Update: {
+          cancelled_at?: string | null
+          event_id?: string
+          last_checked_at?: string | null
+          organizer_name?: string | null
+          source_url?: string
+          starts_on?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "agent_event_details_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: true
+            referencedRelation: "events"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       blocks: {
         Row: {
           blocked_id: string
@@ -66,8 +101,10 @@ export type Database = {
           location: string
           max_guests: number | null
           motto: string | null
+          organizer_name: string | null
           price: number | null
           title: string
+          website_url: string | null
         }
         Insert: {
           background_url?: string | null
@@ -87,8 +124,10 @@ export type Database = {
           location: string
           max_guests?: number | null
           motto?: string | null
+          organizer_name?: string | null
           price?: number | null
           title: string
+          website_url?: string | null
         }
         Update: {
           background_url?: string | null
@@ -108,8 +147,10 @@ export type Database = {
           location?: string
           max_guests?: number | null
           motto?: string | null
+          organizer_name?: string | null
           price?: number | null
           title?: string
+          website_url?: string | null
         }
         Relationships: [
           {
@@ -444,6 +485,9 @@ export type Database = {
         Args: { p_event_id: string; p_user_id: string }
         Returns: undefined
       }
+      am_i_admin: { Args: never; Returns: boolean }
+      approve_agent_candidate: { Args: { p_id: string }; Returns: string }
+      approve_agent_proposal: { Args: { p_id: string }; Returns: undefined }
       block_user: { Args: { p_user_id: string }; Returns: undefined }
       can_rsvp_to_event: { Args: { p_event_id: string }; Returns: boolean }
       create_party: {
@@ -461,10 +505,12 @@ export type Database = {
           p_location: string
           p_max_guests: number
           p_motto: string
+          p_organizer_name?: string
           p_polls: Json
           p_price?: number
           p_questions: Json
           p_title: string
+          p_website_url?: string
         }
         Returns: string
       }
@@ -473,6 +519,63 @@ export type Database = {
         Returns: undefined
       }
       delete_self: { Args: never; Returns: undefined }
+      discard_agent_candidate: { Args: { p_id: string }; Returns: undefined }
+      get_agent_drafts: {
+        Args: never
+        Returns: {
+          background_url: string
+          description: string
+          duplicate_title: string
+          ends_at: string
+          event_type: string
+          id: string
+          location: string
+          organizer_name: string
+          price: number
+          source_url: string
+          starts_at: string
+          title: string
+          website_url: string
+        }[]
+      }
+      get_agent_event_details: {
+        Args: { p_event_id: string }
+        Returns: {
+          cancelled_at: string
+          going_count: number
+          organizer_name: string
+          source_url: string
+        }[]
+      }
+      get_agent_proposals: {
+        Args: never
+        Returns: {
+          changes: Json
+          ends_at: string
+          event_date: string
+          event_id: string
+          id: string
+          kind: string
+          location: string
+          new_ends_at: string
+          new_location: string
+          new_price: number
+          new_starts_at: string
+          price: number
+          source_url: string
+          title: string
+        }[]
+      }
+      get_agent_reports: {
+        Args: never
+        Returns: {
+          event_date: string
+          event_id: string
+          report_count: number
+          source_url: string
+          title: string
+        }[]
+      }
       get_event_attendees: {
         Args: { p_event_id: string }
         Returns: {
@@ -644,8 +747,10 @@ export type Database = {
           max_guests: number
           motto: string
           my_status: string
+          organizer_name: string
           price: number
           title: string
+          website_url: string
         }[]
       }
       get_party_guest_list: {
@@ -747,12 +852,15 @@ export type Database = {
         }[]
       }
       is_party_member: { Args: { p_event_id: string }; Returns: boolean }
+      keep_agent_event: { Args: { p_event_id: string }; Returns: undefined }
       party_has_room: {
         Args: { p_event_id: string; p_user_id: string }
         Returns: boolean
       }
       register_push_token: { Args: { p_token: string }; Returns: undefined }
+      remove_agent_event: { Args: { p_event_id: string }; Returns: undefined }
       request_to_join: { Args: { p_event_id: string }; Returns: undefined }
+      rsvp_is_open: { Args: { p_event_id: string }; Returns: boolean }
       set_single_pool_response: {
         Args: {
           p_option_id: string
@@ -786,10 +894,12 @@ export type Database = {
           p_location: string
           p_max_guests: number
           p_motto: string
+          p_organizer_name?: string
           p_polls: Json
           p_price?: number
           p_questions: Json
           p_title: string
+          p_website_url?: string
         }
         Returns: undefined
       }

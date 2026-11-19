@@ -16,7 +16,7 @@ Verified against the live database on 2026-09-01; section 8 added and verified 2
 
 ## 1. How security works here, in four sentences
 
-RLS is on for all nine tables in `public`, and every policy is written for the
+RLS is on for every table in `public`, and every policy is written for the
 `authenticated` role. A signed-in person reaches their own rows and the rows of parties
 they belong to — nothing else. Everything an anonymous visitor sees comes from
 `SECURITY DEFINER` functions, never from a table. Host and guest are not stored
@@ -727,6 +727,200 @@ Rollback, newest first: `supabase/rollbacks/20261026130000_drop_join_requests_de
 (policy and DELETE back), `20261026120000_add_decline_join_request.sql`
 (only after `RequestsPage` deletes directly again), `20261026110000_push_accepted_join_requests.sql`,
 `20261026104449_push_new_join_requests.sql`, `20261026103803_add_queue_push.sql`.
+
+## 9f. Party agent (agent steps 2, 2026-11-11)
+
+The party agent finds public events and Arthur approves each one (vault: *Party Agent*,
+*Party Agent Database Review*). Two decisions shape the database.
+
+**Drafts never touch `events`.** Everything the agent finds lands in
+`private.agent_candidates` (kind `new`, `change` or `cancel`; status `draft`,
+`approved`, `discarded`, `expired`). The API roles have no USAGE on `private`, so a draft
+is unreachable by construction, and none of the functions that hand out parties needs a
+draft filter. Only an approval copies a candidate into `events`. Its CHECKs mirror the
+ones on `events` so an approval never fails on one. A certain duplicate is the same
+`source_url` on the same `starts_on` (recurring parties share one page), enforced by a
+partial unique index on open and approved `new` candidates.
+
+**An agent event is a party hosted by the system account.** `private.agent_config` holds
+the one id (`private.agent_system_account()`), `private.is_agent_event(id)` asks it.
+Nobody can fake one: RLS on `events` only lets a user write their own `host_id`. No agent
+column was added to `events` on purpose, because `authenticated` holds table-level INSERT
+and UPDATE there (section 2), so any new column is writable by every user at once.
+Agent-only details live in `public.agent_event_details` (source link, start day,
+organiser, `last_checked_at`, `cancelled_at`), RLS on with no policy and no privilege for
+anon or authenticated; the app reads them through `get_agent_event_details(event_id)`,
+which answers only for public, still visible agent events and only for signed-in callers.
+
+**What changes for users.**
+
+- No guest names on agent events: `get_party_guest_list`, `get_party_guests`,
+  `get_event_attendees`, `get_event_attendees_for_events` and
+  `get_event_attendees_by_invite_code` return no rows for them. The counts still come from
+  the count functions. A public event is open to strangers, so a name list would show
+  everyone who is going.
+- A cancelled agent event (`cancelled_at` set) takes no new RSVP and no change to `going`
+  or `maybe`: `public.rsvp_is_open(event_id)` (SECURITY DEFINER, because a policy cannot
+  read `private` or the locked table) sits in `rsvps_insert_authenticated` and
+  `rsvps_update_own`. Leaving (DELETE) still works.
+- `block_user` refuses the system account (`areuout kannst du nicht blockieren.`, 22023):
+  a block would hide every agent event without explanation.
+- `reports.reason` also takes `organizer` ("Ich bin der Veranstalter").
+- `events.website_url` (all parties): CHECK `^https://`, no spaces, at most 500
+  characters. No `GRANT SELECT` since agent step 9 (`20261119152029`): like `location`,
+  it is readable only through `get_party_detail`, never straight from `events`. Since
+  agent step 8 the app reads and
+  writes it through the party functions: `get_party_detail` returns `website_url` under
+  the same rule as `location` (only with exact access, and for everyone but the host only
+  until `private.party_visible_until`), so a stranger on a blurred private party never
+  gets it. `create_party` and `update_party` take `p_website_url` (DEFAULT NULL).
+  `update_party` keeps the link when the parameter is NULL, because the App Store version
+  does not send it; `''` removes the link.
+- `events.organizer_name` (all parties, agent step 8b): CHECK 1–40 characters after trim,
+  its own `GRANT SELECT`. Returned by `get_party_detail` to everyone who gets the row (like
+  motto and price, not tied to the address); `create_party` and `update_party` take
+  `p_organizer_name` with the same keep rule as the website (NULL keeps, `''` removes). An
+  agent event keeps its organiser in `agent_event_details.organizer_name` (≤ 200); the app
+  shows that one when `events.organizer_name` is empty.
+
+**Admins.** `private.admins (user_id)` and `private.is_admin()`; no role column on
+`profiles`. Every admin function (agent step 4) checks `private.is_admin()` first.
+
+**Run log and blocked sources.** `private.agent_runs` (one row per run and category,
+counts, tokens, cost, error) and `private.agent_blocked_sources` (source links of removed
+events; the agent never adds them again).
+
+Applied 2026-11-11, see `supabase/migrations/README.md`.
+
+**The agent itself (agent step 3, 2026-11-12).** Edge Function `party-agent`, one category
+per call, started with the header `x-agent-secret` (secret `AGENT_SECRET`, `verify_jwt`
+off, same pattern as `send-push`). Even `service_role` has no USAGE on `private`, so the
+function does not go through PostgREST: it connects with the built-in secret
+`SUPABASE_DB_URL` (role `postgres`) and writes only `private.agent_candidates` and
+`private.agent_runs`, never `events`. Every event is checked in code against its source
+page (robots.txt, name, date, place, 14-day window, price), geocoded with Photon (the app's
+service; Nominatim answers Supabase's servers with 403), and compared with the known source
+links (all statuses, so a discarded draft never comes back), the open drafts and all
+upcoming public parties. Stock photos live in `event-backgrounds/<system account>/<type>/`.
+
+**Review and push (agent step 4, 2026-11-13).** Four RPCs for the admin screen `/admin`
+(`Neue Events`), all SECURITY DEFINER, granted to `authenticated` only, and each one checks
+`private.is_admin()` first (42501 `Nur Admins dürfen das.` for everyone else, so typing the
+URL or calling the API gets nothing):
+
+- `am_i_admin()`: the page `/admin` answers 404 unless it is true; the profile shows the row
+  `Neue Events` only when it is true.
+- `get_agent_drafts()`: first sets drafts whose event has started to `expired` (no schedule
+  needed; pg_cron comes in step 7), then returns the open `new` drafts, soonest first, with
+  the title of `duplicate_of` as `duplicate_title`.
+- `approve_agent_candidate(id)`: only an open `new` draft whose event has not started.
+  Inserts the event (host = system account, `is_public`, no `max_guests`, a 12-character
+  invite code from the same alphabet as `generateInviteCode`) and its
+  `agent_event_details` row, and marks the candidate `approved` with `event_id`. The map
+  shows it through `get_explore_parties` like any public party.
+- `discard_agent_candidate(id)`: open draft to `discarded`; the agent never proposes the
+  source link again (it compares all statuses).
+
+**`private.queue_admin_push(body)`** follows `private.queue_push` (section 9e): the tokens of
+every admin, Vault `push_secret`, `net.http_post` to `send-push`, title `Neue Events`, data
+`{ "path": "/admin" }`. Owner only; `party-agent` calls it after each category call when
+there are new drafts (`[n] neue Events warten auf dich`) or the call failed
+(`Agent-Lauf fehlgeschlagen: …`). Every error turns into a warning, so a run never fails on
+the push. In the app, `features/push/PushTaps.tsx` follows a tapped push only to paths on
+its allowlist (today `/admin`).
+
+Verified 2026-11-13 in rolled-back transactions on the live database: Arthur gets the 5
+drafts, approve creates a public event of the system account with fuzzy position and
+details row, discard leaves 3, a second decision on the same draft gets P0002; a stranger
+gets 42501 on all three admin RPCs, `am_i_admin` false, and sees an approved event in
+`get_explore_parties`; anon holds no EXECUTE; `queue_admin_push` queues nothing for an
+admin without tokens. Rollback: `supabase/rollbacks/20261113200537_add_agent_review.sql`.
+
+**Agent events in the app (agent step 5, 2026-11-14).** Migration `20261114184640`:
+
+- `get_agent_event_details` also returns `going_count`, the number of `going` RSVPs. The
+  count functions (`get_rsvp_counts_by_status`) answer only party members, so a stranger
+  would see 0. Same rules as before: public, still visible agent events, signed-in callers
+  only. Still no names anywhere. The app shows `gelistet von areuout`, `Veranstalter: …`,
+  the count and `Quelle ansehen` whenever this function returns a row.
+- Report reason `organizer` on an agent event: the AFTER INSERT trigger
+  `reports_push_organizer` (`private.push_organizer_report`) calls `private.queue_admin_push`
+  with `Veranstalter-Meldung: <title>` (title only, no name). The email to Arthur
+  (`reports_email_new`) still goes out as for every report. The app offers the reason only
+  on agent events.
+- Three admin RPCs (authenticated only, `private.is_admin()` first, 42501 otherwise):
+  `get_agent_reports()` lists open organiser reports per agent event; `keep_agent_event(id)`
+  sets them to `handled`; `remove_agent_event(id)` writes the source link to
+  `private.agent_blocked_sources` (`organizer_request`) and then deletes the event.
+  **The order matters:** `agent_candidates.event_id` cascades, so deleting the event also
+  deletes the approved candidate the agent used to recognise the source. Without the block
+  the next run would add the event again. Since migration `20261114191338` it also sets
+  every open draft of the same source link to `discarded` (other dates of a recurring
+  event, found in the iPhone test). **Known gap:** the block hangs on the link, not on the
+  event, so the same event found on another site comes back as a draft (parked in the
+  vault's build order).
+
+Verified 2026-11-14 in one rolled-back transaction on the live database (see
+`supabase/migrations/README.md`). Rollback: `supabase/rollbacks/20261114184640_add_agent_display.sql`.
+
+**Re-check, changes and cancellation (agent step 6, 2026-11-14).** Migration `20261114192638`:
+
+- `party-agent` re-checks, before each search, the approved, not cancelled, upcoming agent
+  events of its category (`other` runs with `club`; `recheck.ts`, at most 60 s). It reads the
+  source page itself (robots.txt as for new events), a short Claude call without tools pulls
+  out date, times, place, price and "cancelled", and the code checks them against the page:
+  a new date or price must be on it, a new place must be more than 100 m away, a
+  cancellation needs a word like `abgesagt` on the page. Description and wording are never
+  compared. It sets `last_checked_at` and writes proposals as `agent_candidates` with kind
+  `change` (the row carries the proposed state, `changes` names only the changed fields:
+  `starts_at`, `ends_at`, `location` with `lat`/`lng`, `price`) or `cancel`. A proposal that
+  is already open or was discarded is not made again; an older open one of the same kind
+  expires. Index `agent_candidates_one_open_proposal`: one open proposal per event and kind.
+  `agent_runs` counts `rechecked` and `proposals`.
+- `get_agent_proposals()` (admin only, 42501 otherwise): first expires open proposals whose
+  event has started, then returns the open ones with the current and the proposed values.
+- `approve_agent_proposal(id)` (admin only): applies only the fields in `changes` to `events`
+  (and `starts_on` when the day moves), or sets `cancelled_at` (open changes of the event
+  expire). Then every guest with `going` or `maybe` gets a push through `private.queue_push`
+  (actor = system account): title = party title, body `Geändert: Datum, Uhrzeit, …` or
+  `Die Party wurde abgesagt`, no name. Each call is caught, so the approval never fails on a
+  push. Verwerfen uses `discard_agent_candidate`.
+- The app shows `Abgesagt` and no RSVP button or bar when `cancelled_at` is set;
+  `rsvp_is_open` (step 2) refuses the write anyway.
+
+Verified 2026-11-14 in one rolled-back transaction on the live database (see
+`supabase/migrations/README.md`). Rollback: `supabase/rollbacks/20261114192638_add_agent_proposals.sql`.
+
+**Schedule (agent step 7, 2026-11-15).** Migration `20261115205332`:
+
+- `pg_cron` is on. Jobs (pg_cron runs in UTC; 13:00 UTC is 14:00 in Leipzig in winter,
+  15:00 in summer): `party-agent-club`, `-concert`, `-festival`, `-open-air` every Monday
+  and Thursday at 13:00, 13:10, 13:20, 13:30, then `party-agent-finish` at 13:50;
+  `agent-expire-candidates` every hour at :05. `select jobname, schedule from cron.job;`
+- `private.call_party_agent(category)` posts to `party-agent` through pg_net with the header
+  `x-agent-secret`, read at call time from Vault `agent_secret` (entered by Arthur, same value
+  as the function secret `AGENT_SECRET`). The secret is in no migration, job text or log.
+  Without it the function writes an error row (`Nicht gestartet: Vault-Secret …`).
+- `private.finish_agent_run()` looks at the rows of the last 55 minutes: a call without
+  `finished_at` gets `Abgebrochen: kein Abschluss …`, a category without a row gets an error
+  row `Nicht gestartet: keine Antwort von party-agent` (e.g. a wrong secret, 403). Then
+  **one** admin push per full run through `private.queue_admin_push`: `… neue Events und …
+  Änderungen warten auf dich` and/or `Agent-Lauf fehlgeschlagen: <categories> – <reason>`.
+  No retry; the next scheduled run starts normally. `party-agent` itself no longer pushes
+  (it did once per call since step 4), so a manual curl run pushes nothing; call
+  `select private.finish_agent_run();` afterwards for the push.
+- `private.expire_agent_candidates()`: the expiry rules of `get_agent_drafts` and
+  `get_agent_proposals` on a schedule (both RPCs still expire on load as well).
+- `private.agent_cost_by_month` (security_invoker): calls, failed calls, drafts, proposals,
+  tokens, searches and `cost_usd` per month in Leipzig time. SQL editor only.
+
+All three functions are owner only (no EXECUTE for public, anon, authenticated).
+
+Verified 2026-11-15/16 on production: a rolled-back transaction for the error paths (no
+secret, unfinished call, missing category, nothing found gives no push); then two real
+runs with the jobs set to a one-off time: all four categories (11 drafts, 0.53 $) and one
+push; with a broken `ANTHROPIC_API_KEY` four error rows (401) and one push
+`Agent-Lauf fehlgeschlagen`. Rollback: `supabase/rollbacks/20261115205332_schedule_party_agent.sql`.
 
 ## 10. Checking this file against the database
 

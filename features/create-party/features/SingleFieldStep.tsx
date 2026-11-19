@@ -4,7 +4,8 @@ import { useState } from 'react'
 import StepFrame from '../StepFrame'
 import Input from '@/components/shared/Input'
 import FeatureChip from './FeatureChip'
-import { LIMITS, type PartyDraft } from '../draft'
+import { alertError } from '@/lib/utils'
+import { LIMITS, toWebsiteUrl, type PartyDraft } from '../draft'
 
 // Typing past the cap clamps to it rather than being swallowed, as in the old flow, so
 // the number on screen is always the one that will be saved.
@@ -28,10 +29,13 @@ const FIELDS = {
   maxGuests: { label: 'Max. Teilnehmer', placeholder: 'z.B. 50', maxLength: undefined },
   dresscode: { label: 'Dresscode', placeholder: 'z.B. Verkleidung', maxLength: LIMITS.dresscode },
   price: { label: 'Preis', placeholder: 'z.B. 5€', maxLength: undefined },
+  website: { label: 'Website', placeholder: 'z.B. meineparty.de', maxLength: LIMITS.website },
+  organizer: { label: 'Veranstalter', placeholder: 'z.B. Abi-Komitee 2027', maxLength: LIMITS.organizer },
 } as const
 
-// The Motto, max. Teilnehmer, Dresscode and Preis sub-steps: one row each (mockups
-// Create 07–09 and 16). Works on a local copy; back discards it, Hinzufügen saves it.
+// The Motto, max. Teilnehmer, Dresscode, Preis, Website and Veranstalter sub-steps: one
+// row each (mockups Create 07–09 and 16; Website and Veranstalter are built like Preis,
+// Party Agent steps 8 and 8b). Works on a local copy; back discards it, Hinzufügen saves it.
 export default function SingleFieldStep({
   field,
   draft,
@@ -44,7 +48,12 @@ export default function SingleFieldStep({
   onBack: () => void
 }) {
   const [value, setValue] = useState(() =>
-    field === 'price' && draft.price !== null ? String(draft.price).replace('.', ',') : String(draft[field] ?? '')
+    field === 'price' && draft.price !== null
+      ? String(draft.price).replace('.', ',')
+      : field === 'website'
+        ? // The host typed it without https://, so it comes back the same way.
+          (draft.website ?? '').replace(/^https:\/\//, '')
+        : String(draft[field] ?? '')
   )
   const { label, placeholder, maxLength } = FIELDS[field]
   const trimmed = value.trim()
@@ -63,6 +72,13 @@ export default function SingleFieldStep({
         return onSave({ motto: trimmed })
       case 'dresscode':
         return onSave({ dresscode: trimmed })
+      case 'organizer':
+        return onSave({ organizer: trimmed })
+      case 'website': {
+        const website = toWebsiteUrl(trimmed)
+        if (!website) return alertError('Das ist keine gültige Website. Zum Beispiel: meineparty.de')
+        return onSave({ website })
+      }
     }
   }
 
@@ -79,6 +95,8 @@ export default function SingleFieldStep({
         placeholder={placeholder}
         maxLength={maxLength}
         inputMode={field === 'maxGuests' ? 'numeric' : field === 'price' ? 'decimal' : undefined}
+        type={field === 'website' ? 'url' : undefined}
+        autoComplete={field === 'website' ? 'off' : undefined}
       />
     </StepFrame>
   )

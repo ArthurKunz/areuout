@@ -2,6 +2,7 @@ import ShellMap from '@/components/shell/ShellMap'
 import Shell from '@/components/shell/Shell'
 import { MapProvider } from '@/components/shell/MapContext'
 import PushRefresh from '@/features/push/PushRefresh'
+import PushTaps from '@/features/push/PushTaps'
 
 // Shared by every redesigned screen. Next keeps a layout mounted while its child routes
 // change, so the map is created once and survives every tab switch. MapProvider lets
@@ -10,6 +11,7 @@ export default function ShellLayout({ children }: { children: React.ReactNode })
   return (
     <MapProvider>
       <PushRefresh />
+      <PushTaps />
       <ShellMap />
       <Shell>{children}</Shell>
     </MapProvider>

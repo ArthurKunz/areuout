@@ -15,6 +15,7 @@ export default function DetailHeader({
   actions,
   onClose,
   onHost,
+  byline,
   children,
 }: {
   title: string
@@ -24,6 +25,8 @@ export default function DetailHeader({
   onClose: () => void
   // Opens the host's profile; left out when the viewer is the host.
   onHost?: () => void
+  // Replaces `von [Host]`: an agent event says who listed it and who organises it.
+  byline?: ReactNode
   children: ReactNode
 }) {
   return (
@@ -32,17 +35,20 @@ export default function DetailHeader({
     <div className='-mt-6 min-h-0 flex-1 overflow-y-auto px-5 pt-6 pb-5'>
       <div className='relative z-10 flex items-start justify-between gap-3'>
         <div className='flex min-w-0 flex-col'>
-          <h1 className='text-heading-1 font-bold break-words text-heading'>{title}</h1>
-          <span className='text-text-3 text-text'>
-            von{' '}
-            {onHost ? (
-              <button type='button' onClick={onHost} className='transition-opacity duration-(--duration-press) ease-ios active:opacity-60'>
-                {hostName}
-              </button>
-            ) : (
-              hostName
-            )}
-          </span>
+          {/* One line only: a longer title (mostly agent events) ends in … (step 8c). */}
+          <h1 className='truncate text-heading-1 font-bold text-heading'>{title}</h1>
+          {byline ?? (
+            <span className='text-text-3 text-text'>
+              von{' '}
+              {onHost ? (
+                <button type='button' onClick={onHost} className='transition-opacity duration-(--duration-press) ease-ios active:opacity-60'>
+                  {hostName}
+                </button>
+              ) : (
+                hostName
+              )}
+            </span>
+          )}
           {!isPublic && <span className='text-text-3 text-yellow'>(Privat)</span>}
         </div>
         <div className='flex shrink-0 items-center gap-2'>
