@@ -23,7 +23,7 @@ import { timingSafeEqual } from 'jsr:@std/crypto@1/timing-safe-equal'
 import postgres from 'npm:postgres@3.4.5'
 import { emptyUsage, MODEL, runClaude } from './claude.ts'
 import { sameEvent, type Slot } from './dedupe.ts'
-import { geocode, geoProblem } from './geo.ts'
+import { geocode, geoProblem, resetGeoProblem } from './geo.ts'
 import { berlinToDate, buildPrompt, CATEGORIES, EVENT_TYPES, type EventType, type FoundEvent, parseEvents, toFoundEvent, windowDates } from './prompt.ts'
 import { recheckEvents } from './recheck.ts'
 import { checkEvent, type RobotsCache } from './verify.ts'
@@ -80,6 +80,7 @@ Deno.serve(async (req) => {
   if (!category) return json(400, { error: 'category muss club, concert, festival oder open_air sein' })
 
   const started = Date.now()
+  resetGeoProblem()
   const window = windowDates()
   const sql = postgres(Deno.env.get('SUPABASE_DB_URL') ?? '', { prepare: false, max: 2 })
   const counts = { found: 0, verified: 0, discarded: 0, duplicates: 0, drafts: 0 }

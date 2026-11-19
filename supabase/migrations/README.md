@@ -522,3 +522,12 @@ Veranstalter (getrimmt); Speichern ohne den Parameter behält Veranstalter und W
 Fremder auf der privaten Party sieht den Veranstalter, aber keine Website; 41 Zeichen werden
 abgelehnt; `''` löscht nur den Veranstalter. Rollback:
 `supabase/rollbacks/20261117212113_add_an_organizer_to_a_party.sql`.
+
+
+## Die Migration für das Spaltenrecht des Website-Links (Agent-Schritt 9, 19.11.2026)
+
+| Datei | Was sie ändert | Wie angewendet | Version |
+|---|---|---|---|
+| `20261119152029_hide_the_website_column_of_events.sql` | Nimmt `GRANT SELECT (website_url)` auf `events` zurück: der Link ist wie `location` nur über `get_party_detail` lesbar (Code-Review Schritt 9) | `apply_migration`, am 19.11.2026 | echt |
+
+Rollback: `supabase/rollbacks/20261119152029_hide_the_website_column_of_events.sql`.

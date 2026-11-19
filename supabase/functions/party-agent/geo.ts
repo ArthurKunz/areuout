@@ -24,6 +24,12 @@ export type Place = { lat: number; lng: number; label: string }
 // Timeout wartet.
 export let geoProblem: string | null = null
 
+// A warm worker keeps this module between calls, so each call asks Photon again. Otherwise
+// one outage would also discard the events of every later category on the same worker.
+export function resetGeoProblem() {
+  geoProblem = null
+}
+
 async function search(query: string): Promise<Place | null> {
   if (geoProblem) return null
   try {

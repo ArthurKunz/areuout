@@ -767,7 +767,9 @@ which answers only for public, still visible agent events and only for signed-in
   a block would hide every agent event without explanation.
 - `reports.reason` also takes `organizer` ("Ich bin der Veranstalter").
 - `events.website_url` (all parties): CHECK `^https://`, no spaces, at most 500
-  characters, its own `GRANT SELECT` (section 2). Since agent step 8 the app reads and
+  characters. No `GRANT SELECT` since agent step 9 (`20261119152029`): like `location`,
+  it is readable only through `get_party_detail`, never straight from `events`. Since
+  agent step 8 the app reads and
   writes it through the party functions: `get_party_detail` returns `website_url` under
   the same rule as `location` (only with exact access, and for everyone but the host only
   until `private.party_visible_until`), so a stranger on a blurred private party never

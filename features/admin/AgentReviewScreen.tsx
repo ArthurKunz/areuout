@@ -15,27 +15,27 @@ type Draft = Database['public']['Functions']['get_agent_drafts']['Returns'][numb
 type Report = Database['public']['Functions']['get_agent_reports']['Returns'][number]
 type Proposal = Database['public']['Functions']['get_agent_proposals']['Returns'][number]
 
-const pad = (n: number) => String(n).padStart(2, '0')
 // Formats as in the detail's cards (DetailCards), plus the weekday: 'Mi., 18.11.26', HH:MM, '5€'.
+// Always in Leipzig time, like changedWhat below, whatever zone the phone is set to.
 const formatDate = (iso: string) =>
-  new Date(iso).toLocaleDateString('de-DE', { weekday: 'short', day: '2-digit', month: '2-digit', year: '2-digit' })
-const formatTime = (iso: string) => {
-  const date = new Date(iso)
-  return `${pad(date.getHours())}:${pad(date.getMinutes())}`
-}
+  new Date(iso).toLocaleDateString('de-DE', { timeZone: 'Europe/Berlin', weekday: 'short', day: '2-digit', month: '2-digit', year: '2-digit' })
+const formatTime = (iso: string) =>
+  new Date(iso).toLocaleTimeString('de-DE', { timeZone: 'Europe/Berlin', hour: '2-digit', minute: '2-digit', hourCycle: 'h23' })
 const formatPrice = (value: number) =>
   Number.isInteger(value) ? `${value}€` : `${value.toFixed(2).replace('.', ',')}€`
 
-// The agent runs every Monday and Thursday (Party Agent section 8): the next of the two
-// after today.
+// The agent runs every Monday and Thursday from 13:00 UTC (pg_cron, Party Agent step 7):
+// the next of the two run starts, so on a run day before 13:00 that is the same day.
 function nextRunDay() {
-  const day = new Date().getDay()
-  return day >= 1 && day < 4 ? 'Donnerstag' : 'Montag'
+  const now = new Date()
+  const day = now.getUTCDay()
+  const beforeRun = now.getUTCHours() < 13
+  if (day === 1 && beforeRun) return 'Montag'
+  return (day >= 1 && day < 4) || (day === 4 && beforeRun) ? 'Donnerstag' : 'Montag'
 }
 
 const berlinDay = (iso: string) => new Date(iso).toLocaleDateString('sv-SE', { timeZone: 'Europe/Berlin' })
-const berlinTime = (iso: string) =>
-  new Date(iso).toLocaleTimeString('de-DE', { timeZone: 'Europe/Berlin', hour: '2-digit', minute: '2-digit', hourCycle: 'h23' })
+const berlinTime = formatTime
 
 // What a change proposal changes, in the same words as the guests' push
 // (approve_agent_proposal): `Geändert: Datum, Uhrzeit`.

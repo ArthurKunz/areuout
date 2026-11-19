@@ -129,7 +129,10 @@ export default function PartyDetail({
       supabase.rpc('get_agent_event_details', { p_event_id: partyId }).maybeSingle(),
     ]).then(async ([detail, polls, code, requests, session, agent]) => {
       if (cancelled) return
-      const error = detail.error ?? polls.error ?? code.error ?? requests.error ?? agent.error
+      const error = detail.error ?? polls.error ?? code.error ?? requests.error
+      // The agent lookup answers for every party but matters only for agent events, so its
+      // error never blocks a normal party; the detail then shows without the agent parts.
+      if (agent.error) console.error('[areuout]', agent.error.message)
       if (error) {
         console.error('[areuout]', error.message)
         setFailed(true)

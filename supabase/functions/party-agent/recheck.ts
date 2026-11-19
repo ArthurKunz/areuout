@@ -23,6 +23,21 @@ const BUDGET_MS = 60_000
 const PAGE_CHARS = 40_000
 // Eine Absage muss so auf der Seite stehen, nicht nur in Claudes Antwort.
 const CANCELLED = /abgesagt|entfällt|entfaellt|fällt aus|faellt aus|findet nicht statt|cancelled|canceled/
+// ... and near the event's name, so that a listing with another cancelled night or a
+// cookie banner does not count (code review, step 9).
+const NEAR_CHARS = 500
+
+function cancelledNearName(title: string, text: string): boolean {
+  const name = title.toLowerCase().replace(/…$/, '').trim()
+  const words = name.split(/[^a-z0-9äöüß]+/).filter((w) => w.length >= 4)
+  for (const needle of words.length ? words : [name]) {
+    if (!needle) continue
+    for (let i = text.indexOf(needle); i !== -1; i = text.indexOf(needle, i + 1)) {
+      if (CANCELLED.test(text.slice(Math.max(0, i - NEAR_CHARS), i + needle.length + NEAR_CHARS))) return true
+    }
+  }
+  return false
+}
 
 type Approved = {
   id: string
@@ -119,7 +134,7 @@ async function propose(ev: Approved, f: Facts, text: string): Promise<{ proposal
     title: ev.title, starts_at: ev.event_date, ends_at: ev.ends_at, starts_on: ev.starts_on, location: ev.location,
     lat: ev.lat, lng: ev.lng, price: ev.price === null ? null : Number(ev.price),
   }
-  if (f.cancelled && CANCELLED.test(text)) return { proposal: { kind: 'cancel', changes: null }, row: base }
+  if (f.cancelled && cancelledNearName(ev.title, text)) return { proposal: { kind: 'cancel', changes: null }, row: base }
 
   const changes: Record<string, unknown> = {}
   const next = { ...base }
