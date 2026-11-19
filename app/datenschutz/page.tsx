@@ -260,7 +260,7 @@ const SECTIONS: LegalSection[] = [
   {
     heading: '13. Widerspruchsrecht nach Art. 21 DSGVO',
     paragraphs: [
-      'Soweit wir Daten auf Grundlage eines berechtigten Interesses nach Art. 6 Abs. 1 lit. f DSGVO verarbeiten — das betrifft die Karte, die Adresssuche, die Server-Protokolle sowie Meldungen und Blockierungen —, hast du das Recht, aus Gründen, die sich aus deiner besonderen Situation ergeben, jederzeit Widerspruch gegen diese Verarbeitung einzulegen.',
+      'Soweit wir Daten auf Grundlage eines berechtigten Interesses nach Art. 6 Abs. 1 lit. f DSGVO verarbeiten — das betrifft die Karte, die Adresssuche, die Server-Protokolle, die Liste öffentlicher Veranstaltungen sowie Meldungen und Blockierungen —, hast du das Recht, aus Gründen, die sich aus deiner besonderen Situation ergeben, jederzeit Widerspruch gegen diese Verarbeitung einzulegen.',
       'Legst du Widerspruch ein, verarbeiten wir die betroffenen Daten nicht mehr, es sei denn, wir können zwingende schutzwürdige Gründe nachweisen, die deine Interessen, Rechte und Freiheiten überwiegen, oder die Verarbeitung dient der Geltendmachung, Ausübung oder Verteidigung von Rechtsansprüchen.',
       'Ein Widerspruch genügt formlos an die in Abschnitt 2 genannte Adresse.',
       'Direktwerbung betreiben wir nicht, weder per E-Mail noch in der App. Ein Widerspruch dagegen geht deshalb ins Leere — es gibt nichts, dem zu widersprechen wäre.',
