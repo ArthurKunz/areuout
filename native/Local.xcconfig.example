@@ -1,0 +1,6 @@
+// Copy to Local.xcconfig (ignored by git) and fill in. Same values as NEXT_PUBLIC_SUPABASE_URL
+// and NEXT_PUBLIC_SUPABASE_ANON_KEY in .env.local. Only the public (anon/publishable) key,
+// never the service role key.
+// The host without https:// because xcconfig reads // as a comment.
+SUPABASE_HOST = your-project.supabase.co
+SUPABASE_ANON_KEY = your-anon-key

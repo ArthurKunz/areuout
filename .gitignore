@@ -54,3 +54,8 @@ next-env.d.ts
 
 # Apple keys (APNs, Sign in with Apple) never enter the repo
 *.p8
+
+# native iOS app
+/native/Local.xcconfig
+/native/build/
+xcuserdata/
