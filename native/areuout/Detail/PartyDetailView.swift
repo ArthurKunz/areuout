@@ -19,6 +19,10 @@ struct PartyDetailView: View {
     @State private var notice: (title: String, message: String)?
     @State private var errorMessage: String?
     @State private var isBusy = false
+    @State private var isAnswering = false
+    @State private var showGuests = false
+    @State private var votesFor: PollData?
+    @State private var answersFor: PollData?
 
     init(partyID: UUID, onChange: @escaping () -> Void = {}) {
         _model = State(initialValue: PartyDetailModel(partyID: partyID))
@@ -69,6 +73,15 @@ struct PartyDetailView: View {
         .sheet(isPresented: $showNewLink) {
             NewLinkSheet(url: model.inviteURL)
         }
+        .sheet(isPresented: $showGuests) {
+            GuestListSheet(partyID: model.partyID, maxGuests: model.detail?.maxGuests, isHost: role == .host) {
+                Task { await reload() }
+            }
+        }
+        .sheet(item: $votesFor) { poll in VotesSheet(poll: poll) }
+        .sheet(item: $answersFor) { question in
+            AnswersSheet(question: question, hostName: model.detail?.hostName ?? "", myUserID: profile.userID)
+        }
         .alert(notice?.title ?? "", isPresented: Binding(get: { notice != nil }, set: { if !$0 { notice = nil } })) {
             Button("Fertig") {}
         } message: {
@@ -112,6 +125,19 @@ struct PartyDetailView: View {
         }
         .ignoresSafeArea(edges: .top)
         .overlay(alignment: .top) { topBar(detail) }
+        .safeAreaInset(edge: .bottom) {
+            // Wer noch nicht geantwortet hat: Teilnehmen, Anfragen, Warten oder voll.
+            if role == .stranger, !model.isCancelled {
+                JoinBar(
+                    isPublic: detail.isPublic,
+                    isRequested: model.isRequested,
+                    isFull: model.isFull,
+                    isBusy: isAnswering,
+                    join: { Task { await answer(.going) } },
+                    request: { Task { await requestToJoin() } }
+                )
+            }
+        }
         .disabled(isBusy)
     }
 
@@ -192,6 +218,10 @@ struct PartyDetailView: View {
                 Text(detail.hostName)
             }
             .font(.subheadline)
+            if role == .guest, !model.isCancelled {
+                RSVPPicker(status: model.myStatus) { status in Task { await answer(status) } }
+                    .disabled(isAnswering)
+            }
             if model.agent?.cancelledAt != nil {
                 Text("Abgesagt")
                     .font(.subheadline.weight(.semibold))
@@ -208,6 +238,7 @@ struct PartyDetailView: View {
 
     private func cards(_ detail: PartyDetail) -> some View {
         let items = cardItems(detail)
+        let canTakePart = role != .stranger && !model.isCancelled
         return VStack(spacing: 12) {
             ForEach(Array(rows(items).enumerated()), id: \.offset) { _, row in
                 HStack(alignment: .top, spacing: 12) {
@@ -215,6 +246,24 @@ struct PartyDetailView: View {
                         DetailCard(item: item)
                     }
                 }
+            }
+            if role == .host, !model.requests.isEmpty {
+                RequestsCard(
+                    requests: model.requests,
+                    accept: { request in Task { await decide(request, accept: true) } },
+                    decline: { request in Task { await decide(request, accept: false) } }
+                )
+            }
+            // Umfragen und Fragen: sichtbar, wem der Server sie gibt, nutzbar nur mit Antwort oder als Host.
+            ForEach(model.polls.filter { !$0.isQuestion }) { poll in
+                PollCard(poll: poll, myUserID: profile.userID, canVote: canTakePart && role != .host,
+                         vote: { option in Task { await vote(option, in: poll) } },
+                         showVotes: { votesFor = poll })
+            }
+            ForEach(model.polls.filter(\.isQuestion)) { question in
+                QuestionCard(question: question, myUserID: profile.userID, canAnswer: canTakePart && role != .host,
+                             send: { text in await answerQuestion(text, question) },
+                             showAnswers: { answersFor = question })
             }
         }
     }
@@ -236,7 +285,10 @@ struct PartyDetailView: View {
         if let motto = detail.motto {
             items.append(DetailCardItem(icon: "lightbulb.fill", color: .iconMotto, title: "Motto", value: motto, isHalf: true))
         }
-        items.append(DetailCardItem(icon: "person.2.fill", color: .iconParticipants, title: "Teilnehmer", value: participantsText(detail)))
+        items.append(DetailCardItem(
+            icon: "person.2.fill", color: .iconParticipants, title: "Teilnehmer", value: participantsText(detail),
+            link: role == .stranger && !detail.isPublic ? nil : ("Gästeliste anzeigen", { showGuests = true })
+        ))
         if let description = detail.description {
             items.append(DetailCardItem(icon: "text.alignleft", color: .iconDescription, title: "Beschreibung", value: description))
         }
@@ -316,6 +368,68 @@ struct PartyDetailView: View {
             }
         } catch {
             errorMessage = "Das hat nicht geklappt. Versuch es nochmal."
+        }
+    }
+
+    private func reload() async {
+        await model.load(userID: profile.userID)
+        onChange()
+    }
+
+    private func answer(_ status: RSVPStatus) async {
+        guard let userID = profile.userID else { return }
+        isAnswering = true
+        defer { isAnswering = false }
+        do {
+            try await Participation.setStatus(status, party: model.partyID, user: userID)
+            await reload()
+        } catch {
+            errorMessage = Participation.rsvpErrorText(error)
+        }
+    }
+
+    private func requestToJoin() async {
+        isAnswering = true
+        defer { isAnswering = false }
+        do {
+            try await Participation.requestToJoin(party: model.partyID)
+            await reload()
+        } catch {
+            errorMessage = "Deine Anfrage konnte nicht gesendet werden."
+        }
+    }
+
+    private func decide(_ request: JoinRequestRow, accept: Bool) async {
+        do {
+            if accept {
+                try await Participation.accept(request.userID, party: model.partyID)
+            } else {
+                try await Participation.decline(request.userID, party: model.partyID)
+            }
+            await reload()
+        } catch {
+            errorMessage = accept ? "Die Anfrage konnte nicht angenommen werden. Ist die Party voll?" : "Die Anfrage konnte nicht abgelehnt werden."
+        }
+    }
+
+    private func vote(_ option: UUID, in poll: PollData) async {
+        guard let userID = profile.userID else { return }
+        do {
+            try await Participation.vote(option, in: poll, user: userID)
+            await model.load(userID: userID)
+        } catch {
+            errorMessage = "Deine Stimme konnte nicht gespeichert werden."
+        }
+    }
+
+    private func answerQuestion(_ text: String, _ question: PollData) async -> Bool {
+        do {
+            try await Participation.answer(text, to: question)
+            await model.load(userID: profile.userID)
+            return true
+        } catch {
+            errorMessage = "Deine Antwort konnte nicht gespeichert werden."
+            return false
         }
     }
 

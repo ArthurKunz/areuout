@@ -36,6 +36,9 @@ struct ExploreView: View {
         .mapControls {
             MapCompass()
         }
+        // Apples Karten-Hinweis muss sichtbar bleiben und sitzt immer unten links. Der
+        // Abstand rückt ihn bündig unter die linke Kante der Tab-Leiste statt in die Ecke.
+        .safeAreaPadding(.horizontal, 12)
         .ignoresSafeArea()
         .overlay(alignment: .top) {
             if loadFailed {

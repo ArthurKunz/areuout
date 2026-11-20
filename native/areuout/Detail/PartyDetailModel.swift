@@ -124,6 +124,10 @@ final class PartyDetailModel {
     private(set) var counts: RSVPCounts?
     private(set) var inviteCode: String?
     private(set) var loadFailed = false
+    private(set) var polls: [PollData] = []
+    private(set) var requests: [JoinRequestRow] = []
+    /// Nur für Fremde mit Teilnehmer-Grenze: ist noch Platz?
+    private(set) var isFull = false
 
     init(partyID: UUID) {
         self.partyID = partyID
@@ -179,10 +183,24 @@ final class PartyDetailModel {
         // Die Nebeninfos dürfen fehlen, ohne dass die Party nicht angezeigt wird.
         agent = try? await supabase.rpc("get_agent_event_details", params: ["p_event_id": partyID]).single().execute().value
         counts = try? await supabase.rpc("get_rsvp_counts_by_status", params: ["p_event_id": partyID]).single().execute().value
-        if role(for: userID) == .host {
+        // Umfragen und Fragen: bei einer privaten Party bekommt ein Fremder keine Zeilen.
+        polls = (try? await Participation.polls(party: partyID)) ?? []
+        switch role(for: userID) {
+        case .host:
             inviteCode = try? await supabase.rpc("get_party_invite_code", params: ["p_event_id": partyID]).execute().value
+            requests = (try? await Participation.requests(party: partyID)) ?? []
+        case .stranger:
+            if detail?.maxGuests != nil, let userID {
+                isFull = !(await Participation.hasRoom(party: partyID, user: userID))
+            }
+        case .guest:
+            break
         }
     }
+
+    var isRequested: Bool { detail?.myStatus == "requested" }
+    var myStatus: RSVPStatus? { detail?.myStatus.flatMap(RSVPStatus.init(rawValue:)) }
+    var isCancelled: Bool { agent?.cancelledAt != nil }
 
     /// Host: Party löschen, danach das Bild (liegt unter {host}/{party}/, wie deleteParty der Web-App).
     func deleteParty() async throws {
