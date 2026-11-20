@@ -32,7 +32,7 @@ struct MainTabView: View {
     var body: some View {
         TabView(selection: $selection) {
             Tab(value: TabID.explore) {
-                ExplorePlaceholder().toolbarVisibility(.hidden, for: .tabBar)
+                ExploreView().toolbarVisibility(.hidden, for: .tabBar)
             }
             Tab(value: TabID.parties) {
                 PartiesPlaceholder { selection = .profile }.toolbarVisibility(.hidden, for: .tabBar)
@@ -111,14 +111,6 @@ private struct BottomBar: View {
 }
 
 // MARK: Platzhalter bis zu ihren Schritten
-
-/// Schritt 4.
-private struct ExplorePlaceholder: View {
-    var body: some View {
-        ContentUnavailableView("Karte", systemImage: "map", description: Text("Kommt in Schritt 4."))
-            .background(Color.appBackground)
-    }
-}
 
 /// Schritt 8. Kopf wie im Mockup: Titel links, Profilbild rechts auf derselben Höhe.
 private struct PartiesPlaceholder: View {
