@@ -5,6 +5,19 @@ struct RootView: View {
     @State private var auth = AuthModel()
 
     var body: some View {
+        #if DEBUG
+        // Nur im Simulator zum Ansehen der Oberfläche ohne Login: Startargument -uiPreviewTabs.
+        if ProcessInfo.processInfo.arguments.contains("-uiPreviewTabs") {
+            MainTabView().environment(auth)
+        } else {
+            content
+        }
+        #else
+        content
+        #endif
+    }
+
+    private var content: some View {
         Group {
             switch auth.phase {
             case .loading:
@@ -12,7 +25,7 @@ struct RootView: View {
             case .signedOut, .onboarding:
                 WelcomeView()
             case .signedIn:
-                SignedInPlaceholder()
+                MainTabView()
             case .failed(let message):
                 VStack(spacing: 16) {
                     Text(message)
@@ -26,19 +39,6 @@ struct RootView: View {
         .background(Color.appBackground)
         .environment(auth)
         .task { await auth.start() }
-    }
-}
-
-/// Platzhalter bis Schritt 3 (Tab-Leiste und Profil).
-private struct SignedInPlaceholder: View {
-    @Environment(AuthModel.self) private var auth
-
-    var body: some View {
-        VStack(spacing: 16) {
-            Text("Du bist eingeloggt.")
-                .font(.title3.bold())
-            Button("Ausloggen") { Task { await auth.signOut() } }
-        }
     }
 }
 

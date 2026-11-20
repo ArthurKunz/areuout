@@ -1,0 +1,169 @@
+import SwiftUI
+
+/// Tab-Leiste (Native Redesign 4): Explore, Parties, Profile in einer Glas-Kapsel und rechts
+/// davon abgesetzt der runde Plus-Knopf. Die System-Tab-Leiste kann den Knopf in dieser
+/// iOS-Version nicht absetzen (auch nicht als Such-Tab, im Simulator geprüft), darum ist die
+/// Leiste aus Apples Liquid-Glass-Bausteinen gebaut. Die Tabs selbst bleiben ein TabView.
+struct MainTabView: View {
+    enum TabID: CaseIterable {
+        case explore, parties, profile
+
+        var title: String {
+            switch self {
+            case .explore: "Explore"
+            case .parties: "Parties"
+            case .profile: "Profile"
+            }
+        }
+
+        var icon: String {
+            switch self {
+            case .explore: "map"
+            case .parties: "party.popper"
+            case .profile: "person.crop.circle"
+            }
+        }
+    }
+
+    @State private var selection: TabID = .explore
+    @State private var showCreate = false
+    @State private var profile = ProfileStore()
+
+    var body: some View {
+        TabView(selection: $selection) {
+            Tab(value: TabID.explore) {
+                ExplorePlaceholder().toolbarVisibility(.hidden, for: .tabBar)
+            }
+            Tab(value: TabID.parties) {
+                PartiesPlaceholder { selection = .profile }.toolbarVisibility(.hidden, for: .tabBar)
+            }
+            Tab(value: TabID.profile) {
+                ProfileView().toolbarVisibility(.hidden, for: .tabBar)
+            }
+        }
+        .safeAreaInset(edge: .bottom, spacing: 0) {
+            BottomBar(selection: $selection) { showCreate = true }
+        }
+        .sheet(isPresented: $showCreate) {
+            CreatePlaceholder()
+        }
+        .environment(profile)
+        .task { await profile.load() }
+    }
+}
+
+/// Die Glas-Kapsel mit den drei Tabs und der runde Plus-Knopf daneben.
+private struct BottomBar: View {
+    @Binding var selection: MainTabView.TabID
+    let create: () -> Void
+
+    var body: some View {
+        GlassEffectContainer(spacing: 12) {
+            HStack(spacing: 12) {
+                HStack(spacing: 0) {
+                    ForEach(MainTabView.TabID.allCases, id: \.self) { tab in
+                        tabButton(tab)
+                    }
+                }
+                .padding(4)
+                .glassEffect(.regular.interactive(), in: Capsule())
+
+                Button(action: create) {
+                    Image(systemName: "plus")
+                        .font(.system(size: 22, weight: .semibold))
+                        .foregroundStyle(.primary)
+                        .frame(width: 62, height: 62)
+                        .contentShape(Circle())
+                }
+                .buttonStyle(.plain)
+                .glassEffect(.regular.interactive(), in: Circle())
+                .accessibilityLabel("Party erstellen")
+            }
+        }
+        .padding(.horizontal, 20)
+        .padding(.bottom, 4)
+    }
+
+    private func tabButton(_ tab: MainTabView.TabID) -> some View {
+        let isSelected = selection == tab
+        return Button {
+            selection = tab
+        } label: {
+            VStack(spacing: 2) {
+                Image(systemName: tab.icon)
+                    .symbolVariant(isSelected ? .fill : .none)
+                    .font(.system(size: 20, weight: .medium))
+                    .frame(height: 26)
+                Text(tab.title)
+                    .font(.system(size: 10, weight: .semibold))
+            }
+            .foregroundStyle(isSelected ? Color.accentColor : Color.primary)
+            .frame(maxWidth: .infinity)
+            .frame(height: 54)
+            .background {
+                if isSelected { Capsule().fill(Color.black.opacity(0.07)) }
+            }
+            .contentShape(Capsule())
+        }
+        .buttonStyle(.plain)
+        .accessibilityAddTraits(isSelected ? .isSelected : [])
+    }
+}
+
+// MARK: Platzhalter bis zu ihren Schritten
+
+/// Schritt 4.
+private struct ExplorePlaceholder: View {
+    var body: some View {
+        ContentUnavailableView("Karte", systemImage: "map", description: Text("Kommt in Schritt 4."))
+            .background(Color.appBackground)
+    }
+}
+
+/// Schritt 8. Kopf wie im Mockup: Titel links, Profilbild rechts auf derselben Höhe.
+private struct PartiesPlaceholder: View {
+    @Environment(ProfileStore.self) private var profile
+    let openProfile: () -> Void
+
+    var body: some View {
+        VStack(spacing: 0) {
+            HStack(alignment: .center) {
+                Text("Parties")
+                    .font(.largeTitle.bold())
+                Spacer()
+                Button(action: openProfile) {
+                    AvatarView(
+                        url: profile.profile?.avatarURL,
+                        color: profile.profile?.avatarColor ?? "#C4C4C6",
+                        initials: profile.initials,
+                        size: 40
+                    )
+                }
+                .buttonStyle(.plain)
+                .accessibilityLabel("Profil")
+            }
+            .padding(.horizontal, 20)
+            .padding(.top, 8)
+
+            ContentUnavailableView("Parties", systemImage: "party.popper", description: Text("Kommt in Schritt 8."))
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+        }
+        .background(Color.appBackground)
+    }
+}
+
+/// Schritt 7.
+private struct CreatePlaceholder: View {
+    @Environment(\.dismiss) private var dismiss
+
+    var body: some View {
+        NavigationStack {
+            ContentUnavailableView("Party erstellen", systemImage: "plus", description: Text("Kommt in Schritt 7."))
+                .toolbar {
+                    ToolbarItem(placement: .cancellationAction) {
+                        Button(role: .close) { dismiss() }
+                    }
+                }
+        }
+    }
+}

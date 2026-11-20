@@ -23,7 +23,6 @@ struct OnboardingView: View {
 
     /// Die sieben Punkte in der Reihenfolge des Mockups; Blau ist Elektroblau.
     private static let swatches = ["#F09343", "#EB4C46", "#5AC5B3", "#BB3ED9", "#DEB93E", "#65C466", "#1E5CFF"]
-    private static let nameMax = 20
 
     var body: some View {
         NavigationStack {
@@ -79,21 +78,9 @@ struct OnboardingView: View {
         }
     }
 
-    /// Alles vor dem ersten Leerzeichen ist der Vorname, der Rest der Nachname (wie im Profil).
-    private var nameParts: (first: String, last: String) {
-        let trimmed = fullName.trimmingCharacters(in: .whitespaces)
-        guard let space = trimmed.firstIndex(of: " ") else { return (trimmed, "") }
-        return (String(trimmed[..<space]), trimmed[space...].trimmingCharacters(in: .whitespaces))
-    }
+    private var nameParts: (first: String, last: String) { FullName.split(fullName) }
 
-    private var nameProblem: String? {
-        let parts = nameParts
-        if parts.first.isEmpty { return "Gib deinen Namen ein." }
-        if parts.first.count > Self.nameMax || parts.last.count > Self.nameMax {
-            return "Vor- und Nachname höchstens je \(Self.nameMax) Zeichen."
-        }
-        return nil
-    }
+    private var nameProblem: String? { FullName.problem(in: fullName) }
 
     private func goToPicture() {
         isFocused = false
@@ -165,10 +152,7 @@ struct OnboardingView: View {
         }
     }
 
-    private var initials: String {
-        let parts = nameParts
-        return [parts.first.first, parts.last.first].compactMap { $0 }.map { String($0).uppercased() }.joined()
-    }
+    private var initials: String { FullName.initials(first: nameParts.first, last: nameParts.last) }
 
     private func loadPhoto(_ item: PhotosPickerItem?) async {
         guard let item else { return }
@@ -189,7 +173,7 @@ struct OnboardingView: View {
                 let user = try await supabase.auth.session.user
                 var avatarURL: String?
                 if let photo {
-                    avatarURL = try await upload(photo, userID: user.id)
+                    avatarURL = try await AvatarStorage.upload(photo, userID: user.id)
                 }
                 // Ohne Wahl eine zufällige der sieben Farben, wie in der Web-App.
                 let avatarColor = color ?? Self.swatches.randomElement() ?? "#1E5CFF"
@@ -211,15 +195,6 @@ struct OnboardingView: View {
             }
         }
     }
-
-    /// Nie die Originaldatei: Neu zeichnen entfernt Standort und Gerät aus dem Foto.
-    private func upload(_ image: UIImage, userID: UUID) async throws -> String {
-        guard let jpeg = image.avatarJPEG() else { throw AuthFailure("Dieses Bild konnte nicht verarbeitet werden.") }
-        let path = "\(userID.uuidString.lowercased())/avatar-\(Int(Date().timeIntervalSince1970 * 1000)).jpg"
-        let bucket = supabase.storage.from("avatars")
-        try await bucket.upload(path, data: jpeg, options: FileOptions(cacheControl: "3600", contentType: "image/jpeg", upsert: false))
-        return try bucket.getPublicURL(path: path).absoluteString
-    }
 }
 
 private struct NewProfile: Encodable {
@@ -233,19 +208,5 @@ private struct NewProfile: Encodable {
         case id, firstname, lastname
         case avatarURL = "avatar_url"
         case avatarColor = "avatar_color"
-    }
-}
-
-extension UIImage {
-    /// Höchstens 512 px an der längsten Kante (wie AVATAR_MAX_EDGE der Web-App), als JPEG.
-    func avatarJPEG(maxEdge: CGFloat = 512) -> Data? {
-        let scale = min(1, maxEdge / max(size.width, size.height))
-        let target = CGSize(width: (size.width * scale).rounded(), height: (size.height * scale).rounded())
-        let format = UIGraphicsImageRendererFormat()
-        format.scale = 1
-        let redrawn = UIGraphicsImageRenderer(size: target, format: format).image { _ in
-            draw(in: CGRect(origin: .zero, size: target))
-        }
-        return redrawn.jpegData(compressionQuality: 0.85)
     }
 }

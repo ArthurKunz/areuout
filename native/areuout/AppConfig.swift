@@ -18,4 +18,17 @@ enum AppConfig {
         }
         return key
     }()
+
+    /// Die Website, von der die App Rechtstexte lädt. In Testversionen lässt sie sich mit dem
+    /// Startargument -websiteURL umstellen, etwa auf einen lokalen Server.
+    static let websiteURL: URL = {
+        #if DEBUG
+        if let index = ProcessInfo.processInfo.arguments.firstIndex(of: "-websiteURL"),
+           index + 1 < ProcessInfo.processInfo.arguments.count,
+           let url = URL(string: ProcessInfo.processInfo.arguments[index + 1]) {
+            return url
+        }
+        #endif
+        return URL(string: "https://www.areuout.de")!
+    }()
 }
