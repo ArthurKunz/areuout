@@ -3,13 +3,7 @@
 import { useRouter } from 'next/navigation'
 import StepFrame from '@/features/create-party/StepFrame'
 
-// A legal document is a numbered list of sections, not a wall of paragraphs, so the
-// three pages hand over their headings and the screen renders the structure.
-export type LegalSection = {
-  // Left out for the lead-in above the first numbered heading.
-  heading?: string
-  paragraphs: string[]
-}
+import type { LegalSection } from './legal/types'
 
 // Longer than 'Datenschutz' (11) and 'Impressum' (9), shorter than
 // 'Nutzungsbedingungen' (19): the titles that no longer fit at text-heading-3.
