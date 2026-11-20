@@ -6,7 +6,7 @@ import UIKit
 /// Das eigene Profil, geladen einmal nach dem Login. Profil- und Parties-Tab lesen daraus.
 @Observable
 final class ProfileStore {
-    struct Profile: Decodable {
+    nonisolated struct Profile: Decodable {
         var firstname: String?
         var lastname: String?
         var avatarURL: String?

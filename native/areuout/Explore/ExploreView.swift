@@ -48,7 +48,7 @@ struct ExploreView: View {
             }
         }
         .sheet(item: $selected) { party in
-            PartyDetailPlaceholder(party: party)
+            PartyDetailView(partyID: party.id) { Task { await load() } }
         }
         .task { await load() }
     }
@@ -78,40 +78,5 @@ private struct PartyCircle: View {
         .overlay(Circle().stroke(Color.black.opacity(0.8), lineWidth: 2))
         .shadow(color: .black.opacity(0.25), radius: 3, y: 1)
         .contentShape(Circle())
-    }
-}
-
-/// Platzhalter bis Schritt 5 (Party-Detail).
-private struct PartyDetailPlaceholder: View {
-    @Environment(\.dismiss) private var dismiss
-    let party: PartySummary
-
-    var body: some View {
-        NavigationStack {
-            VStack(spacing: 16) {
-                AsyncImage(url: party.imageURL) { image in
-                    image.resizable().scaledToFill()
-                } placeholder: {
-                    Color.appPlaceholder
-                }
-                .frame(height: 260)
-                .clipped()
-
-                Text(party.title).font(.title.bold())
-                Text(party.eventDate.formatted(date: .complete, time: .shortened))
-                    .foregroundStyle(.secondary)
-                Text("Die Detail-Seite kommt in Schritt 5.")
-                    .font(.footnote)
-                    .foregroundStyle(.secondary)
-                Spacer()
-            }
-            .ignoresSafeArea(edges: .top)
-            .background(Color.appBackground)
-            .toolbar {
-                ToolbarItem(placement: .cancellationAction) {
-                    Button(role: .close) { dismiss() }
-                }
-            }
-        }
     }
 }

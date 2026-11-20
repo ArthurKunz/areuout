@@ -4,7 +4,7 @@ import Foundation
 /// Eine Party, wie die Listen-Funktionen sie liefern (get_explore_parties, get_my_parties,
 /// get_hosting_parties). Bei einer privaten Party ohne Zugang sind lat/lng schon auf dem
 /// Server die verwischte Position (is_exact = false); die genaue kommt nie aufs Gerät.
-struct PartySummary: Decodable, Identifiable, Hashable {
+nonisolated struct PartySummary: Decodable, Identifiable, Hashable {
     let id: UUID
     let title: String
     let backgroundURL: String?

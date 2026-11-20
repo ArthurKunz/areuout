@@ -74,6 +74,6 @@ final class AuthModel {
     }
 }
 
-private struct ProfileID: Decodable {
+nonisolated private struct ProfileID: Decodable {
     let id: UUID
 }
