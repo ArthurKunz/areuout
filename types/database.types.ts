@@ -85,6 +85,8 @@ export type Database = {
       events: {
         Row: {
           background_url: string | null
+          category: string | null
+          category_other: string | null
           created_at: string | null
           description: string | null
           dresscode: string | null
@@ -95,6 +97,7 @@ export type Database = {
           host_id: string
           id: string
           invite_code: string
+          is_all_day: boolean
           is_public: boolean
           lat: number | null
           lng: number | null
@@ -105,9 +108,12 @@ export type Database = {
           price: number | null
           title: string
           website_url: string | null
+          website_title: string | null
         }
         Insert: {
           background_url?: string | null
+          category?: string | null
+          category_other?: string | null
           created_at?: string | null
           description?: string | null
           dresscode?: string | null
@@ -118,6 +124,7 @@ export type Database = {
           host_id: string
           id?: string
           invite_code: string
+          is_all_day?: boolean
           is_public?: boolean
           lat?: number | null
           lng?: number | null
@@ -128,9 +135,12 @@ export type Database = {
           price?: number | null
           title: string
           website_url?: string | null
+          website_title?: string | null
         }
         Update: {
           background_url?: string | null
+          category?: string | null
+          category_other?: string | null
           created_at?: string | null
           description?: string | null
           dresscode?: string | null
@@ -141,6 +151,7 @@ export type Database = {
           host_id?: string
           id?: string
           invite_code?: string
+          is_all_day?: boolean
           is_public?: boolean
           lat?: number | null
           lng?: number | null
@@ -151,6 +162,7 @@ export type Database = {
           price?: number | null
           title?: string
           website_url?: string | null
+          website_title?: string | null
         }
         Relationships: [
           {
@@ -493,12 +505,15 @@ export type Database = {
       create_party: {
         Args: {
           p_background_url: string
+          p_category?: string
+          p_category_other?: string
           p_description: string
           p_dresscode: string
           p_ends_at: string
           p_event_date: string
           p_id: string
           p_invite_code: string
+          p_is_all_day?: boolean
           p_is_public: boolean
           p_lat: number
           p_lng: number
@@ -510,6 +525,7 @@ export type Database = {
           p_price?: number
           p_questions: Json
           p_title: string
+          p_website_title?: string
           p_website_url?: string
         }
         Returns: string
@@ -520,6 +536,7 @@ export type Database = {
       }
       delete_self: { Args: never; Returns: undefined }
       discard_agent_candidate: { Args: { p_id: string }; Returns: undefined }
+      email_account_status: { Args: { p_email: string }; Returns: string }
       get_agent_drafts: {
         Args: never
         Returns: {
@@ -632,6 +649,8 @@ export type Database = {
         Args: never
         Returns: {
           background_url: string
+          category: string
+          category_other: string
           ends_at: string
           event_date: string
           host_avatar_color: string
@@ -640,6 +659,7 @@ export type Database = {
           host_id: string
           host_lastname: string
           id: string
+          is_all_day: boolean
           is_exact: boolean
           is_public: boolean
           lat: number
@@ -662,6 +682,8 @@ export type Database = {
         Args: never
         Returns: {
           background_url: string
+          category: string
+          category_other: string
           ends_at: string
           event_date: string
           host_avatar_color: string
@@ -670,6 +692,7 @@ export type Database = {
           host_id: string
           host_lastname: string
           id: string
+          is_all_day: boolean
           is_exact: boolean
           is_public: boolean
           lat: number
@@ -692,6 +715,8 @@ export type Database = {
         Args: never
         Returns: {
           background_url: string
+          category: string
+          category_other: string
           ends_at: string
           event_date: string
           host_avatar_color: string
@@ -700,6 +725,7 @@ export type Database = {
           host_id: string
           host_lastname: string
           id: string
+          is_all_day: boolean
           is_exact: boolean
           is_public: boolean
           lat: number
@@ -729,6 +755,8 @@ export type Database = {
         Args: { p_event_id: string }
         Returns: {
           background_url: string
+          category: string
+          category_other: string
           description: string
           dresscode: string
           ends_at: string
@@ -739,6 +767,7 @@ export type Database = {
           host_id: string
           host_lastname: string
           id: string
+          is_all_day: boolean
           is_exact: boolean
           is_public: boolean
           lat: number
@@ -750,6 +779,7 @@ export type Database = {
           organizer_name: string
           price: number
           title: string
+          website_title: string
           website_url: string
         }[]
       }
@@ -883,11 +913,14 @@ export type Database = {
       update_party: {
         Args: {
           p_background_url: string
+          p_category?: string
+          p_category_other?: string
           p_description: string
           p_dresscode: string
           p_ends_at: string
           p_event_date: string
           p_id: string
+          p_is_all_day?: boolean
           p_is_public: boolean
           p_lat: number
           p_lng: number
@@ -899,6 +932,7 @@ export type Database = {
           p_price?: number
           p_questions: Json
           p_title: string
+          p_website_title?: string
           p_website_url?: string
         }
         Returns: undefined
