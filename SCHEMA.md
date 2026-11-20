@@ -922,6 +922,40 @@ runs with the jobs set to a one-off time: all four categories (11 drafts, 0.53 $
 push; with a broken `ANTHROPIC_API_KEY` four error rows (401) and one push
 `Agent-Lauf fehlgeschlagen`. Rollback: `supabase/rollbacks/20261115205332_schedule_party_agent.sql`.
 
+## 9g. Native app fields (native redesign step 0, 2026-11-20)
+
+Applied as `20261120091233` and `20261120091320`. The native iOS app (vault:
+`Native Redesign.md`) needs four new party fields and one login check. All of it is
+backwards compatible: the web app and the App Store version 1.0 call the functions
+without the new parameters and ignore the new columns.
+
+- `events.category` (`house`, `club`, `open_air`, `festival`, `other`) and
+  `events.category_other` (1–20 characters, set exactly when the category is `other`).
+  Optional in the database, because the web app and older parties have none; the native
+  app requires it. Own `GRANT SELECT`, not tied to the address.
+- `events.is_all_day` (default false). Display only: the app sets `event_date` to the
+  start and `ends_at` to the end of the day, so `private.party_visible_until` needs no
+  change. Own `GRANT SELECT`.
+- `events.price` now takes 0 (the app shows `Kostenlos`), still at most 9999.99, and at
+  most 2 decimals (CHECK `price = round(price, 2)`).
+- `events.website_title` (1–40 characters, only with `website_url`). No `GRANT SELECT`,
+  like `website_url`: returned only by `get_party_detail`, under the same rule as the
+  address.
+- `get_explore_parties`, `get_my_parties`, `get_hosting_parties` return `category`,
+  `category_other`, `is_all_day` as new last columns; `get_party_detail` also
+  `website_title`.
+- `create_party` and `update_party` take `p_category`, `p_category_other`, `p_is_all_day`,
+  `p_website_title` (DEFAULT NULL). `update_party` keeps each of them when NULL; when the
+  website link goes away, its title goes with it.
+- `approve_agent_candidate` sets the category from the agent's `event_type`: `club`,
+  `festival`, `open_air` map one to one, `concert` becomes `other` / `Konzert`, `other`
+  becomes `other` / `Event`.
+- `public.email_account_status(p_email)` (SECURITY DEFINER, granted to `anon`): returns
+  `new`, `password` or `no_password` for the native login. Tells anyone whether an address
+  is registered (decided by Arthur). Every call counts against 10 per IP and minute in
+  `private.email_check_calls` (same pattern as `private.invite_lookup_misses`), then
+  `PT429`.
+
 ## 10. Checking this file against the database
 
 Do not trust the above. The database answers all of it, and the Supabase MCP is the

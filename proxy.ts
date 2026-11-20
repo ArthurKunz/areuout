@@ -11,7 +11,8 @@ import { sanitizeNextPath } from '@/lib/utils'
 // has to be reachable without signing in, and nobody can be asked to agree to terms
 // they must first create an account to read — the sign-up sheet links straight to
 // them. They sit at the app root instead of under /profile so this list can name them.
-const LEGAL = [/^\/impressum(\/|$)/, /^\/datenschutz(\/|$)/, /^\/nutzungsbedingungen(\/|$)/]
+// /legal/ is the same three texts as data for the iOS app (app/legal/[doc]/route.ts).
+const LEGAL = [/^\/impressum(\/|$)/, /^\/datenschutz(\/|$)/, /^\/nutzungsbedingungen(\/|$)/, /^\/legal\//]
 
 // Everything the app has is behind an account, with these exceptions: the auth screens
 // themselves, the OAuth/recovery callback, the public invite link — an anonymous
