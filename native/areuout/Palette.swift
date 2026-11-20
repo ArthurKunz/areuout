@@ -21,6 +21,11 @@ extension Color {
     static let iconPoll = Color(hex: 0x744AC0)
     static let iconQuestion = Color(hex: 0xF7CE46)
 
+    /// Aus "#RRGGBB", wie profiles.avatar_color es speichert.
+    init(hexString: String) {
+        self.init(hex: UInt32(hexString.dropFirst(), radix: 16) ?? 0)
+    }
+
     init(hex: UInt32) {
         self.init(
             .sRGB,
