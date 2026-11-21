@@ -81,6 +81,15 @@ enum PartyFormat {
         return allDay ? day : "\(day) um \(clock.string(from: date)) Uhr"
     }
 
+    /// Kalendertage bis zur Party (Berliner Zeit), 0 heißt heute.
+    static func daysUntil(_ date: Date) -> Int {
+        var calendar = Calendar(identifier: .gregorian)
+        calendar.timeZone = berlin
+        let from = calendar.startOfDay(for: Date())
+        let to = calendar.startOfDay(for: date)
+        return max(0, calendar.dateComponents([.day], from: from, to: to).day ?? 0)
+    }
+
     /// `5,50 €`, `0` ist `Kostenlos`.
     static func price(_ value: Double) -> String {
         if value == 0 { return "Kostenlos" }

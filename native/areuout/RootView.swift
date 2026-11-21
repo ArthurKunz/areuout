@@ -9,6 +9,10 @@ struct RootView: View {
         // Nur im Simulator zum Ansehen der Oberfläche ohne Login: Startargument -uiPreviewTabs.
         if ProcessInfo.processInfo.arguments.contains("-uiPreviewTabs") {
             MainTabView().environment(auth)
+        } else if ProcessInfo.processInfo.arguments.contains("-uiPreviewParties") {
+            PartiesView(openProfile: {}, sample: PartySummary.samples())
+                .environment(ProfileStore())
+                .environment(PartyFeed())
         } else if ProcessInfo.processInfo.arguments.contains("-uiPreviewDetail") {
             PartyDetailView(model: .sample()).environment(ProfileStore())
         } else {
