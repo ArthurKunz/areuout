@@ -28,6 +28,9 @@ struct MainTabView: View {
     @State private var selection: TabID = .explore
     @State private var showCreate = false
     @State private var createdPartyID: UUID?
+    @State private var linkedPartyID: UUID?
+    @State private var linkMissing = false
+    @Environment(DeepLinkRouter.self) private var links
     @State private var feed = PartyFeed()
     @State private var profile = ProfileStore()
 
@@ -56,9 +59,35 @@ struct MainTabView: View {
             // Nach dem Erstellen gleich die neue Party zeigen (Teilen-Knopf bereit).
             PartyDetailView(partyID: id) { feed.changed() }
         }
+        .sheet(item: $linkedPartyID) { id in
+            PartyDetailView(partyID: id) { feed.changed() }
+        }
+        .task(id: links.pending) { await openLink() }
+        .alert("Diese Party existiert nicht (mehr).", isPresented: $linkMissing) {
+            Button("OK") {}
+        }
         .environment(profile)
         .environment(feed)
         .task { await profile.load() }
+    }
+}
+
+extension MainTabView {
+    /// Einen wartenden Link öffnen, sobald die App eingeloggt ist.
+    fileprivate func openLink() async {
+        guard let target = links.pending else { return }
+        links.pending = nil
+        switch target {
+        case .party(let id):
+            linkedPartyID = id
+        case .invite(let code):
+            if let id = await DeepLinkRouter.resolveInvite(code) {
+                feed.changed()
+                linkedPartyID = id
+            } else {
+                linkMissing = true
+            }
+        }
     }
 }
 

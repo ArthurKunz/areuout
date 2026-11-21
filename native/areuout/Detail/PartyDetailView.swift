@@ -35,6 +35,17 @@ struct PartyDetailView: View {
 
     private var role: PartyDetailModel.Role { model.role(for: profile.userID) }
 
+    private var shareURL: URL? {
+        role == .host ? model.inviteURL : DeepLinkRouter.guestURL(for: model.partyID)
+    }
+
+    /// Über den Host-Link geöffnet: noch keine Antwort, aber schon Zugang zur privaten Party.
+    /// Dann gibt es die drei Antworten statt `Anfragen` (App Redesign 4.3).
+    private var hasInviteAccess: Bool {
+        guard let detail = model.detail else { return false }
+        return role == .stranger && !detail.isPublic && detail.isExact && !model.isRequested
+    }
+
     var body: some View {
         Group {
             if let detail = model.detail {
@@ -130,7 +141,7 @@ struct PartyDetailView: View {
         .overlay(alignment: .top) { topBar(detail) }
         .safeAreaInset(edge: .bottom) {
             // Wer noch nicht geantwortet hat: Teilnehmen, Anfragen, Warten oder voll.
-            if role == .stranger, !model.isCancelled {
+            if role == .stranger, !hasInviteAccess, !model.isCancelled {
                 JoinBar(
                     isPublic: detail.isPublic,
                     isRequested: model.isRequested,
@@ -157,7 +168,8 @@ struct PartyDetailView: View {
             Spacer()
 
             HStack(spacing: 0) {
-                if role == .host, let url = model.inviteURL {
+                // Host teilt den Einladungslink, alle anderen den Gast-Link (Native Redesign 6).
+                if let url = shareURL {
                     ShareLink(item: url) {
                         Image(systemName: "square.and.arrow.up")
                             .frame(width: 44, height: 44)
@@ -221,7 +233,7 @@ struct PartyDetailView: View {
                 Text(detail.hostName)
             }
             .font(.subheadline)
-            if role == .guest, !model.isCancelled {
+            if role == .guest || hasInviteAccess, !model.isCancelled {
                 RSVPPicker(status: model.myStatus) { status in Task { await answer(status) } }
                     .disabled(isAnswering)
             }
