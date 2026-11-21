@@ -197,7 +197,7 @@ struct OnboardingView: View {
     }
 }
 
-private struct NewProfile: Encodable {
+nonisolated private struct NewProfile: Encodable {
     let id: UUID
     let firstname: String
     let lastname: String

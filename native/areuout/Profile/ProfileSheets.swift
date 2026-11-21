@@ -147,7 +147,7 @@ struct PasswordSheet: View {
 // MARK: Blockierte Personen
 
 struct BlockedSheet: View {
-    private struct BlockedUser: Decodable, Identifiable {
+    nonisolated private struct BlockedUser: Decodable, Identifiable {
         let id: UUID
         let firstname: String?
         let lastname: String?
@@ -388,7 +388,7 @@ struct LegalSheet: View {
     }
 }
 
-private struct LegalDocument: Decodable {
+nonisolated private struct LegalDocument: Decodable {
     struct Section: Decodable {
         let heading: String?
         let paragraphs: [String]

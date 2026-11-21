@@ -20,6 +20,8 @@ extension Color {
     static let iconDresscode = Color(hex: 0xB13A73)
     static let iconPoll = Color(hex: 0x744AC0)
     static let iconQuestion = Color(hex: 0xF7CE46)
+    static let iconParticipants = Color(hex: 0x1E5CFF)
+    static let iconDescription = Color(hex: 0x9A7B5B)
 
     /// Aus "#RRGGBB", wie profiles.avatar_color es speichert.
     init(hexString: String) {

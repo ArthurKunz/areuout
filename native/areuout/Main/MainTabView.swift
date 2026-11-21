@@ -27,15 +27,20 @@ struct MainTabView: View {
 
     @State private var selection: TabID = .explore
     @State private var showCreate = false
+    @State private var createdPartyID: UUID?
+    @State private var linkedPartyID: UUID?
+    @State private var linkMissing = false
+    @Environment(DeepLinkRouter.self) private var links
+    @State private var feed = PartyFeed()
     @State private var profile = ProfileStore()
 
     var body: some View {
         TabView(selection: $selection) {
             Tab(value: TabID.explore) {
-                ExplorePlaceholder().toolbarVisibility(.hidden, for: .tabBar)
+                ExploreView().toolbarVisibility(.hidden, for: .tabBar)
             }
             Tab(value: TabID.parties) {
-                PartiesPlaceholder { selection = .profile }.toolbarVisibility(.hidden, for: .tabBar)
+                PartiesView { selection = .profile }.toolbarVisibility(.hidden, for: .tabBar)
             }
             Tab(value: TabID.profile) {
                 ProfileView().toolbarVisibility(.hidden, for: .tabBar)
@@ -45,10 +50,44 @@ struct MainTabView: View {
             BottomBar(selection: $selection) { showCreate = true }
         }
         .sheet(isPresented: $showCreate) {
-            CreatePlaceholder()
+            PartyFormView(mode: .create) { id in
+                feed.changed()
+                createdPartyID = id
+            }
+        }
+        .sheet(item: $createdPartyID) { id in
+            // Nach dem Erstellen gleich die neue Party zeigen (Teilen-Knopf bereit).
+            PartyDetailView(partyID: id) { feed.changed() }
+        }
+        .sheet(item: $linkedPartyID) { id in
+            PartyDetailView(partyID: id) { feed.changed() }
+        }
+        .task(id: links.pending) { await openLink() }
+        .alert("Diese Party existiert nicht (mehr).", isPresented: $linkMissing) {
+            Button("OK") {}
         }
         .environment(profile)
+        .environment(feed)
         .task { await profile.load() }
+    }
+}
+
+extension MainTabView {
+    /// Einen wartenden Link öffnen, sobald die App eingeloggt ist.
+    fileprivate func openLink() async {
+        guard let target = links.pending else { return }
+        links.pending = nil
+        switch target {
+        case .party(let id):
+            linkedPartyID = id
+        case .invite(let code):
+            if let id = await DeepLinkRouter.resolveInvite(code) {
+                feed.changed()
+                linkedPartyID = id
+            } else {
+                linkMissing = true
+            }
+        }
     }
 }
 
@@ -112,58 +151,3 @@ private struct BottomBar: View {
 
 // MARK: Platzhalter bis zu ihren Schritten
 
-/// Schritt 4.
-private struct ExplorePlaceholder: View {
-    var body: some View {
-        ContentUnavailableView("Karte", systemImage: "map", description: Text("Kommt in Schritt 4."))
-            .background(Color.appBackground)
-    }
-}
-
-/// Schritt 8. Kopf wie im Mockup: Titel links, Profilbild rechts auf derselben Höhe.
-private struct PartiesPlaceholder: View {
-    @Environment(ProfileStore.self) private var profile
-    let openProfile: () -> Void
-
-    var body: some View {
-        VStack(spacing: 0) {
-            HStack(alignment: .center) {
-                Text("Parties")
-                    .font(.largeTitle.bold())
-                Spacer()
-                Button(action: openProfile) {
-                    AvatarView(
-                        url: profile.profile?.avatarURL,
-                        color: profile.profile?.avatarColor ?? "#C4C4C6",
-                        initials: profile.initials,
-                        size: 40
-                    )
-                }
-                .buttonStyle(.plain)
-                .accessibilityLabel("Profil")
-            }
-            .padding(.horizontal, 20)
-            .padding(.top, 8)
-
-            ContentUnavailableView("Parties", systemImage: "party.popper", description: Text("Kommt in Schritt 8."))
-                .frame(maxWidth: .infinity, maxHeight: .infinity)
-        }
-        .background(Color.appBackground)
-    }
-}
-
-/// Schritt 7.
-private struct CreatePlaceholder: View {
-    @Environment(\.dismiss) private var dismiss
-
-    var body: some View {
-        NavigationStack {
-            ContentUnavailableView("Party erstellen", systemImage: "plus", description: Text("Kommt in Schritt 7."))
-                .toolbar {
-                    ToolbarItem(placement: .cancellationAction) {
-                        Button(role: .close) { dismiss() }
-                    }
-                }
-        }
-    }
-}

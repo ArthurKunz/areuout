@@ -18,7 +18,8 @@ const LEGAL = [/^\/impressum(\/|$)/, /^\/datenschutz(\/|$)/, /^\/nutzungsbedingu
 // themselves, the OAuth/recovery callback, the public invite link — an anonymous
 // visitor is meant to see the party there and be offered the sign-up sheet — and the
 // three legal texts above.
-const PUBLIC_PATHS = [/^\/login(\/|$)/, /^\/forgot-password(\/|$)/, /^\/callback(\/|$)/, /^\/e\//, ...LEGAL]
+// /p/ is the guest link of the iOS app: without the app it only asks for the app.
+const PUBLIC_PATHS = [/^\/login(\/|$)/, /^\/forgot-password(\/|$)/, /^\/callback(\/|$)/, /^\/e\//, /^\/p\//, ...LEGAL]
 
 const LOGIN = /^\/login(\/|$)/
 const ONBOARDING = /^\/onboarding(\/|$)/
