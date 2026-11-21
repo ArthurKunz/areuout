@@ -171,7 +171,7 @@ enum Participation {
     static func setStatus(_ status: RSVPStatus, party: UUID, user: UUID) async throws {
         try await supabase
             .from("rsvps")
-            .upsert(RSVPRow(eventID: party, userID: user, status: status.rawValue), onConflict: "event_id,user_id")
+            .upsert(RSVPRow(eventID: party, userID: user, status: status.rawValue), onConflict: "event_id,user_id", returning: .minimal)
             .execute()
     }
 
@@ -197,7 +197,7 @@ enum Participation {
 
     /// Host: einen Gast entfernen (rsvps_delete_host).
     static func removeGuest(_ guest: UUID, party: UUID) async throws {
-        try await supabase.from("rsvps").delete().eq("event_id", value: party).eq("user_id", value: guest).execute()
+        try await supabase.from("rsvps").delete(returning: .minimal).eq("event_id", value: party).eq("user_id", value: guest).execute()
     }
 
     static func polls(party: UUID) async throws -> [PollData] {
@@ -217,22 +217,17 @@ enum Participation {
     static func vote(_ option: UUID, in poll: PollData, user: UUID) async throws {
         if poll.allowMultiple {
             if poll.myOptions(user).contains(option) {
-                try await supabase.from("pool_responses").delete()
+                try await supabase.from("pool_responses").delete(returning: .minimal)
                     .eq("pool_id", value: poll.poolID).eq("user_id", value: user).eq("option_id", value: option)
                     .execute()
             } else {
                 try await supabase.from("pool_responses")
-                    .insert(NewResponse(poolID: poll.poolID, userID: user, optionID: option))
+                    .insert(NewResponse(poolID: poll.poolID, userID: user, optionID: option), returning: .minimal)
                     .execute()
             }
         } else {
             try await supabase.rpc("set_single_pool_response", params: SingleResponseParams(poolID: poll.poolID, optionID: option, text: nil)).execute()
         }
-    }
-
-    /// Frage: die eigene Antwort (höchstens 25 Zeichen, pool_responses_text_max_25).
-    static func answer(_ text: String, to question: PollData) async throws {
-        try await supabase.rpc("set_single_pool_response", params: SingleResponseParams(poolID: question.poolID, optionID: nil, text: text)).execute()
     }
 
     /// Satz für den Nutzer, wenn eine Antwort scheitert (wie rsvpErrorText der Web-App).

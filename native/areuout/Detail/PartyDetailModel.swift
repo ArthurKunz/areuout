@@ -205,7 +205,9 @@ final class PartyDetailModel {
     /// Host: Party löschen, danach das Bild (liegt unter {host}/{party}/, wie deleteParty der Web-App).
     func deleteParty() async throws {
         guard let detail else { return }
-        try await supabase.from("events").delete().eq("id", value: partyID).execute()
+        // returning: .minimal, sonst will PostgREST die gelöschte Zeile zurückgeben und
+        // scheitert an den Spalten ohne Leserecht (location, website_url, invite_code).
+        try await supabase.from("events").delete(returning: .minimal).eq("id", value: partyID).execute()
         try? await AvatarStorage.removeFolder(
             bucket: "event-backgrounds",
             prefix: "\(detail.hostID.uuidString.lowercased())/\(partyID.uuidString.lowercased())"
@@ -215,13 +217,13 @@ final class PartyDetailModel {
     /// Gast: die eigene Antwort löschen. Die Party bleibt, verschwindet aber aus `Going`.
     /// Bei einer privaten Party geht damit auch der Zugang (Native Redesign 5.5).
     func removeMyAnswer(userID: UUID) async throws {
-        try await supabase.from("rsvps").delete().eq("event_id", value: partyID).eq("user_id", value: userID).execute()
+        try await supabase.from("rsvps").delete(returning: .minimal).eq("event_id", value: partyID).eq("user_id", value: userID).execute()
     }
 
     /// Host: neuer Einladungscode, der alte Link ist sofort tot (Link-Reset bei geleaktem Invite).
     func resetInviteLink() async throws {
         let code = Self.makeInviteCode()
-        try await supabase.from("events").update(["invite_code": code]).eq("id", value: partyID).execute()
+        try await supabase.from("events").update(["invite_code": code], returning: .minimal).eq("id", value: partyID).execute()
         inviteCode = code
     }
 

@@ -27,6 +27,8 @@ struct MainTabView: View {
 
     @State private var selection: TabID = .explore
     @State private var showCreate = false
+    @State private var createdPartyID: UUID?
+    @State private var feed = PartyFeed()
     @State private var profile = ProfileStore()
 
     var body: some View {
@@ -45,9 +47,17 @@ struct MainTabView: View {
             BottomBar(selection: $selection) { showCreate = true }
         }
         .sheet(isPresented: $showCreate) {
-            CreatePlaceholder()
+            PartyFormView(mode: .create) { id in
+                feed.changed()
+                createdPartyID = id
+            }
+        }
+        .sheet(item: $createdPartyID) { id in
+            // Nach dem Erstellen gleich die neue Party zeigen (Teilen-Knopf bereit).
+            PartyDetailView(partyID: id) { feed.changed() }
         }
         .environment(profile)
+        .environment(feed)
         .task { await profile.load() }
     }
 }
@@ -141,21 +151,5 @@ private struct PartiesPlaceholder: View {
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
         }
         .background(Color.appBackground)
-    }
-}
-
-/// Schritt 7.
-private struct CreatePlaceholder: View {
-    @Environment(\.dismiss) private var dismiss
-
-    var body: some View {
-        NavigationStack {
-            ContentUnavailableView("Party erstellen", systemImage: "plus", description: Text("Kommt in Schritt 7."))
-                .toolbar {
-                    ToolbarItem(placement: .cancellationAction) {
-                        Button(role: .close) { dismiss() }
-                    }
-                }
-        }
     }
 }

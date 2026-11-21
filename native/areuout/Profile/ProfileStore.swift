@@ -51,7 +51,7 @@ final class ProfileStore {
         let parts = FullName.split(text)
         try await supabase
             .from("profiles")
-            .update(["firstname": parts.first, "lastname": parts.last])
+            .update(["firstname": parts.first, "lastname": parts.last], returning: .minimal)
             .eq("id", value: userID)
             .execute()
         profile?.firstname = parts.first
@@ -66,7 +66,7 @@ final class ProfileStore {
         let url = try await AvatarStorage.upload(image, userID: userID)
         try await supabase
             .from("profiles")
-            .update(["avatar_url": url])
+            .update(["avatar_url": url], returning: .minimal)
             .eq("id", value: userID)
             .execute()
         profile?.avatarURL = url

@@ -22,7 +22,7 @@ struct PartyDetailView: View {
     @State private var isAnswering = false
     @State private var showGuests = false
     @State private var votesFor: PollData?
-    @State private var answersFor: PollData?
+    @State private var editDraft: PartyDraft?
 
     init(partyID: UUID, onChange: @escaping () -> Void = {}) {
         _model = State(initialValue: PartyDetailModel(partyID: partyID))
@@ -79,9 +79,12 @@ struct PartyDetailView: View {
             }
         }
         .sheet(item: $votesFor) { poll in VotesSheet(poll: poll) }
-        .sheet(item: $answersFor) { question in
-            AnswersSheet(question: question, hostName: model.detail?.hostName ?? "", myUserID: profile.userID)
+        .sheet(item: $editDraft) { draft in
+            PartyFormView(mode: .edit(partyID: model.partyID), draft: draft) { _ in
+                Task { await reload() }
+            }
         }
+
         .alert(notice?.title ?? "", isPresented: Binding(get: { notice != nil }, set: { if !$0 { notice = nil } })) {
             Button("Fertig") {}
         } message: {
@@ -153,14 +156,6 @@ struct PartyDetailView: View {
 
             Spacer()
 
-            Text(detail.isPublic ? "Öffentlich" : "Privat")
-                .font(.subheadline.weight(.semibold))
-                .padding(.horizontal, 14)
-                .frame(height: 36)
-                .glassEffect(.regular, in: Capsule())
-
-            Spacer()
-
             HStack(spacing: 0) {
                 if role == .host, let url = model.inviteURL {
                     ShareLink(item: url) {
@@ -180,6 +175,14 @@ struct PartyDetailView: View {
             .font(.system(size: 17, weight: .semibold))
             .glassEffect(.regular.interactive(), in: Capsule())
         }
+        // Der Chip steht in der Mitte der ganzen Seite, nicht zwischen den Knöpfen.
+        .overlay {
+            Text(detail.isPublic ? "Öffentlich" : "Privat")
+                .font(.subheadline.weight(.semibold))
+                .padding(.horizontal, 14)
+                .frame(height: 36)
+                .glassEffect(.regular, in: Capsule())
+        }
         .foregroundStyle(Color(.label))
         .padding(.horizontal, 16)
         .padding(.top, 8)
@@ -191,7 +194,7 @@ struct PartyDetailView: View {
         case .host:
             Button("Link-reset", systemImage: "link") { askReset = true }
             Button("bearbeiten", systemImage: "pencil") {
-                notice = ("Kommt bald", "Bearbeiten kommt in Schritt 7 dazu.")
+                if let detail = model.detail { editDraft = PartyDraft.from(detail, polls: model.polls) }
             }
             Button("Party löschen", systemImage: "trash", role: .destructive) { askDelete = true }
         case .guest:
@@ -254,16 +257,12 @@ struct PartyDetailView: View {
                     decline: { request in Task { await decide(request, accept: false) } }
                 )
             }
-            // Umfragen und Fragen: sichtbar, wem der Server sie gibt, nutzbar nur mit Antwort oder als Host.
+            // Umfragen: sichtbar, wem der Server sie gibt, nutzbar nur mit Antwort. Fragen gibt es
+            // in der nativen App nicht mehr (entschieden 2026-11-20).
             ForEach(model.polls.filter { !$0.isQuestion }) { poll in
                 PollCard(poll: poll, myUserID: profile.userID, canVote: canTakePart && role != .host,
                          vote: { option in Task { await vote(option, in: poll) } },
                          showVotes: { votesFor = poll })
-            }
-            ForEach(model.polls.filter(\.isQuestion)) { question in
-                QuestionCard(question: question, myUserID: profile.userID, canAnswer: canTakePart && role != .host,
-                             send: { text in await answerQuestion(text, question) },
-                             showAnswers: { answersFor = question })
             }
         }
     }
@@ -419,17 +418,6 @@ struct PartyDetailView: View {
             await model.load(userID: userID)
         } catch {
             errorMessage = "Deine Stimme konnte nicht gespeichert werden."
-        }
-    }
-
-    private func answerQuestion(_ text: String, _ question: PollData) async -> Bool {
-        do {
-            try await Participation.answer(text, to: question)
-            await model.load(userID: profile.userID)
-            return true
-        } catch {
-            errorMessage = "Deine Antwort konnte nicht gespeichert werden."
-            return false
         }
     }
 

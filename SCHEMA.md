@@ -950,6 +950,14 @@ without the new parameters and ignore the new columns.
 - `approve_agent_candidate` sets the category from the agent's `event_type`: `club`,
   `festival`, `open_air` map one to one, `concert` becomes `other` / `Konzert`, `other`
   becomes `other` / `Event`.
+- `update_party` is SECURITY DEFINER since `20261121103724`: it reads `website_url` and
+  `website_title` to keep them when the parameter is NULL, and `authenticated` has no SELECT
+  on those columns (since `20261119152029`), so as invoker it failed for every user with
+  `permission denied for table events`. It still only touches `id = p_id and host_id =
+  auth.uid()` and raises 42501 otherwise.
+- Clients that write `events` directly (delete, `invite_code`) must ask for
+  `return=minimal`: returning the row needs SELECT on every column, which `authenticated`
+  does not have. supabase-swift defaults to `.representation`.
 - `public.email_account_status(p_email)` (SECURITY DEFINER, granted to `anon`): returns
   `new`, `password` or `no_password` for the native login. Tells anyone whether an address
   is registered (decided by Arthur). Every call counts against 10 per IP and minute in

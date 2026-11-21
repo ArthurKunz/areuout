@@ -16,6 +16,7 @@ struct ExploreView: View {
     @State private var parties: [PartySummary] = []
     @State private var selected: PartySummary?
     @State private var loadFailed = false
+    @Environment(PartyFeed.self) private var feed
 
     var body: some View {
         Map(position: $position) {
@@ -51,9 +52,9 @@ struct ExploreView: View {
             }
         }
         .sheet(item: $selected) { party in
-            PartyDetailView(partyID: party.id) { Task { await load() } }
+            PartyDetailView(partyID: party.id) { feed.changed() }
         }
-        .task { await load() }
+        .task(id: feed.version) { await load() }
     }
 
     private func load() async {

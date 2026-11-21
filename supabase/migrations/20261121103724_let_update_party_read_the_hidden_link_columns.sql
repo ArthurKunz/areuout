@@ -1,0 +1,11 @@
+-- update_party scheitert seit 20261119152029 (hide_the_website_column_of_events) für jeden
+-- Nutzer mit "permission denied for table events": die Funktion liest beim Speichern
+-- website_url (und seit 20261120091233 website_title), um sie bei NULL zu behalten, und
+-- authenticated hat auf diese Spalten bewusst kein SELECT-Recht mehr. Betroffen waren die
+-- Web-App und die native App. Gefunden am 2026-11-21 beim Test der nativen App, Fix von
+-- Arthur freigegeben.
+--
+-- Fix: die Funktion läuft als Besitzer (postgres). Sie prüft weiter selbst, dass nur der
+-- Host seine eigene Party ändert: das UPDATE trifft nur `id = p_id and host_id = auth.uid()`,
+-- sonst bricht sie mit 42501 ab, bevor Umfragen angefasst werden. search_path ist schon ''.
+alter function public.update_party(p_id uuid, p_title text, p_is_public boolean, p_event_date timestamp with time zone, p_ends_at timestamp with time zone, p_location text, p_lat double precision, p_lng double precision, p_background_url text, p_description text, p_motto text, p_dresscode text, p_max_guests integer, p_polls jsonb, p_questions jsonb, p_price numeric, p_website_url text, p_organizer_name text, p_category text, p_category_other text, p_is_all_day boolean, p_website_title text) security definer;
