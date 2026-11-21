@@ -3,7 +3,10 @@
     "details": [
       {
         "appIDs": ["Z56K8WN38A.de.areuout.app"],
-        "components": [{ "/": "/e/*", "comment": "Invite links open the app" }]
+        "components": [
+          { "/": "/e/*", "comment": "Invite links open the app" },
+          { "/": "/p/*", "comment": "Guest links open the app" }
+        ]
       }
     ]
   }
