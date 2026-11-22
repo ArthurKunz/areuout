@@ -245,17 +245,15 @@ struct AccountSheet: View {
             .disabled(isBusy)
             .overlay { if isBusy { ProgressView().controlSize(.large) } }
         }
-        .confirmationDialog(deleteQuestion, isPresented: $askDelete, titleVisibility: .visible) {
+        .alert(deleteQuestion, isPresented: $askDelete) {
             Button("Account löschen", role: .destructive) { Task { await startDelete() } }
             Button("Abbrechen", role: .cancel) {}
         }
-        .confirmationDialog(
-            "Bei Apple hat das gerade nicht geklappt. Trotzdem löschen? Die Anmeldung mit Apple kannst du danach selbst in den iPhone-Einstellungen unter „Mit Apple anmelden“ beenden.",
-            isPresented: $askDeleteWithoutApple,
-            titleVisibility: .visible
-        ) {
+        .alert("Trotzdem löschen?", isPresented: $askDeleteWithoutApple) {
             Button("Trotzdem löschen", role: .destructive) { Task { await finishDelete() } }
             Button("Abbrechen", role: .cancel) {}
+        } message: {
+            Text("Bei Apple hat das gerade nicht geklappt. Die Anmeldung mit Apple kannst du danach selbst in den iPhone-Einstellungen unter „Mit Apple anmelden“ beenden.")
         }
         .alert("Das ging nicht", isPresented: errorBinding($errorMessage)) {
             Button("OK") {}

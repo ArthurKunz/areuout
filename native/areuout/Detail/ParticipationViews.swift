@@ -121,14 +121,21 @@ struct RequestsCard: View {
                     )
                     Text(request.name).font(.subheadline)
                     Spacer()
-                    Button("Ablehnen") { decline(request) }
-                        .buttonStyle(.bordered)
-                        .tint(Color(.label))
-                    Button("Annehmen") { accept(request) }
-                        .buttonStyle(.borderedProminent)
+                    // Kreuz und Haken statt Text: „Ablehnen“ und „Annehmen“ brachen in zwei Zeilen um.
+                    Button { decline(request) } label: {
+                        Image(systemName: "xmark").fontWeight(.semibold)
+                    }
+                    .buttonStyle(.bordered)
+                    .tint(Color(.label))
+                    .accessibilityLabel("Ablehnen")
+                    Button { accept(request) } label: {
+                        Image(systemName: "checkmark").fontWeight(.semibold)
+                    }
+                    .buttonStyle(.borderedProminent)
+                    .accessibilityLabel("Annehmen")
                 }
-                .controlSize(.small)
-                .buttonBorderShape(.capsule)
+                .controlSize(.regular)
+                .buttonBorderShape(.circle)
             }
         }
     }

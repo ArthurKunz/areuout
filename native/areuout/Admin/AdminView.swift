@@ -108,7 +108,7 @@ struct AdminView: View {
             }
         }
         .task { await load() }
-        .confirmationDialog(removing.map { "\($0.title) entfernen?" } ?? "", isPresented: Binding(get: { removing != nil }, set: { if !$0 { removing = nil } }), titleVisibility: .visible) {
+        .alert(removing.map { "\($0.title) entfernen?" } ?? "", isPresented: Binding(get: { removing != nil }, set: { if !$0 { removing = nil } })) {
             Button("Entfernen", role: .destructive) {
                 if let report = removing { Task { await remove(report) } }
             }
@@ -116,7 +116,7 @@ struct AdminView: View {
         } message: {
             Text("Das Event verschwindet für alle, und der Agent nimmt diese Quelle nicht wieder auf.")
         }
-        .confirmationDialog(cancelling.map { "\($0.title) absagen?" } ?? "", isPresented: Binding(get: { cancelling != nil }, set: { if !$0 { cancelling = nil } }), titleVisibility: .visible) {
+        .alert(cancelling.map { "\($0.title) absagen?" } ?? "", isPresented: Binding(get: { cancelling != nil }, set: { if !$0 { cancelling = nil } })) {
             Button("Als abgesagt markieren", role: .destructive) {
                 if let proposal = cancelling { Task { await approveProposal(proposal.id) } }
             }

@@ -74,7 +74,9 @@ struct PartyDetailView: View {
         .onChange(of: scenePhase) { _, phase in
             if phase == .active { Task { await model.load(userID: profile.userID, isAdmin: profile.isAdmin) } }
         }
-        .confirmationDialog("Möchtest du die Party wirklich löschen?", isPresented: $askDelete, titleVisibility: .visible) {
+        // Alerts statt confirmationDialog: iOS 26 zeigt im Dialog keinen Abbrechen-Knopf,
+        // im Alert steht er grau neben oder unter dem roten (Arthur, 2026-11-22).
+        .alert("Möchtest du die Party wirklich löschen?", isPresented: $askDelete) {
             Button("Löschen", role: .destructive) { Task { await deleteTapped() } }
             Button("Abbrechen", role: .cancel) {}
         } message: {
@@ -82,13 +84,13 @@ struct PartyDetailView: View {
                 Text("Das Event verschwindet für alle, und der Agent nimmt diese Quelle nicht wieder auf.")
             }
         }
-        .confirmationDialog("Möchtest du den Link wirklich resetten?", isPresented: $askReset, titleVisibility: .visible) {
+        .alert("Möchtest du den Link wirklich resetten?", isPresented: $askReset) {
             Button("Link resetten", role: .destructive) { Task { await resetLink() } }
             Button("Abbrechen", role: .cancel) {}
         } message: {
             Text("Der alte Link funktioniert danach nicht mehr. Wer ihn schon hat, kommt nicht mehr rein.")
         }
-        .confirmationDialog("Weshalb meldest du die Party?", isPresented: $askReport, titleVisibility: .visible) {
+        .alert("Weshalb meldest du die Party?", isPresented: $askReport) {
             ForEach(reportReasons, id: \.self) { reason in
                 Button(reason.label, role: .destructive) { Task { await report(reason) } }
             }
