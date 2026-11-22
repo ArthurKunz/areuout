@@ -34,6 +34,8 @@ final class AuthModel {
 
     func signOut() async {
         isSettingPassword = false
+        // Vorher, solange die Sitzung das Löschen des Tokens noch erlaubt.
+        await PushManager.shared.forgetThisDevice()
         try? await supabase.auth.signOut()
         phase = .signedOut
     }

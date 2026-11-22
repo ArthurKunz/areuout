@@ -8,9 +8,14 @@ import Supabase
 /// Kommt der Link ohne Login, wartet er hier, bis die App eingeloggt ist.
 @Observable
 final class DeepLinkRouter {
+    /// Eine Instanz für die ganze App, damit auch Tipps auf Mitteilungen hier landen.
+    static let shared = DeepLinkRouter()
+
     enum Target: Equatable {
         case party(UUID)
         case invite(String)
+        /// Mitteilung des Agents an den Admin (path `/admin`).
+        case admin
     }
 
     var pending: Target?

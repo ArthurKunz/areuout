@@ -6,6 +6,7 @@ import SwiftUI
 struct PartyDetailView: View {
     @Environment(\.dismiss) private var dismiss
     @Environment(\.openURL) private var openURL
+    @Environment(\.scenePhase) private var scenePhase
     @Environment(ProfileStore.self) private var profile
 
     /// Wird nach Löschen oder Antwort-Löschen gerufen, damit Karte und Listen neu laden.
@@ -64,7 +65,13 @@ struct PartyDetailView: View {
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .background(Color.appBackground)
-        .task { await model.load(userID: profile.userID) }
+        // Neu laden, sobald das eigene Profil da ist: über eine Mitteilung startet die Party,
+        // bevor die App weiß, wer eingeloggt ist, und ohne das fehlen Host-Teile wie `Anfragen`.
+        .task(id: profile.userID) { await model.load(userID: profile.userID) }
+        // Und jedes Mal, wenn die App wieder nach vorne kommt (etwa über eine neue Mitteilung).
+        .onChange(of: scenePhase) { _, phase in
+            if phase == .active { Task { await model.load(userID: profile.userID) } }
+        }
         .confirmationDialog("Möchtest du die Party wirklich löschen?", isPresented: $askDelete, titleVisibility: .visible) {
             Button("Löschen", role: .destructive) { Task { await deleteTapped() } }
             Button("Abbrechen", role: .cancel) {}
@@ -393,6 +400,8 @@ struct PartyDetailView: View {
         defer { isAnswering = false }
         do {
             try await Participation.setStatus(status, party: model.partyID, user: userID)
+            // Wie die Web-App: nach zugesagt oder vielleicht einmal um Mitteilungen bitten.
+            if status != .notGoing { PushManager.shared.ask() }
             await reload()
         } catch {
             errorMessage = Participation.rsvpErrorText(error)
@@ -404,6 +413,7 @@ struct PartyDetailView: View {
         defer { isAnswering = false }
         do {
             try await Participation.requestToJoin(party: model.partyID)
+            PushManager.shared.ask()
             await reload()
         } catch {
             errorMessage = "Deine Anfrage konnte nicht gesendet werden."

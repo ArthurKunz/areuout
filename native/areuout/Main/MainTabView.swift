@@ -68,7 +68,10 @@ struct MainTabView: View {
         }
         .environment(profile)
         .environment(feed)
-        .task { await profile.load() }
+        .task {
+            await profile.load()
+            PushManager.shared.refresh()
+        }
     }
 }
 
@@ -79,7 +82,11 @@ extension MainTabView {
         links.pending = nil
         switch target {
         case .party(let id):
-            linkedPartyID = id
+            // Ist genau diese Party schon offen, lädt sie über scenePhase neu.
+            if linkedPartyID != id { linkedPartyID = id }
+        case .admin:
+            // Der Admin-Bereich kommt in Schritt 11 ins Profil.
+            selection = .profile
         case .invite(let code):
             if let id = await DeepLinkRouter.resolveInvite(code) {
                 feed.changed()

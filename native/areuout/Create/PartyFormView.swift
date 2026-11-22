@@ -217,6 +217,7 @@ struct PartyFormView: View {
                 switch mode {
                 case .create:
                     let id = try await PartySaver.create(draft, userID: userID)
+                    PushManager.shared.ask()
                     dismiss()
                     onSaved(id)
                 case .edit(let partyID):

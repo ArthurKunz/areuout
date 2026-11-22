@@ -3,7 +3,8 @@ import SwiftUI
 
 @main
 struct AreuoutApp: App {
-    @State private var links = DeepLinkRouter()
+    @UIApplicationDelegateAdaptor(AppDelegate.self) private var appDelegate
+    @State private var links = DeepLinkRouter.shared
 
     var body: some Scene {
         WindowGroup {
