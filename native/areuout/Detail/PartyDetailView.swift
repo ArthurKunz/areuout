@@ -34,10 +34,11 @@ struct PartyDetailView: View {
         _model = State(initialValue: model)
     }
 
-    private var role: PartyDetailModel.Role { model.role(for: profile.userID) }
+    private var role: PartyDetailModel.Role { model.role(for: profile.userID, isAdmin: profile.isAdmin) }
 
     private var shareURL: URL? {
-        role == .host ? model.inviteURL : DeepLinkRouter.guestURL(for: model.partyID)
+        // Partys des Agents sind öffentlich und haben keinen Einladungslink zum Weitergeben.
+        role == .host && !model.isAgentEvent ? model.inviteURL : DeepLinkRouter.guestURL(for: model.partyID)
     }
 
     /// Über den Host-Link geöffnet: noch keine Antwort, aber schon Zugang zur privaten Party.
@@ -57,7 +58,7 @@ struct PartyDetailView: View {
                 } description: {
                     Text("Diese Party konnte nicht geladen werden.")
                 } actions: {
-                    Button("Nochmal versuchen") { Task { await model.load(userID: profile.userID) } }
+                    Button("Nochmal versuchen") { Task { await model.load(userID: profile.userID, isAdmin: profile.isAdmin) } }
                 }
             } else {
                 ProgressView()
@@ -67,14 +68,18 @@ struct PartyDetailView: View {
         .background(Color.appBackground)
         // Neu laden, sobald das eigene Profil da ist: über eine Mitteilung startet die Party,
         // bevor die App weiß, wer eingeloggt ist, und ohne das fehlen Host-Teile wie `Anfragen`.
-        .task(id: profile.userID) { await model.load(userID: profile.userID) }
+        .task(id: "\(profile.userID?.uuidString ?? "")\(profile.isAdmin)") { await model.load(userID: profile.userID, isAdmin: profile.isAdmin) }
         // Und jedes Mal, wenn die App wieder nach vorne kommt (etwa über eine neue Mitteilung).
         .onChange(of: scenePhase) { _, phase in
-            if phase == .active { Task { await model.load(userID: profile.userID) } }
+            if phase == .active { Task { await model.load(userID: profile.userID, isAdmin: profile.isAdmin) } }
         }
         .confirmationDialog("Möchtest du die Party wirklich löschen?", isPresented: $askDelete, titleVisibility: .visible) {
             Button("Löschen", role: .destructive) { Task { await deleteTapped() } }
             Button("Abbrechen", role: .cancel) {}
+        } message: {
+            if role == .host && model.isAgentEvent {
+                Text("Das Event verschwindet für alle, und der Agent nimmt diese Quelle nicht wieder auf.")
+            }
         }
         .confirmationDialog("Möchtest du den Link wirklich resetten?", isPresented: $askReset, titleVisibility: .visible) {
             Button("Link resetten", role: .destructive) { Task { await resetLink() } }
@@ -211,7 +216,9 @@ struct PartyDetailView: View {
     private var menuItems: some View {
         switch role {
         case .host:
-            Button("Link-reset", systemImage: "link") { askReset = true }
+            if !model.isAgentEvent {
+                Button("Link-reset", systemImage: "link") { askReset = true }
+            }
             Button("bearbeiten", systemImage: "pencil") {
                 if let detail = model.detail { editDraft = PartyDraft.from(detail, polls: model.polls) }
             }
@@ -373,14 +380,18 @@ struct PartyDetailView: View {
         do {
             switch role {
             case .host:
-                try await model.deleteParty()
+                if model.isAgentEvent {
+                    try await model.removeAgentEvent()
+                } else {
+                    try await model.deleteParty()
+                }
                 onChange()
                 dismiss()
             case .guest:
                 guard let userID = profile.userID else { return }
                 try await model.removeMyAnswer(userID: userID)
                 onChange()
-                await model.load(userID: profile.userID)
+                await model.load(userID: profile.userID, isAdmin: profile.isAdmin)
             case .stranger:
                 return
             }
@@ -390,7 +401,7 @@ struct PartyDetailView: View {
     }
 
     private func reload() async {
-        await model.load(userID: profile.userID)
+        await model.load(userID: profile.userID, isAdmin: profile.isAdmin)
         onChange()
     }
 
@@ -437,7 +448,7 @@ struct PartyDetailView: View {
         guard let userID = profile.userID else { return }
         do {
             try await Participation.vote(option, in: poll, user: userID)
-            await model.load(userID: userID)
+            await model.load(userID: userID, isAdmin: profile.isAdmin)
         } catch {
             errorMessage = "Deine Stimme konnte nicht gespeichert werden."
         }

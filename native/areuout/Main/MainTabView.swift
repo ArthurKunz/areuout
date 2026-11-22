@@ -85,8 +85,8 @@ extension MainTabView {
             // Ist genau diese Party schon offen, lädt sie über scenePhase neu.
             if linkedPartyID != id { linkedPartyID = id }
         case .admin:
-            // Der Admin-Bereich kommt in Schritt 11 ins Profil.
             selection = .profile
+            profile.showAdmin = true
         case .invite(let code):
             if let id = await DeepLinkRouter.resolveInvite(code) {
                 feed.changed()

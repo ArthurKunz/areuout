@@ -155,9 +155,12 @@ final class PartyDetailModel {
     }
     #endif
 
-    func role(for userID: UUID?) -> Role {
+    /// Partys des Agents verwaltet ein Admin wie ein Host; sie bleiben beim Systemkonto
+    /// "areuout" (entschieden 2026-11-22).
+    func role(for userID: UUID?, isAdmin: Bool = false) -> Role {
         guard let detail else { return .stranger }
         if detail.hostID == userID { return .host }
+        if isAdmin && isAgentEvent { return .host }
         return detail.hasAnswer ? .guest : .stranger
     }
 
@@ -167,7 +170,7 @@ final class PartyDetailModel {
         inviteCode.map { AppConfig.websiteURL.appending(path: "e/\($0)") }
     }
 
-    func load(userID: UUID?) async {
+    func load(userID: UUID?, isAdmin: Bool = false) async {
         do {
             let detail: PartyDetail = try await supabase
                 .rpc("get_party_detail", params: ["p_event_id": partyID])
@@ -185,8 +188,9 @@ final class PartyDetailModel {
         counts = try? await supabase.rpc("get_rsvp_counts_by_status", params: ["p_event_id": partyID]).single().execute().value
         // Umfragen und Fragen: bei einer privaten Party bekommt ein Fremder keine Zeilen.
         polls = (try? await Participation.polls(party: partyID)) ?? []
-        switch role(for: userID) {
+        switch role(for: userID, isAdmin: isAdmin) {
         case .host:
+            guard !isAgentEvent else { break }
             inviteCode = try? await supabase.rpc("get_party_invite_code", params: ["p_event_id": partyID]).execute().value
             requests = (try? await Participation.requests(party: partyID)) ?? []
         case .stranger:
@@ -212,6 +216,12 @@ final class PartyDetailModel {
             bucket: "event-backgrounds",
             prefix: "\(detail.hostID.uuidString.lowercased())/\(partyID.uuidString.lowercased())"
         )
+    }
+
+    /// Admin: eine Party des Agents entfernen. remove_agent_event sperrt dabei die Quelle,
+    /// damit der Agent sie nicht wieder einträgt.
+    func removeAgentEvent() async throws {
+        try await supabase.rpc("remove_agent_event", params: ["p_event_id": partyID]).execute()
     }
 
     /// Gast: die eigene Antwort löschen. Die Party bleibt, verschwindet aber aus `Going`.

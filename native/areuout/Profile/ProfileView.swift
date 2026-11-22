@@ -4,7 +4,7 @@ import SwiftUI
 /// Profil-Tab (Native Redesign 5.4): Bild mit Stift, Name, eine Liste mit Sheets.
 struct ProfileView: View {
     enum Sheet: String, Identifiable {
-        case name, password, blocked, account, legal
+        case name, password, blocked, account, legal, admin
         var id: String { rawValue }
     }
 
@@ -30,6 +30,9 @@ struct ProfileView: View {
                 row("Blockierte Personen", sheet: .blocked)
                 row("Account verwalten", sheet: .account)
                 row("Rechtliches", sheet: .legal)
+                if profile.isAdmin {
+                    row("Neue Events", sheet: .admin)
+                }
             }
         }
         .listStyle(.insetGrouped)
@@ -42,8 +45,12 @@ struct ProfileView: View {
             case .blocked: BlockedSheet()
             case .account: AccountSheet()
             case .legal: LegalSheet()
+            case .admin: AdminView()
             }
         }
+        // Über die Mitteilung des Agents kann das vor dem Profil ankommen, darum auch isAdmin beobachten.
+        .onChange(of: profile.showAdmin, initial: true) { openAdminIfAsked() }
+        .onChange(of: profile.isAdmin) { openAdminIfAsked() }
         .onChange(of: photoItem) { _, item in
             Task { await changePicture(item) }
         }
@@ -99,6 +106,13 @@ struct ProfileView: View {
                     .font(.footnote.weight(.semibold))
                     .foregroundStyle(Color(.label))
             }
+        }
+    }
+
+    private func openAdminIfAsked() {
+        if profile.showAdmin, profile.isAdmin {
+            sheet = .admin
+            profile.showAdmin = false
         }
     }
 

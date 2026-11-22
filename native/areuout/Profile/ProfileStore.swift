@@ -23,6 +23,10 @@ final class ProfileStore {
     private(set) var userID: UUID?
     /// Konten nur über Apple oder Google haben kein Passwort; ihre Zeile `Password` fehlt.
     private(set) var hasPassword = false
+    /// Admins geben Partys des Agents frei und verwalten sie wie ein Host (private.admins).
+    private(set) var isAdmin = false
+    /// Von einer Mitteilung des Agents gesetzt: den Admin-Bereich öffnen.
+    var showAdmin = false
     private(set) var usesApple = false
 
     var fullName: String {
@@ -37,6 +41,7 @@ final class ProfileStore {
         let providers = Set(user.identities?.map(\.provider) ?? [])
         hasPassword = providers.contains("email")
         usesApple = providers.contains("apple")
+        isAdmin = (try? await supabase.rpc("am_i_admin").execute().value) ?? false
         profile = try? await supabase
             .from("profiles")
             .select("firstname, lastname, avatar_url, avatar_color")
@@ -77,6 +82,7 @@ final class ProfileStore {
         profile = nil
         userID = nil
         hasPassword = false
+        isAdmin = false
         usesApple = false
     }
 }
