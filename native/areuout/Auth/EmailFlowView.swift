@@ -22,7 +22,7 @@ struct EmailFlowView: View {
     @State private var isBusy = false
     @State private var errorMessage: String?
     @State private var notice: String?
-    @FocusState private var isFocused: Bool
+    @FocusState private var focused: Step?
 
     private let codeLength = 6
 
@@ -43,7 +43,7 @@ struct EmailFlowView: View {
                 }
             }
         }
-        .onAppear { isFocused = true }
+        .focusSoon { focused = step }
         .alert("Das ging nicht", isPresented: binding(for: $errorMessage)) {
             Button("OK") {}
         } message: {
@@ -74,7 +74,7 @@ struct EmailFlowView: View {
                 .autocorrectionDisabled()
                 .submitLabel(.continue)
                 .onSubmit(submitEmail)
-                .focused($isFocused)
+                .focused($focused, equals: .email)
                 .capsuleField()
             PrimaryButton(title: "Weiter", isLoading: isBusy, isEnabled: isEmailPlausible, action: submitEmail)
 
@@ -85,12 +85,7 @@ struct EmailFlowView: View {
                     .foregroundStyle(.secondary)
                     .multilineTextAlignment(.center)
             }
-            SecureField("Password", text: $password)
-                .textContentType(.password)
-                .submitLabel(.go)
-                .onSubmit(submitPassword)
-                .focused($isFocused)
-                .capsuleField()
+            PasswordField(placeholder: "Password", text: $password, focus: $focused, focusValue: .password, onSubmit: submitPassword)
             PrimaryButton(title: "Weiter", isLoading: isBusy, isEnabled: !password.isEmpty, action: submitPassword)
             Button("Passwort vergessen?", action: sendReset)
                 .font(.subheadline)
@@ -101,7 +96,7 @@ struct EmailFlowView: View {
             TextField("Code", text: $code)
                 .keyboardType(.numberPad)
                 .textContentType(.oneTimeCode)
-                .focused($isFocused)
+                .focused($focused, equals: .code)
                 .capsuleField()
                 .onChange(of: code) { _, value in
                     let digits = String(value.filter(\.isNumber).prefix(codeLength))
@@ -115,12 +110,7 @@ struct EmailFlowView: View {
                 .disabled(isBusy)
 
         case .newPassword:
-            SecureField("Password", text: $newPassword)
-                .textContentType(.newPassword)
-                .submitLabel(.go)
-                .onSubmit(submitNewPassword)
-                .focused($isFocused)
-                .capsuleField()
+            PasswordField(placeholder: "Password", text: $newPassword, contentType: .newPassword, focus: $focused, focusValue: .newPassword, onSubmit: submitNewPassword)
             if let problem = PasswordRules.firstProblem(in: newPassword), !newPassword.isEmpty {
                 Text(problem)
                     .font(.footnote)
@@ -216,7 +206,11 @@ struct EmailFlowView: View {
 
     private func go(to next: Step) {
         withAnimation { step = next }
-        isFocused = true
+        // Das neue Feld entsteht erst mit dem Schritt; kurz warten, dann fokussieren.
+        Task {
+            try? await Task.sleep(for: .milliseconds(150))
+            focused = next
+        }
     }
 
     /// Ab dem Code ist das Konto angelegt und eingeloggt. Wer hier abbricht, wird

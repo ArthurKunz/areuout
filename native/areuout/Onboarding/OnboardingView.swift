@@ -47,8 +47,8 @@ struct OnboardingView: View {
         }
         .onAppear {
             if fullName.isEmpty { fullName = auth.suggestedName }
-            isFocused = true
         }
+        .focusSoon { isFocused = true }
         .onChange(of: photoItem) { _, item in
             Task { await loadPhoto(item) }
         }

@@ -68,8 +68,8 @@ struct NameSheet: View {
         }
         .onAppear {
             text = profile.fullName
-            isFocused = true
         }
+        .focusSoon { isFocused = true }
         .alert("Das ging nicht", isPresented: errorBinding($errorMessage)) {
             Button("OK") {}
         } message: {
@@ -99,7 +99,7 @@ struct PasswordSheet: View {
     @State private var password = ""
     @State private var isBusy = false
     @State private var errorMessage: String?
-    @FocusState private var isFocused: Bool
+    @FocusState private var focused: Bool?
 
     var body: some View {
         ProfileSheetFrame(
@@ -109,19 +109,14 @@ struct PasswordSheet: View {
             isBusy: isBusy
         ) {
             VStack(alignment: .leading, spacing: 8) {
-                SecureField("Neues Password", text: $password)
-                    .textContentType(.newPassword)
-                    .submitLabel(.done)
-                    .onSubmit(save)
-                    .focused($isFocused)
-                    .capsuleField()
+                PasswordField(placeholder: "Neues Password", text: $password, contentType: .newPassword, focus: $focused, focusValue: true, onSubmit: save)
                 if let problem = PasswordRules.firstProblem(in: password), !password.isEmpty {
                     Text(problem).font(.footnote).foregroundStyle(.secondary).padding(.leading, 20)
                 }
             }
             .padding(24)
         }
-        .onAppear { isFocused = true }
+        .focusSoon { focused = true }
         .alert("Das ging nicht", isPresented: errorBinding($errorMessage)) {
             Button("OK") {}
         } message: {
@@ -282,7 +277,10 @@ struct AccountSheet: View {
         guard profile.usesApple else { return await finishDelete() }
         isBusy = true
         do {
-            let code = try await AppleReauth.authorizationCode()
+            let credential = try await AppleAuthorization.request(scopes: [], nonceHashed: AuthService.makeNonce().hashed)
+            guard let data = credential.authorizationCode, let code = String(data: data, encoding: .utf8) else {
+                throw AuthFailure("Apple hat keinen Code geschickt.")
+            }
             try await supabase.functions.invoke("revoke-apple", options: FunctionInvokeOptions(body: ["code": code]))
             await finishDelete()
         } catch {
@@ -307,51 +305,6 @@ struct AccountSheet: View {
         } catch {
             errorMessage = "Dein Account konnte nicht gelöscht werden."
         }
-    }
-}
-
-/// Holt bei Apple einen frischen Autorisierungscode, nur für das Löschen.
-private final class AppleReauth: NSObject, ASAuthorizationControllerDelegate, ASAuthorizationControllerPresentationContextProviding {
-    private var continuation: CheckedContinuation<String, Error>?
-
-    static func authorizationCode() async throws -> String {
-        try await AppleReauth().run()
-    }
-
-    private func run() async throws -> String {
-        let request = ASAuthorizationAppleIDProvider().createRequest()
-        request.requestedScopes = []
-        request.nonce = AuthService.makeNonce().hashed
-        let controller = ASAuthorizationController(authorizationRequests: [request])
-        controller.delegate = self
-        controller.presentationContextProvider = self
-        return try await withCheckedThrowingContinuation { continuation in
-            self.continuation = continuation
-            controller.performRequests()
-        }
-    }
-
-    func authorizationController(controller: ASAuthorizationController, didCompleteWithAuthorization authorization: ASAuthorization) {
-        guard let credential = authorization.credential as? ASAuthorizationAppleIDCredential,
-              let data = credential.authorizationCode,
-              let code = String(data: data, encoding: .utf8) else {
-            continuation?.resume(throwing: AuthFailure("Apple hat keinen Code geschickt."))
-            continuation = nil
-            return
-        }
-        continuation?.resume(returning: code)
-        continuation = nil
-    }
-
-    func authorizationController(controller: ASAuthorizationController, didCompleteWithError error: Error) {
-        continuation?.resume(throwing: error)
-        continuation = nil
-    }
-
-    func presentationAnchor(for controller: ASAuthorizationController) -> ASPresentationAnchor {
-        if let window = UIApplication.shared.topViewController?.view.window { return window }
-        let scene = UIApplication.shared.connectedScenes.compactMap { $0 as? UIWindowScene }.first!
-        return ASPresentationAnchor(windowScene: scene)
     }
 }
 

@@ -6,7 +6,6 @@ import SwiftUI
 struct WelcomeView: View {
     @Environment(AuthModel.self) private var auth
     @State private var showEmail = false
-    @State private var appleNonce = ""
     @State private var errorMessage: String?
 
     var body: some View {
@@ -25,49 +24,30 @@ struct WelcomeView: View {
                 }
                 .padding(.bottom, 20)
 
-                SignInWithAppleButton(.continue) { request in
-                    let nonce = AuthService.makeNonce()
-                    appleNonce = nonce.raw
-                    request.requestedScopes = [.fullName, .email]
-                    request.nonce = nonce.hashed
-                } onCompletion: { result in
-                    Task { await finishApple(result) }
+                // Apple und Google mit demselben Knopf-Stil, damit Schrift und Größe gleich sind
+                // (Arthur, 2026-11-22). Apple erlaubt einen eigenen Knopf mit seinem Logo.
+                WelcomeButton(title: "Mit Apple fortfahren", tint: .black, foreground: .white) {
+                    Image(systemName: "apple.logo").font(.system(size: 18, weight: .medium))
+                } action: {
+                    Task { await signInWithApple() }
                 }
-                .signInWithAppleButtonStyle(.black)
-                .frame(height: 52)
-                .clipShape(Capsule())
 
-                Button {
+                WelcomeButton(title: "Mit Google fortfahren", tint: .appPrimaryButton, foreground: .white) {
+                    Image("GoogleLogo").resizable().frame(width: 18, height: 18)
+                } action: {
                     Task { await signInWithGoogle() }
-                } label: {
-                    HStack(spacing: 8) {
-                        Image("GoogleLogo")
-                            .resizable()
-                            .frame(width: 18, height: 18)
-                        Text("Weiter mit Google")
-                    }
-                    .frame(maxWidth: .infinity)
                 }
-                .buttonStyle(.borderedProminent)
-                .buttonBorderShape(.capsule)
-                .controlSize(.extraLarge)
-                .tint(Color.appPrimaryButton)
 
-                Button {
+                WelcomeButton(title: "Weiter mit Email", tint: .appSeparator, foreground: .black) {
+                    EmptyView()
+                } action: {
                     showEmail = true
-                } label: {
-                    Text("Weiter mit Email")
-                        .foregroundStyle(.black)
-                        .frame(maxWidth: .infinity)
                 }
-                .buttonStyle(.borderedProminent)
-                .buttonBorderShape(.capsule)
-                .controlSize(.extraLarge)
-                .tint(Color.appSeparator)
 
-                Text("Mit „Google“ oder „Apple“ stimmst du den [Nutzungsbedingungen](https://www.areuout.de/nutzungsbedingungen) und der [Datenschutzerklärung](https://www.areuout.de/datenschutz) zu.")
+                Text(Self.consentText)
                     .font(.caption2)
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(Color(.secondaryLabel))
+                    .tint(Color(.secondaryLabel))
                     .multilineTextAlignment(.center)
                     .padding(.top, 4)
             }
@@ -104,19 +84,24 @@ struct WelcomeView: View {
         Binding(get: { errorMessage != nil }, set: { if !$0 { errorMessage = nil } })
     }
 
-    private func finishApple(_ result: Result<ASAuthorization, Error>) async {
-        switch result {
-        case .success(let authorization):
-            guard let credential = authorization.credential as? ASAuthorizationAppleIDCredential else { return }
-            do {
-                try await AuthService.signInWithApple(credential: credential, rawNonce: appleNonce)
-            } catch {
-                show(error)
-            }
-        case .failure(let error):
+    private func signInWithApple() async {
+        let nonce = AuthService.makeNonce()
+        do {
+            let credential = try await AppleAuthorization.request(scopes: [.fullName, .email], nonceHashed: nonce.hashed)
+            try await AuthService.signInWithApple(credential: credential, rawNonce: nonce.raw)
+        } catch {
             if (error as? ASAuthorizationError)?.code == .canceled { return }
             show(error)
         }
+    }
+
+    /// Die Zustimmung unten: Links in demselben Grau wie der Text, nur unterstrichen.
+    private static var consentText: AttributedString {
+        var text = (try? AttributedString(markdown: "Mit „Google“ oder „Apple“ stimmst du den [Nutzungsbedingungen](https://www.areuout.de/nutzungsbedingungen) und der [Datenschutzerklärung](https://www.areuout.de/datenschutz) zu.")) ?? AttributedString()
+        for run in text.runs where run.link != nil {
+            text[run.range].underlineStyle = .single
+        }
+        return text
     }
 
     private func signInWithGoogle() async {
@@ -155,5 +140,30 @@ private struct BackgroundShapes: View {
             .fill(Color.black.opacity(0.035))
             .frame(width: size, height: size)
             .rotationEffect(.degrees(-20))
+    }
+}
+
+/// Ein Knopf der Startseite: gleiche Form, Höhe und Schrift für Apple, Google und E-Mail.
+private struct WelcomeButton<Icon: View>: View {
+    let title: String
+    let tint: Color
+    let foreground: Color
+    @ViewBuilder let icon: Icon
+    let action: () -> Void
+
+    var body: some View {
+        Button(action: action) {
+            HStack(spacing: 8) {
+                icon
+                Text(title)
+            }
+            .font(.body.weight(.semibold))
+            .foregroundStyle(foreground)
+            .frame(maxWidth: .infinity)
+        }
+        .buttonStyle(.borderedProminent)
+        .buttonBorderShape(.capsule)
+        .controlSize(.extraLarge)
+        .tint(tint)
     }
 }
