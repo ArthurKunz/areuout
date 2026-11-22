@@ -76,8 +76,9 @@ struct ProfileView: View {
 
                 PhotosPicker(selection: $photoItem, matching: .images) {
                     // Color(.label) statt .primary: .primary nimmt in Knöpfen die Akzentfarbe an.
+                    // Feste Größe: das Symbol muss in den 44-pt-Kreis passen, auch bei großer Schrift.
                     Image(systemName: "pencil")
-                        .font(.title3.weight(.semibold))
+                        .font(.system(size: 18, weight: .semibold))
                         .foregroundStyle(Color(.label))
                         .frame(width: 44, height: 44)
                         .glassEffect(.regular.tint(Color(hex: 0xD9D9D9)).interactive(), in: Circle())

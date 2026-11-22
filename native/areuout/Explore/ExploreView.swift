@@ -16,6 +16,7 @@ struct ExploreView: View {
     @State private var parties: [PartySummary] = []
     @State private var selected: PartySummary?
     @State private var loadFailed = false
+    @State private var isLoading = true
     @Environment(PartyFeed.self) private var feed
 
     var body: some View {
@@ -42,6 +43,19 @@ struct ExploreView: View {
         .safeAreaPadding(.horizontal, 12)
         .ignoresSafeArea()
         .overlay(alignment: .top) {
+            if isLoading && parties.isEmpty {
+                ProgressView()
+                    .padding(10)
+                    .glassEffect(.regular, in: Circle())
+                    .padding(.top, 8)
+            } else if !loadFailed && parties.isEmpty {
+                Text("Gerade keine Partys in Leipzig")
+                    .font(.footnote.weight(.semibold))
+                    .padding(.horizontal, 14)
+                    .frame(height: 36)
+                    .glassEffect(.regular, in: Capsule())
+                    .padding(.top, 8)
+            }
             if loadFailed {
                 Button("Partys konnten nicht geladen werden. Nochmal versuchen") {
                     Task { await load() }
@@ -58,6 +72,8 @@ struct ExploreView: View {
     }
 
     private func load() async {
+        isLoading = true
+        defer { isLoading = false }
         do {
             parties = try await supabase.rpc("get_explore_parties").execute().value
             loadFailed = false

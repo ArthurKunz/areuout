@@ -248,6 +248,7 @@ struct PartyCard: View {
             }
             .foregroundStyle(Color(.label))
             .contentShape(RoundedRectangle(cornerRadius: 32, style: .continuous))
+            .dynamicTypeSize(...DynamicTypeSize.xxLarge)
             .accessibilityElement(children: .combine)
     }
 

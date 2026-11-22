@@ -172,6 +172,8 @@ struct PollCard: View {
                 }
                 .buttonStyle(.plain)
                 .disabled(!canVote)
+                .accessibilityLabel("\(option.label), \(count) Stimmen")
+                .accessibilityAddTraits(mine.contains(option.optionID) ? .isSelected : [])
             }
             if poll.allowMultiple {
                 Text("Mehrere Antworten möglich").font(.caption).foregroundStyle(.secondary)

@@ -7,6 +7,7 @@ struct PartyDetailView: View {
     @Environment(\.dismiss) private var dismiss
     @Environment(\.openURL) private var openURL
     @Environment(\.scenePhase) private var scenePhase
+    @Environment(\.dynamicTypeSize) private var typeSize
     @Environment(ProfileStore.self) private var profile
 
     /// Wird nach Löschen oder Antwort-Löschen gerufen, damit Karte und Listen neu laden.
@@ -150,7 +151,8 @@ struct PartyDetailView: View {
             }
         }
         .ignoresSafeArea(edges: .top)
-        .overlay(alignment: .top) { topBar(detail) }
+        // Die Glas-Knöpfe wachsen wie Apples eigene Leisten nur bis zu einer Grenze mit.
+        .overlay(alignment: .top) { topBar(detail).dynamicTypeSize(...DynamicTypeSize.xxLarge) }
         .safeAreaInset(edge: .bottom) {
             // Wer noch nicht geantwortet hat: Teilnehmen, Anfragen, Warten oder voll.
             if role == .stranger, !hasInviteAccess, !model.isCancelled {
@@ -342,7 +344,8 @@ struct PartyDetailView: View {
         var index = 0
         while index < items.count {
             let item = items[index]
-            if item.isHalf, index + 1 < items.count, items[index + 1].isHalf {
+            // Bei sehr großer Schrift steht jede Karte allein, sonst brechen die Wörter.
+            if item.isHalf, !typeSize.isAccessibilitySize, index + 1 < items.count, items[index + 1].isHalf {
                 rows.append([item, items[index + 1]])
                 index += 2
             } else {

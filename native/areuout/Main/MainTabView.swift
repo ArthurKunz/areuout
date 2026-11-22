@@ -128,6 +128,9 @@ private struct BottomBar: View {
         }
         .padding(.horizontal, 20)
         .padding(.bottom, 4)
+        // Wie Apples Tab-Leiste: wächst nur bis zu einer Grenze, bei großer Schrift zeigt
+        // langes Drücken das Symbol groß (Large Content Viewer).
+        .dynamicTypeSize(...DynamicTypeSize.xxLarge)
     }
 
     private func tabButton(_ tab: MainTabView.TabID) -> some View {
@@ -152,6 +155,9 @@ private struct BottomBar: View {
             .contentShape(Capsule())
         }
         .buttonStyle(.plain)
+        .accessibilityShowsLargeContentViewer {
+            Label(tab.title, systemImage: tab.icon)
+        }
         .accessibilityAddTraits(isSelected ? .isSelected : [])
     }
 }
