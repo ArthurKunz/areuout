@@ -239,6 +239,8 @@ struct GuestListSheet: View {
     @State private var guests: [GuestRow] = []
     @State private var isLoading = true
     @State private var errorMessage: String?
+    @State private var blocking: GuestRow?
+    @Environment(ProfileStore.self) private var profile
 
     var body: some View {
         NavigationStack {
@@ -272,6 +274,12 @@ struct GuestListSheet: View {
                                 Button("Entfernen", role: .destructive) { Task { await remove(guest) } }
                             }
                         }
+                        // Blockieren per langem Druck, für alle außer einen selbst (Regel 1.2).
+                        .contextMenu {
+                            if guest.userID != profile.userID {
+                                Button("Blockieren", systemImage: "hand.raised", role: .destructive) { blocking = guest }
+                            }
+                        }
                     }
                 }
             }
@@ -284,10 +292,28 @@ struct GuestListSheet: View {
             }
         }
         .task { await load() }
+        .alert(blocking.map { "\($0.name) blockieren?" } ?? "", isPresented: Binding(get: { blocking != nil }, set: { if !$0 { blocking = nil } })) {
+            Button("Abbrechen", role: .cancel) {}
+            Button("Blockieren", role: .destructive) {
+                if let guest = blocking { Task { await block(guest) } }
+            }
+        } message: {
+            Text("Ihr seht gegenseitig keine Partys mehr, und eure Zusagen und Anfragen untereinander werden entfernt. Unter Profil, Blockierte Personen kannst du das rückgängig machen.")
+        }
         .alert("Das ging nicht", isPresented: Binding(get: { errorMessage != nil }, set: { if !$0 { errorMessage = nil } })) {
             Button("OK") {}
         } message: {
             Text(errorMessage ?? "")
+        }
+    }
+
+    private func block(_ guest: GuestRow) async {
+        do {
+            try await Participation.block(guest.userID)
+            withAnimation { guests.removeAll { $0.userID == guest.userID } }
+            onChange()
+        } catch {
+            errorMessage = "\(guest.name) konnte nicht blockiert werden."
         }
     }
 

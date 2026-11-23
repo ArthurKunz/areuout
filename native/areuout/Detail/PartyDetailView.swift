@@ -21,6 +21,7 @@ struct PartyDetailView: View {
     @State private var notice: (title: String, message: String)?
     @State private var errorMessage: String?
     @State private var askCalendar = false
+    @State private var askBlockHost = false
     @State private var isBusy = false
     @State private var isAnswering = false
     @State private var showGuests = false
@@ -118,6 +119,12 @@ struct PartyDetailView: View {
             }
         }
 
+        .alert("\(hostName) blockieren?", isPresented: $askBlockHost) {
+            Button("Abbrechen", role: .cancel) {}
+            Button("Blockieren", role: .destructive) { Task { await blockHost() } }
+        } message: {
+            Text("Ihr seht gegenseitig keine Partys mehr, und eure Zusagen und Anfragen untereinander werden entfernt. Unter Profil, Blockierte Personen kannst du das rückgängig machen.")
+        }
         // App 2.1: nach dem Zusagen einmal pro Party anbieten, sie in den Kalender zu tragen.
         .alert("Zum Kalender hinzufügen?", isPresented: $askCalendar) {
             Button("Nein", role: .cancel) {}
@@ -243,9 +250,36 @@ struct PartyDetailView: View {
             Button("Party löschen", systemImage: "trash", role: .destructive) { askDelete = true }
         case .guest:
             Button("Party melden", systemImage: "exclamationmark.bubble") { askReport = true }
+            blockHostButton
             Button("Party löschen", systemImage: "trash", role: .destructive) { askDelete = true }
         case .stranger:
             Button("Party melden", systemImage: "exclamationmark.bubble") { askReport = true }
+            blockHostButton
+        }
+    }
+
+    /// Nicht bei Agent-Partys: deren Host ist das Systemkonto areuout.
+    @ViewBuilder
+    private var blockHostButton: some View {
+        if !model.isAgentEvent {
+            Button("Host blockieren", systemImage: "hand.raised", role: .destructive) { askBlockHost = true }
+        }
+    }
+
+    private var hostName: String {
+        guard let detail = model.detail else { return "Host" }
+        let name = [detail.hostFirstname, detail.hostLastname].compactMap { $0 }.joined(separator: " ")
+        return name.isEmpty ? "Host" : name
+    }
+
+    private func blockHost() async {
+        guard let host = model.detail?.hostID else { return }
+        do {
+            try await Participation.block(host)
+            onChange()
+            dismiss()
+        } catch {
+            errorMessage = "\(hostName) konnte nicht blockiert werden."
         }
     }
 

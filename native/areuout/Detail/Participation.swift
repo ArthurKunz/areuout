@@ -168,6 +168,12 @@ enum Participation {
     }
 
     /// Antwort setzen oder ändern (upsert wie setRsvp der Web-App).
+    /// Blockieren (Regel 1.2 von Apple). Der Server entfernt dabei gegenseitige Zusagen und
+    /// Anfragen zwischen beiden und lehnt sich selbst und das Systemkonto areuout ab.
+    static func block(_ user: UUID) async throws {
+        try await supabase.rpc("block_user", params: ["p_user_id": user]).execute()
+    }
+
     static func setStatus(_ status: RSVPStatus, party: UUID, user: UUID) async throws {
         try await supabase
             .from("rsvps")
