@@ -989,6 +989,27 @@ block, never for a past party, and a failing push never fails the write.
   push, `Bald ist es so weit. Bist du dabei?`, to guests with `maybe` and to everyone in
   `private.invite_opens` without a row in `rsvps`. Actor = the host.
 
+## 9i. Admins follow a verified email (2026-11-23)
+
+Migration `20261123125446_make_admins_follow_a_verified_email.sql`, rollback in
+`supabase/rollbacks/`. `private.admins` still decides (`private.is_admin()`,
+`private.queue_admin_push` and all admin functions are unchanged), but its rows now
+come back by themselves: deleting an account removed its row (cascade from `profiles`),
+and a new account with the same address was no admin.
+
+- **`private.admin_emails`** (new; `email` lowercase, primary key; no grant for `anon` or
+  `authenticated`): the addresses whose account is an admin. Today: Arthur's address.
+- **`profiles_admin_from_email`** (AFTER INSERT on `profiles`, function
+  `private.admin_from_email()`): inserts the new profile into `private.admins` when the
+  user's address is in `admin_emails` and `email_confirmed_at` is set. An unconfirmed
+  sign-up with a foreign address never becomes an admin. Errors become a warning, so a
+  profile never fails because of it.
+- One backfill ran with the migration for existing profiles.
+- To add or remove an admin: insert into or delete from `private.admin_emails`, and for an
+  existing account also `private.admins`.
+- Apple "hide my email" addresses do not match; the admin must sign in with the listed
+  address (email or Google).
+
 ## 10. Checking this file against the database
 
 Do not trust the above. The database answers all of it, and the Supabase MCP is the
