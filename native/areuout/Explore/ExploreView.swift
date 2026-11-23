@@ -17,11 +17,14 @@ struct ExploreView: View {
     @State private var selected: PartySummary?
     @State private var loadFailed = false
     @State private var isLoading = true
+    @State private var day: Date?
+
+    private var shown: [PartySummary] { parties.on(day) }
     @Environment(PartyFeed.self) private var feed
 
     var body: some View {
         Map(position: $position) {
-            ForEach(parties) { party in
+            ForEach(shown) { party in
                 Annotation(party.title, coordinate: party.coordinate, anchor: .center) {
                     Button {
                         selected = party
@@ -43,26 +46,36 @@ struct ExploreView: View {
         .safeAreaPadding(.horizontal, 12)
         .ignoresSafeArea()
         .overlay(alignment: .top) {
-            if isLoading && parties.isEmpty {
-                ProgressView()
-                    .padding(10)
-                    .glassEffect(.regular, in: Circle())
-                    .padding(.top, 8)
-            } else if !loadFailed && parties.isEmpty {
-                Text("Gerade keine Partys in Leipzig")
-                    .font(.footnote.weight(.semibold))
-                    .padding(.horizontal, 14)
-                    .frame(height: 36)
-                    .glassEffect(.regular, in: Capsule())
-                    .padding(.top, 8)
-            }
-            if loadFailed {
-                Button("Partys konnten nicht geladen werden. Nochmal versuchen") {
-                    Task { await load() }
+            VStack(spacing: 0) {
+                DateFilterBar(day: $day)
+                if isLoading && parties.isEmpty {
+                    ProgressView()
+                        .padding(10)
+                        .glassEffect(.regular, in: Circle())
+                        .padding(.top, 8)
+                } else if !loadFailed && parties.isEmpty {
+                    Text("Gerade keine Partys in Leipzig")
+                        .font(.footnote.weight(.semibold))
+                        .padding(.horizontal, 14)
+                        .frame(height: 36)
+                        .glassEffect(.regular, in: Capsule())
+                        .padding(.top, 8)
+                } else if !loadFailed && shown.isEmpty {
+                    Text("An diesem Tag gibt es keine Party")
+                        .font(.footnote.weight(.semibold))
+                        .padding(.horizontal, 14)
+                        .frame(height: 36)
+                        .glassEffect(.regular, in: Capsule())
+                        .padding(.top, 8)
                 }
-                .font(.footnote)
-                .buttonStyle(.glass)
-                .padding(.top, 8)
+                if loadFailed {
+                    Button("Partys konnten nicht geladen werden. Nochmal versuchen") {
+                        Task { await load() }
+                    }
+                    .font(.footnote)
+                    .buttonStyle(.glass)
+                    .padding(.top, 8)
+                }
             }
         }
         .sheet(item: $selected) { party in

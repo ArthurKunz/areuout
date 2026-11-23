@@ -17,11 +17,15 @@ struct PartiesView: View {
     @State private var loadFailed = false
     @State private var selected: PartySummary?
     @State private var filter = PartyFilter()
+    @State private var day: Date?
 
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 24) {
-                header
+                VStack(alignment: .leading, spacing: 12) {
+                    header
+                    DateFilterBar(day: $day)
+                }
                 if isLoading && upcoming.isEmpty && going.isEmpty && hosting.isEmpty {
                     ProgressView().frame(maxWidth: .infinity).padding(.top, 80)
                 } else if loadFailed {
@@ -34,9 +38,9 @@ struct PartiesView: View {
                     }
                 } else if rows.allSatisfy({ $0.parties.isEmpty }) {
                     ContentUnavailableView(
-                        filter.isActive ? "Nichts gefunden" : "Noch keine Partys",
+                        isFiltering ? "Nichts gefunden" : "Noch keine Partys",
                         systemImage: "party.popper",
-                        description: Text(filter.isActive ? "Keine Party passt zu deinem Filter." : "Sobald es Partys gibt, findest du sie hier.")
+                        description: Text(isFiltering ? (day != nil && !filter.isActive ? "An diesem Tag gibt es keine Party." : "Keine Party passt zu deinem Filter.") : "Sobald es Partys gibt, findest du sie hier.")
                     )
                     .padding(.top, 40)
                 } else {
@@ -83,11 +87,13 @@ struct PartiesView: View {
 
     private var rows: [(title: String, parties: [PartySummary], badge: PartyCard.Badge)] {
         [
-            ("Upcoming", filter.apply(upcoming), .days),
-            ("Going", filter.apply(going), .status),
-            ("Hosting", filter.apply(hosting), .none),
+            ("Upcoming", filter.apply(upcoming).on(day), .days),
+            ("Going", filter.apply(going).on(day), .status),
+            ("Hosting", filter.apply(hosting).on(day), .none),
         ]
     }
+
+    private var isFiltering: Bool { filter.isActive || day != nil }
 
     private func load() async {
         if let sample {
