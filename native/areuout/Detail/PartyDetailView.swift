@@ -20,6 +20,7 @@ struct PartyDetailView: View {
     @State private var showNewLink = false
     @State private var notice: (title: String, message: String)?
     @State private var errorMessage: String?
+    @State private var askCalendar = false
     @State private var isBusy = false
     @State private var isAnswering = false
     @State private var showGuests = false
@@ -53,6 +54,12 @@ struct PartyDetailView: View {
         Group {
             if let detail = model.detail {
                 content(detail)
+            } else if model.isGone {
+                ContentUnavailableView(
+                    "Diese Party gibt es nicht mehr",
+                    systemImage: "party.popper",
+                    description: Text("Sie wurde abgesagt oder gelöscht.")
+                )
             } else if model.loadFailed {
                 ContentUnavailableView {
                     Label("Nicht geladen", systemImage: "wifi.exclamationmark")
@@ -111,6 +118,13 @@ struct PartyDetailView: View {
             }
         }
 
+        // App 2.1: nach dem Zusagen einmal pro Party anbieten, sie in den Kalender zu tragen.
+        .alert("Zum Kalender hinzufügen?", isPresented: $askCalendar) {
+            Button("Nein", role: .cancel) {}
+            Button("Hinzufügen") { Task { await addToCalendar() } }
+        } message: {
+            Text("Titel, Uhrzeit und Ort der Party kommen in deinen Kalender.")
+        }
         .alert(notice?.title ?? "", isPresented: Binding(get: { notice != nil }, set: { if !$0 { notice = nil } })) {
             Button("Fertig") {}
         } message: {
@@ -419,8 +433,24 @@ struct PartyDetailView: View {
             // Wie die Web-App: nach zugesagt oder vielleicht einmal um Mitteilungen bitten.
             if status != .notGoing { PushManager.shared.ask() }
             await reload()
+            if status == .going, !PartyCalendar.wasOffered(model.partyID) {
+                PartyCalendar.markOffered(model.partyID)
+                askCalendar = true
+            }
         } catch {
             errorMessage = Participation.rsvpErrorText(error)
+        }
+    }
+
+    private func addToCalendar() async {
+        guard let detail = model.detail else { return }
+        do {
+            try await PartyCalendar.add(detail)
+            notice = ("Im Kalender", "Die Party steht jetzt in deinem Kalender.")
+        } catch PartyCalendar.Failure.noAccess {
+            errorMessage = "areuout darf nicht in deinen Kalender schreiben. Das kannst du in den Einstellungen unter areuout erlauben."
+        } catch {
+            errorMessage = "Die Party konnte nicht in deinen Kalender eingetragen werden."
         }
     }
 

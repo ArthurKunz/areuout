@@ -40,13 +40,19 @@ struct MainTabView: View {
                 ExploreView().toolbarVisibility(.hidden, for: .tabBar)
             }
             Tab(value: TabID.parties) {
-                PartiesView { selection = .profile }.toolbarVisibility(.hidden, for: .tabBar)
+                PartiesView { selection = .profile }
+                    .tabBarClearance()
+                    .toolbarVisibility(.hidden, for: .tabBar)
             }
             Tab(value: TabID.profile) {
-                ProfileView().toolbarVisibility(.hidden, for: .tabBar)
+                ProfileView()
+                    .tabBarClearance()
+                    .toolbarVisibility(.hidden, for: .tabBar)
             }
         }
-        .safeAreaInset(edge: .bottom, spacing: 0) {
+        // Die Leiste liegt über den Tabs. Der Platz darunter kommt pro Tab über
+        // `tabBarClearance()`, denn ein Inset am TabView erreicht die Listen nicht.
+        .overlay(alignment: .bottom) {
             BottomBar(selection: $selection) { showCreate = true }
         }
         .sheet(isPresented: $showCreate) {
@@ -98,8 +104,19 @@ extension MainTabView {
     }
 }
 
+extension View {
+    /// Platz unter dem letzten Inhalt, damit die Tab-Leiste nichts verdeckt und darüber
+    /// noch etwas Luft bleibt (Arthur, 2026-11-23).
+    func tabBarClearance() -> some View {
+        contentMargins(.bottom, BottomBar.clearance, for: .scrollContent)
+    }
+}
+
 /// Die Glas-Kapsel mit den drei Tabs und der runde Plus-Knopf daneben.
 private struct BottomBar: View {
+    /// Leistenhöhe (62) minus Absenkung (10) plus 20 Luft.
+    static let clearance: CGFloat = 72
+
     @Binding var selection: MainTabView.TabID
     let create: () -> Void
 
@@ -127,7 +144,8 @@ private struct BottomBar: View {
             }
         }
         .padding(.horizontal, 20)
-        .padding(.bottom, 4)
+        // 10 Punkte tiefer in den unteren Rand, näher an Apples eigene Tab-Leiste.
+        .padding(.bottom, -10)
         // Wie Apples Tab-Leiste: wächst nur bis zu einer Grenze, bei großer Schrift zeigt
         // langes Drücken das Symbol groß (Large Content Viewer).
         .dynamicTypeSize(...DynamicTypeSize.xxLarge)

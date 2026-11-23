@@ -885,6 +885,8 @@ Verified 2026-11-14 in one rolled-back transaction on the live database (see
   (actor = system account): title = party title, body `Geändert: Datum, Uhrzeit, …` or
   `Die Party wurde abgesagt`, no name. Each call is caught, so the approval never fails on a
   push. Verwerfen uses `discard_agent_candidate`.
+  Since 2026-11-23 (section 9h) only the cancel path sends its own push; an approved change
+  pushes through the trigger `events_push_changes`.
 - The app shows `Abgesagt` and no RSVP button or bar when `cancelled_at` is set;
   `rsvp_is_open` (step 2) refuses the write anyway.
 
@@ -963,6 +965,29 @@ without the new parameters and ignore the new columns.
   is registered (decided by Arthur). Every call counts against 10 per IP and minute in
   `private.email_check_calls` (same pattern as `private.invite_lookup_misses`), then
   `PT429`.
+
+## 9h. Change push and 48-hour reminder (App 2.1, 2026-11-23)
+
+Migration `20261123123041_push_party_changes_and_reminder.sql`, rollback in
+`supabase/rollbacks/`. Every push goes through `private.queue_push` (section 9e), so the
+same rules hold: no name, address or time in the text, never to the actor, never across a
+block, never for a past party, and a failing push never fails the write.
+
+- **`events_push_changes`** (AFTER UPDATE OF `event_date`, `ends_at`, `is_all_day`,
+  `location`, `lat`, `lng`): every guest with `going` or `maybe` gets
+  `Geändert: Datum, Uhrzeit, Ende, Ort` (only the words that changed, Berlin time for date and
+  time). Actor = `auth.uid()`, or the host when there is none. Covers host edits, admin edits
+  of agent parties and approved agent proposals. Motto, dress code, picture, price and the
+  rest send nothing.
+- **`events_push_cancelled`** (BEFORE DELETE): every guest with `going` or `maybe` gets
+  `Die Party wurde abgesagt`. Covers the host deleting, `remove_agent_event` and the
+  cascade from a deleted host account. The push carries the party id; the app shows
+  "Diese Party gibt es nicht mehr" when the party is gone.
+- **`private.send_party_reminders()`**, cron job `party-reminders` at minute 15 of every hour:
+  parties starting in more than 47 and at most 48 hours that are not yet in
+  **`private.party_reminders`** (new, one row per party, cascade with the event) get one
+  push, `Bald ist es so weit. Bist du dabei?`, to guests with `maybe` and to everyone in
+  `private.invite_opens` without a row in `rsvps`. Actor = the host.
 
 ## 10. Checking this file against the database
 

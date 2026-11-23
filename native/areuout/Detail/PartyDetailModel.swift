@@ -124,6 +124,8 @@ final class PartyDetailModel {
     private(set) var counts: RSVPCounts?
     private(set) var inviteCode: String?
     private(set) var loadFailed = false
+    /// Die Party gibt es nicht (mehr), etwa nach einer Absage-Push (App 2.1).
+    private(set) var isGone = false
     private(set) var polls: [PollData] = []
     private(set) var requests: [JoinRequestRow] = []
     /// Nur für Fremde mit Teilnehmer-Grenze: ist noch Platz?
@@ -179,8 +181,11 @@ final class PartyDetailModel {
                 .value
             self.detail = detail
             loadFailed = false
+            isGone = false
         } catch {
-            loadFailed = true
+            // Keine Zeile heißt: gelöscht oder nie da gewesen, nicht kein Netz.
+            isGone = (error as? PostgrestError)?.code == "PGRST116"
+            loadFailed = !isGone
             return
         }
         // Die Nebeninfos dürfen fehlen, ohne dass die Party nicht angezeigt wird.
