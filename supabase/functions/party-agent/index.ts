@@ -23,7 +23,7 @@ import { timingSafeEqual } from 'jsr:@std/crypto@1/timing-safe-equal'
 import postgres from 'npm:postgres@3.4.5'
 import { emptyUsage, MODEL, runClaude } from './claude.ts'
 import { sameEvent, type Slot } from './dedupe.ts'
-import { geocode, geoProblem, resetGeoProblem } from './geo.ts'
+import { directProblem, geocode, geoProblem, resetGeoProblem } from './geo.ts'
 import { berlinToDate, buildPrompt, CATEGORIES, EVENT_TYPES, type EventType, type FoundEvent, parseEvents, toFoundEvent, windowDates } from './prompt.ts'
 import { recheckEvents } from './recheck.ts'
 import { checkEvent, type RobotsCache } from './verify.ts'
@@ -80,9 +80,9 @@ Deno.serve(async (req) => {
   if (!category) return json(400, { error: 'category muss club, concert, festival oder open_air sein' })
 
   const started = Date.now()
-  resetGeoProblem()
   const window = windowDates()
   const sql = postgres(Deno.env.get('SUPABASE_DB_URL') ?? '', { prepare: false, max: 2 })
+  resetGeoProblem(sql)
   const counts = { found: 0, verified: 0, discarded: 0, duplicates: 0, drafts: 0 }
   const reasons: Record<string, number> = {}
   const discard = (reason: string) => {
@@ -214,7 +214,16 @@ Deno.serve(async (req) => {
         })
       }
     }
-    if (unchecked) error = `Zeitbudget erreicht, ${unchecked} Events nicht geprueft`
+    // Faellt die Adresssuche ganz aus, gilt der Aufruf als gescheitert: sonst endet er
+    // still ohne Entwuerfe und ohne Push (so geschehen am 2026-11-23 und 2026-11-26).
+    const geoFailed = Object.entries(reasons)
+      .filter(([reason]) => reason.startsWith('Adresse nicht gefunden ('))
+      .reduce((sum, [, n]) => sum + n, 0)
+    const problems = [
+      geoFailed ? `Adresssuche ausgefallen, ${geoFailed} Events verworfen (${geoProblem})` : null,
+      unchecked ? `Zeitbudget erreicht, ${unchecked} Events nicht geprueft` : null,
+    ].filter(Boolean)
+    if (problems.length) error = problems.join('; ')
 
     for (const c of checked) {
       const startsAt = berlinToDate(c.ev.date, c.ev.start_time ?? '00:00')
@@ -273,13 +282,15 @@ Deno.serve(async (req) => {
   await sql.end()
 
   // Nur Zahlen und Gruende, keine Inhalte.
-  console.log(JSON.stringify({ run: run.id, category: category.id, ...counts, ...recheck, cost_usd: cost, error }))
+  const geo = directProblem ? `direkt ${directProblem}, weiter ueber DB` : 'direkt'
+  console.log(JSON.stringify({ run: run.id, category: category.id, ...counts, ...recheck, cost_usd: cost, geo, error }))
   return json(error && !counts.drafts ? 500 : 200, {
     run_id: run.id,
     category: category.id,
     ...counts,
     ...recheck,
     discard_reasons: reasons,
+    geo,
     web_searches: usage.searches,
     web_fetches: usage.fetches,
     cost_usd: cost,

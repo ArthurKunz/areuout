@@ -799,7 +799,12 @@ function does not go through PostgREST: it connects with the built-in secret
 `SUPABASE_DB_URL` (role `postgres`) and writes only `private.agent_candidates` and
 `private.agent_runs`, never `events`. Every event is checked in code against its source
 page (robots.txt, name, date, place, 14-day window, price), geocoded with Photon (the app's
-service; Nominatim answers Supabase's servers with 403), and compared with the known source
+service; Nominatim answers Supabase's servers with 403). Since 2026-11-23 Photon also answers
+the Edge Functions with 403, so after the first failure a call geocodes through
+`private.photon_get(url)` (extension `http`, synchronous, only Photon URLs, no API role may
+execute it). pg_net cannot do this: it is busy with the call that started the agent. If
+geocoding fails both ways, the run row gets an error and the run push says
+`Agent-Lauf fehlgeschlagen`. The events are then compared with the known source
 links (all statuses, so a discarded draft never comes back), the open drafts and all
 upcoming public parties. Stock photos live in `event-backgrounds/<system account>/<type>/`.
 

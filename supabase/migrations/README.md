@@ -531,3 +531,14 @@ abgelehnt; `''` löscht nur den Veranstalter. Rollback:
 | `20261119152029_hide_the_website_column_of_events.sql` | Nimmt `GRANT SELECT (website_url)` auf `events` zurück: der Link ist wie `location` nur über `get_party_detail` lesbar (Code-Review Schritt 9) | `apply_migration`, am 19.11.2026 | echt |
 
 Rollback: `supabase/rollbacks/20261119152029_hide_the_website_column_of_events.sql`.
+
+## Die Adresssuche des Agenten über die Datenbank (27.11.2026)
+
+Photon antwortet den Edge Functions seit dem Lauf vom 23.11.2026 mit HTTP 403, der Datenbank aber normal. Der Agent fand deshalb keine Entwürfe mehr.
+
+| Datei | Was sie ändert | Wie angewendet | Version |
+|---|---|---|---|
+| `20261127155054_geocode_photon_through_the_database.sql` | Erweiterung `http` (Schema `extensions`) und `private.photon_get(url)`: fragt nur Photon ab, Zeitlimit 10 s, für keine API-Rolle ausführbar | `apply_migration`, am 27.11.2026 | echt |
+| `20261127155114_fix_photon_get_content_type.sql` | `content::text`, weil `extensions.http` `varchar` liefert | `apply_migration`, am 27.11.2026 | echt |
+
+Rollback: `drop function private.photon_get(text); drop extension http;` (party-agent fällt dann auf den direkten Weg zurück).
